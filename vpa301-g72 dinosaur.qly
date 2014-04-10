@@ -13017,23 +13017,48 @@ func ResponseReceived(response as string)
             _ClearException()
     enderr
     if temp==0 then
+
+        if PowerUpComCheck then
+            REM Read 0 but com check is on, turn it off
+            tmrpowerup.TimePeriod=10
+            PowerUpComCheck=false
+        endif
+
 '        tmr_CheckML.enabled=true
         return
     elseif temp==1 then
-        tmrpowerup.enabled=false
-        tmr_CheckML.enabled=false
-        'probably need to exit the current screen
-        close_all()
-        Init_Power_Up_Screen()
-        CurrentTime=DateTimeFunctions_Maintenance.GetCurrentTime()'@debug
-        CurrentDate=DateTimeFunctions_Maintenance.GetDateString("\nMM/dd/yyyy HH:mm:ss", CurrentTime)
-        debugText=CurrentDate+" Value of PowerUp read as "+str(temp)
-        DebugEB.appendText=debugText
-    Else '@debug
+        if PowerUpComCheck then
+            tmrpowerup.enabled=false
+            tmr_CheckML.enabled=false
+            'probably need to exit the current screen
+            close_all()
+            Init_Power_Up_Screen()
+        else
+            REM Read 1, but haven't verified.
+            REM Change time period to 1 so we don't wait 10 seconds for another response.
+            PowerUpComCheck=true
+            tmrPowerUp.TimePeriod=1
+            CurrentTime=DateTimeFunctions_Maintenance.GetCurrentTime()
+            CurrentDate=DateTimeFunctions_Maintenance.GetDateString("\nMM/dd/yyyy HH:mm:ss", CurrentTime)
+            debugText=CurrentDate+"Value of PowerUp read as "+str(temp)
+            DebugEB.appendText=debugText
+
+            If WriteErrorToPortTwo then
+                transmit(COM2, debugtext, false)
+            endif
+        endif
+
+    Else
+        REM Bad data
         CurrentTime=DateTimeFunctions_Maintenance.GetCurrentTime()
         CurrentDate=DateTimeFunctions_Maintenance.GetDateString("\nMM/dd/yyyy HH:mm:ss", CurrentTime)
-        debugText=CurrentDate+" Value of PowerUp read as "+str(temp)+"    "
+        debugText=CurrentDate+"Value of PowerUp read as "+str(temp)
         DebugEB.appendText=debugText
+
+        If WriteErrorToPortTwo then
+            transmit(COM2, debugtext, false)
+        endif
+
     endif
 
 endfunc
@@ -14579,17 +14604,41 @@ func ResponseReceived (response as reference to string)
         _ClearException()
 '        debugEB.appendText="AveSp response "+response
     enderr
+
+    if NewErr == 0 then
+
+        If NewErrComCheck then
+            REM Com check is on, but received 0, turn off
+            NewErrComCheck=false
+        endif
+
+    endif
+
     if NewErr == 1 then
-        'Send NewErr = 0
-        GMCCommand.command = "NewErr=0"
-        GMCCommand.executeCommand = true
-        'Get ErrMsg
-        GMCcom_ErrMsg.executeCommand=true
-    elseif NewErr > 1 then'@DEBUG
+
+        IF NewErrComCheck then
+            REM Make sure we are getting valid response
+            'Send NewErr = 0
+            GMCCommand.command = "NewErr=0"
+            GMCCommand.executeCommand = true
+            'Get ErrMsg
+            GMCcom_ErrMsg.executeCommand=true
+        else
+            REM Read 1, but haven't verified
+            NewErrComCheck=true
+        endif
+
+    elseif NewErr > 1 then
+        REM Bad data
         CurrentTime=DateTimeFunctions_Maintenance.GetCurrentTime()
         CurrentDate=DateTimeFunctions_Maintenance.GetDateString("\nMM/dd/yyyy HH:mm:ss", CurrentTime)
         debugText=CurrentDate+" Value of NewErr read as "+str(NewErr)+"    "
         DebugEB.appendText=debugText
+        NewErrComCheck=false
+
+        if WriteErrorToPortTwo then
+            transmit(COM2, debugtext, false)
+        endif
 
     endif
 
