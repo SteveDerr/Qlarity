@@ -358,6 +358,7 @@ dim currentvalue as string
     dim debugText as string
 
 Func Write_To_Debug(DebugDesc_ as charstr, DebugSource_ as string)
+    REM Function gets date and time and outputs message to the debug screen and to port two if the error port is enabled.
     dim DateAndError as string
 
     CurrentTime=DateTimeFunctions_Maintenance.GetCurrentTime()
@@ -1187,7 +1188,6 @@ func Handle_Error(errorID as Integer)
     if ErrorDisplayDisabled and errorID >4 and errorID<8 then
         'do not update the error log or display message
     else
-        '@Debug
         debugText="Error ID "+str(ErrorID)+"\nCurrent Values - PcurA: " +str(PcurA) +", PcurB: " +str(PcurB) +", Pcur: " +str(Pcur) +", AveSp: " + str(currate)+", Pressure warning limit: " +eb_Pmax_Warn.Value +", Pressure Shutdown limit " + eb_PMax_1.value +", Flow Warning " + eb_flowRlim_Warn.value +", Flow Showdown " + eb_FlowRlim_1.Value
         Write_To_Debug(debugText, "Global Function Handle_Error")
 
@@ -14544,9 +14544,17 @@ func ResponseReceived (response as reference to string)
     enderr
     If MLtot>0 and GMCPoll_Flowing.enabled then
         If MLtot >= Target_Volume then
-            Tar_Vol_Reached = true
-            FlowStopped=True
-            Set_Flow_Buttons()
+            If MLtotComCheck then
+            REM Check twice before stopping
+                Tar_Vol_Reached = true
+                FlowStopped=True
+                Set_Flow_Buttons()
+            else
+                MLtotComCheck=true
+            endif
+        else
+            MLtotComCheck=false
+
         endif
     endif
         If Pressure_mode_screen.enabled then
@@ -14766,10 +14774,19 @@ func ResponseReceived (response as reference to string)
     If PcurA > PMaxWarn then
         If Pumping and not FlowStopped then  'only apply this error in flowmode
             If not AlreadyWarned then
-                Handle_Error(5)
+                If PcurAComCheck then
+                REM Check value twice before warning.
+                    Handle_Error(5)
+                    AlreadyWarned=true
+                else
+                    PcurAComCheck=true
+                endif
+
             endif
-            AlreadyWarned=true
+
         endif
+    else
+        PcurAComCheck=false
     Endif
 
 
@@ -14838,10 +14855,18 @@ func ResponseReceived (response as reference to string)
     If PcurB > PMaxWarn then
         If Pumping and not FlowStopped then  'only apply this error in flowmode
             If not AlreadyWarned then
-                Handle_Error(6)
+                IF PcurBComCheck then
+                REM Check Pressure twice before warn.
+                    Handle_Error(6)
+                    AlreadyWarned=true
+                else
+                    PcurBComCheck=true
+                endif
             endif
-            AlreadyWarned=true
+
         endif
+    else
+        PcurBComCheck=false
     Endif
 
 
