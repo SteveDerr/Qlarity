@@ -13751,6 +13751,12 @@ func ResponseReceived (response as reference to string)
 '        debugEB.appendText="AveSp response "+response
     enderr
 
+    If CurRate > FRMax or -CurRate > FRMax then
+        REM Flowing faster than we should be, log it
+        debugText="Value of AveSp read as "+str(CurRate)
+        Write_To_Debug(debugText, "GMCPoll_CurFlow")
+    endif
+
     If eb_flowr.DecimalPlaces==2 then
         lbl_Current_Flow_Rate.value=_FormatFloat(CurRate,6,2,_FLOAT_NORMAL)
     else
@@ -14175,6 +14181,12 @@ func ResponseReceived (response as reference to string)
         _ClearException()
 '        debugEB.appendText="FState response "+response
     enderr
+
+    IF fstate>6 then
+        REM Known bad value
+        debugtext="Value of FState read as "+str(fstate)
+        Write_To_Debug(debugtext, "GMCPoll_Flowing")
+    endif
 
     If FlowStopped and not Remote_Control then
         If fstate==0 then
@@ -14943,6 +14955,13 @@ func ResponseReceived (response as reference to string)
         _ClearException()
 '        debugEB.appendText="PState response "+response
     enderr
+
+    if PState>6 then
+        REM Known bad value
+        debugtext="Value of PState read as "+str(PState)
+        Write_To_Debug(debugtext, "GMCPoll_PState_status")
+    endif
+
     If P_Stop_Pressed and not Remote_Control then
         If PState==0 then
             GMCPoll_PState_status.enabled = false
