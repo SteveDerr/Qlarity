@@ -2107,7 +2107,7 @@ Func Set_Flow_Buttons()
         lbl_Flow_Instructions.bgColor=clr_messagebackground
         lbl_Current_Flow_Rate.value=""
         lbl_Flow_Instructions.bgColor=26
-        lbl_Flow_Instructions.value="Flowing at constant rate"
+'        lbl_Flow_Instructions.value="Flowing at constant rate"
     endif
 endfunc
 Func Set_Manual_Flow_Buttons()
@@ -6731,7 +6731,7 @@ func click()
     endif
 
 endfunc
-init enabled := true
+init enabled := false
 Enddec
 Declare but_Debug_1 as ButtonV2
 Level 249538
@@ -8527,19 +8527,19 @@ init font := helvb18_bdf
 
 func click()
     IF PcurA<-10 or PcurB<-10 then
-    lbl_Flow_Instructions.value = "Pressure values are less than -10, rezero transducers"
-'    return
+        lbl_Flow_Instructions.value = "Pressure values are less than -10, rezero transducers"
+'       return
     endif
     If But_StartFlow.value=="STOP" then
-    'Stop motion
-    Stop_Flow()
-    tmr_update_but_delay.enabled=true
-    return
+        'Stop motion
+        Stop_Flow()
+        tmr_update_but_delay.enabled=true
+        return
     else
-    Send_FlowR(mlmax,mlpermin)
-    Start_Flow()
-    '            Tar_Vol_Reached=false
-    Set_Flow_Buttons()
+        Send_FlowR(mlmax,mlpermin)
+        Start_Flow()
+        '            Tar_Vol_Reached=false
+        Set_Flow_Buttons()
     endif
 
 endfunc
@@ -16928,7 +16928,7 @@ Declare Label_77 as LabelV2
 Level 249472
 #Visible True
 #Lock False
-init value := "Software Version Dinosaur"
+init value := "Software Version VPA 301 13-4-2014"
 init parent := sys_setup_screen
 init xpos := 54
 init ypos := 770
