@@ -1256,10 +1256,13 @@ func Init_Error_Popup_Screen(errorID as Integer)
         return
     endif
     I_sent_Restart=false
-    GMCcom_PowerUp_1.executeCommand=true
-    GMCCom_Rev.executeCommand=true
-    GMCcom_ErrCode.executeCommand=true
-    GMCcom_LineNum.executeCommand=true
+    REM These commands are not executed before we check the code. They are queued up and performed as seperate messages.
+    REM GMCcom_PowerUp_1 was deleted because we couldn't figure out why we were calling it and
+    REM because it was turing the Ignore button on at the wrong time.
+'    GMCcom_PowerUp_1.executeCommand=true
+'    GMCCom_Rev.executeCommand=true
+'    GMCcom_ErrCode.executeCommand=true
+'    GMCcom_LineNum.executeCommand=true
 
     if errorID <8 then
         If ErrorDisplayDisabled then
@@ -13108,39 +13111,6 @@ func FailureReceived(response as string, failReason as GMC_FailureReason)
     REM @Debug throw added to help debug communicaiton error
     throw(str(me), "Failure Received")
 
-endfunc
-Enddec
-Declare GMCCom_PowerUP_1 as GMCCommandExecV2
-Level 249771
-#Visible True
-#Lock False
-init commobject := galilcomm
-init parent := daq_objects
-init command := "MG PowerUp"
-init enabled := true
-
-func ResponseReceived(response as string)
-    dim temp as float
-    dim respstr as string
-
-    respstr = Clip_String(response,2)
-
-    check error
-             Val(temp,respstr)
-    on error
-            _ClearException()
-    enderr
-    REM But_ignore should only be set in Set_Error_Buttons
-'    if temp==0 then
-'        but_Ignore_Error.enabled=true
-'    else
-'        but_Ignore_Error.enabled=false
-'    endif
-
-endfunc
-
-func FailureReceived(response as string, failReason as GMC_FailureReason)
-    Controller_Communication_Error(me.command,response, failReason)
 endfunc
 Enddec
 Declare GMCcom_PRange as GMCCommandExecV2
