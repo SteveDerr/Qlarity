@@ -570,11 +570,13 @@ func Check_PowerUp()
     GMCCom_PowerUp.executeCommand=true
 endfunc
 
-func Controller_Communication_Error(strObj as String,strResp as String)
+func Controller_Communication_Error(strObj as String,strResp as String, FailReasonResp as GMC_FailureReason)
+    dim DebugMessage as string
     warning_sound()
     lbl_msg_Title.enabled=true
     lbl_msg_Title.value="Galil Communication Error: " + strObj
-    Write_To_Debug(lbl_msg_title.value, "Global Function Controller_Communication_Error")
+    DebugMessage = "Global Function Controller_Communication_Error, FailureReceived response="+str(strResp)+", FailureReceived reason="+str(FailReasonResp)
+    Write_To_Debug(lbl_msg_title.value, DebugMessage)
 endfunc
 func Cycle_To_Start()
     'send "Cycle=1
@@ -1170,9 +1172,10 @@ func Handle_Error(errorID as Integer)
 
 
     dim strTime as string
-    if errorID==14 then 'we must force them to restart the pump
-        but_Ignore_Error.enabled=false
-    endif
+
+'    if errorID==14 then 'we must force them to restart the pump
+'        but_Ignore_Error.enabled=false
+'    endif
     if Hold_This_Error then'we won't handle any more errors
         return
     endif
@@ -1249,7 +1252,7 @@ func Init_Const_P_Screen()
 endfunc
 
 func Init_Error_Popup_Screen(errorID as Integer)
-       if Hold_This_Error then
+    if Hold_This_Error then
         return
     endif
     I_sent_Restart=false
@@ -11928,7 +11931,7 @@ func ResponseReceived(response as string)
 endfunc
 
 func FailureReceived(response as string, failReason as GMC_FailureReason)
-    Controller_Communication_Error(me.command,response)
+    Controller_Communication_Error(me.command,response, failReason)
 endfunc
 Enddec
 Declare GMCcom_Amin as GMCCommandExecV2
@@ -11952,7 +11955,7 @@ func ResponseReceived(response as string)
 endfunc
 
 func FailureReceived(response as string, failReason as GMC_FailureReason)
-    Controller_Communication_Error(me.command,response)
+    Controller_Communication_Error(me.command,response, failReason)
 endfunc
 Enddec
 Declare GMCcom_Bmax as GMCCommandExecV2
@@ -11976,7 +11979,7 @@ func ResponseReceived(response as string)
 endfunc
 
 func FailureReceived(response as string, failReason as GMC_FailureReason)
-    Controller_Communication_Error(me.command,response)
+    Controller_Communication_Error(me.command,response, failReason)
 endfunc
 Enddec
 Declare GMCcom_Bmin as GMCCommandExecV2
@@ -12000,7 +12003,7 @@ func ResponseReceived(response as string)
 endfunc
 
 func FailureReceived(response as string, failReason as GMC_FailureReason)
-    Controller_Communication_Error(me.command,response)
+    Controller_Communication_Error(me.command,response, failReason)
 endfunc
 Enddec
 Declare GMCcom_CyclDone3 as GMCCommandExecV2
@@ -12040,7 +12043,7 @@ func ResponseReceived(response as string)
 endfunc
 
 func FailureReceived(response as string, failReason as GMC_FailureReason)
-    Controller_Communication_Error(me.command,response)
+    Controller_Communication_Error(me.command,response, failReason)
 endfunc
 
 init parent := daq_objects
@@ -12075,7 +12078,7 @@ endfunc
 
 func FailureReceived(response as string, failReason as GMC_FailureReason)
 
-    Controller_Communication_Error(me.command,response)
+    Controller_Communication_Error(me.command,response, failReason)
 endfunc
 Enddec
 Declare GMCCom_Debug as GMCCommandExecV2
@@ -12160,7 +12163,7 @@ func ResponseReceived(response as string)
 endfunc
 
 func FailureReceived(response as string, failReason as GMC_FailureReason)
-    Controller_Communication_Error(me.command,response)
+    Controller_Communication_Error(me.command,response, failReason)
 endfunc
 
 init parent := daq_objects
@@ -12213,7 +12216,7 @@ func ResponseReceived(response as string)
 endfunc
 
 func FailureReceived(response as string, failReason as GMC_FailureReason)
-    Controller_Communication_Error(me.command,response)
+    Controller_Communication_Error(me.command,response, failReason)
 endfunc
 Enddec
 Declare GMCcom_ErrMsg as GMCCommandExecV2
@@ -12240,7 +12243,7 @@ func ResponseReceived(response as string)
 endfunc
 
 func FailureReceived(response as string, failReason as GMC_FailureReason)
-    Controller_Communication_Error(me.command,response)
+    Controller_Communication_Error(me.command,response, failReason)
 endfunc
 
 init parent := daq_objects
@@ -12264,7 +12267,7 @@ func ResponseReceived(response as string)
 endfunc
 
 func FailureReceived(response as string, failReason as GMC_FailureReason)
-    Controller_Communication_Error(me.command,response)
+    Controller_Communication_Error(me.command,response, failReason)
 endfunc
 
 init parent := daq_objects
@@ -12313,7 +12316,7 @@ func ResponseReceived(response as string)
 endfunc
 
 func FailureReceived(response as string, failReason as GMC_FailureReason)
-    Controller_Communication_Error(me.command,response)
+    Controller_Communication_Error(me.command,response, failReason)
 endfunc
 Enddec
 Declare GMCcom_FRMax as GMCCommandExecV2
@@ -12350,7 +12353,7 @@ func ResponseReceived(response as string)
 endfunc
 
 func FailureReceived(response as string, failReason as GMC_FailureReason)
-    Controller_Communication_Error(me.command,response)
+    Controller_Communication_Error(me.command,response, failReason)
 endfunc
 
 init parent := daq_objects
@@ -12445,7 +12448,7 @@ func ResponseReceived(response as string)
 endfunc
 
 func FailureReceived(response as string, failReason as GMC_FailureReason)
-    Controller_Communication_Error(me.command, response)
+    Controller_Communication_Error(me.command, response, failReason)
 endfunc
 
 init parent := daq_objects
@@ -12522,7 +12525,7 @@ func ResponseReceived(response as string)
 endfunc
 
 func FailureReceived(response as string, failReason as GMC_FailureReason)
-    Controller_Communication_Error(me.command,response)
+    Controller_Communication_Error(me.command,response, failReason)
 endfunc
 Enddec
 Declare GMCcom_FwdAlrmA as GMCCommandExecV2
@@ -12546,7 +12549,7 @@ func ResponseReceived(response as string)
 endfunc
 
 func FailureReceived(response as string, failReason as GMC_FailureReason)
-    Controller_Communication_Error(me.command,response)
+    Controller_Communication_Error(me.command,response, failReason)
 endfunc
 Enddec
 Declare GMCcom_FwdAlrmB as GMCCommandExecV2
@@ -12570,7 +12573,7 @@ func ResponseReceived(response as string)
 endfunc
 
 func FailureReceived(response as string, failReason as GMC_FailureReason)
-    Controller_Communication_Error(me.command,response)
+    Controller_Communication_Error(me.command,response, failReason)
 endfunc
 Enddec
 Declare GMCcom_IA as GMCCommandExecV2
@@ -12618,7 +12621,7 @@ func ResponseReceived(response as string)
 endfunc
 
 func FailureReceived(response as string, failReason as GMC_FailureReason)
-    Controller_Communication_Error(me.command,response)
+    Controller_Communication_Error(me.command,response, failReason)
 endfunc
 
 init parent := daq_objects
@@ -12691,7 +12694,7 @@ func ResponseReceived(response as string)
 endfunc
 
 func FailureReceived(response as string, failReason as GMC_FailureReason)
-    Controller_Communication_Error(me.command,response)
+    Controller_Communication_Error(me.command,response, failReason)
 endfunc
 
 init parent := daq_objects
@@ -12716,7 +12719,7 @@ func ResponseReceived(response as string)
 endfunc
 
 func FailureReceived(response as string, failReason as GMC_FailureReason)
-    Controller_Communication_Error(me.command,response)
+    Controller_Communication_Error(me.command,response, failReason)
 endfunc
 
 init parent := daq_objects
@@ -12748,7 +12751,7 @@ Dim temp as float
 endfunc
 
 func FailureReceived(response as string, failReason as GMC_FailureReason)
-    Controller_Communication_Error(me.command,response)
+    Controller_Communication_Error(me.command,response, failReason)
 endfunc
 
 init parent := daq_objects
@@ -12844,7 +12847,7 @@ func ResponseReceived(response as string)
 endfunc
 
 func FailureReceived(response as string, failReason as GMC_FailureReason)
-    Controller_Communication_Error(me.command,response)
+    Controller_Communication_Error(me.command,response, failReason)
 endfunc
 Enddec
 Declare GMCCom_MLaccum as GMCCommandExecV2
@@ -12865,7 +12868,7 @@ func ResponseReceived(response as string)
 endfunc
 
 func FailureReceived(response as string, failReason as GMC_FailureReason)
-    Controller_Communication_Error(me.command,response)
+    Controller_Communication_Error(me.command,response, failReason)
 endfunc
 Enddec
 Declare GMCcom_MLPmmA as GMCCommandExecV2
@@ -12926,7 +12929,7 @@ init commobject := galilcomm
 init parent := daq_objects
 
 func FailureReceived(response as string, failReason as GMC_FailureReason)
-    Controller_Communication_Error(me.command,response)
+    Controller_Communication_Error(me.command,response, failReason)
 endfunc
 Enddec
 Declare GMCcom_PfsVB as GMCCommandExecV2
@@ -12950,7 +12953,7 @@ init commobject := galilcomm
 init parent := daq_objects
 
 func FailureReceived(response as string, failReason as GMC_FailureReason)
-    Controller_Communication_Error(me.command,response)
+    Controller_Communication_Error(me.command,response, failReason)
 endfunc
 Enddec
 Declare GMCcom_Pmax as GMCCommandExecV2
@@ -12975,7 +12978,7 @@ func ResponseReceived(response as string)
 endfunc
 
 func FailureReceived(response as string, failReason as GMC_FailureReason)
-    Controller_Communication_Error(me.command,response)
+    Controller_Communication_Error(me.command,response, failReason)
 endfunc
 
 init parent := daq_objects
@@ -13007,7 +13010,7 @@ func ResponseReceived(response as string)
 endfunc
 
 func FailureReceived(response as string, failReason as GMC_FailureReason)
-    Controller_Communication_Error(me.command,response)
+    Controller_Communication_Error(me.command,response, failReason)
 endfunc
 
 init parent := daq_objects
@@ -13032,7 +13035,7 @@ endfunc
 init parent := daq_objects
 
 func FailureReceived(response as string, failReason as GMC_FailureReason)
-    Controller_Communication_Error(me.command,response)
+    Controller_Communication_Error(me.command,response, failReason)
 endfunc
 Enddec
 Declare GMCCom_PowerUP as GMCCommandExecV2
@@ -13093,7 +13096,7 @@ func ResponseReceived(response as string)
 endfunc
 
 func FailureReceived(response as string, failReason as GMC_FailureReason)
-    Controller_Communication_Error(me.command,response)
+    Controller_Communication_Error(me.command,response, failReason)
 endfunc
 Enddec
 Declare GMCCom_PowerUP_1 as GMCCommandExecV2
@@ -13116,16 +13119,17 @@ func ResponseReceived(response as string)
     on error
             _ClearException()
     enderr
-    if temp==0 then
-        but_Ignore_Error.enabled=true
-    else
-        but_Ignore_Error.enabled=false
-    endif
+    REM But_ignore should only be set in Set_Error_Buttons
+'    if temp==0 then
+'        but_Ignore_Error.enabled=true
+'    else
+'        but_Ignore_Error.enabled=false
+'    endif
 
 endfunc
 
 func FailureReceived(response as string, failReason as GMC_FailureReason)
-    Controller_Communication_Error(me.command,response)
+    Controller_Communication_Error(me.command,response, failReason)
 endfunc
 Enddec
 Declare GMCcom_PRange as GMCCommandExecV2
@@ -13183,7 +13187,7 @@ init parent := daq_objects
 
 func FailureReceived(response as string, failReason as GMC_FailureReason)
 '    _D(str(me)+ " FailureReceived")
-    Controller_Communication_Error(me.command,response)
+    Controller_Communication_Error(me.command,response, failReason)
 endfunc
 
 func ExecuteCommand(newVal as boolean)
@@ -13273,7 +13277,7 @@ func ResponseReceived(response as string)
 endfunc
 
 func FailureReceived(response as string, failReason as GMC_FailureReason)
-    Controller_Communication_Error(me.command,response)
+    Controller_Communication_Error(me.command,response, failReason)
 endfunc
 
 init parent := daq_objects
@@ -13359,7 +13363,7 @@ func ResponseReceived(response as string)
 endfunc
 
 func FailureReceived(response as string, failReason as GMC_FailureReason)
-    Controller_Communication_Error(me.command,response)
+    Controller_Communication_Error(me.command,response, failReason)
 endfunc
 Enddec
 Declare GMCcom_RcvStart as GMCCommandExecV2
@@ -13382,7 +13386,7 @@ endfunc
 init parent := daq_objects
 
 func FailureReceived(response as string, failReason as GMC_FailureReason)
-    Controller_Communication_Error(me.command,response)
+    Controller_Communication_Error(me.command,response, failReason)
 endfunc
 Enddec
 Declare GMCcom_ReflRate as GMCCommandExecV2
@@ -13404,7 +13408,7 @@ func ResponseReceived(response as string)
 endfunc
 
 func FailureReceived(response as string, failReason as GMC_FailureReason)
-    Controller_Communication_Error(me.command,response)
+    Controller_Communication_Error(me.command,response, failReason)
 endfunc
 
 init parent := daq_objects
@@ -13428,7 +13432,7 @@ func ResponseReceived(response as string)
 endfunc
 
 func FailureReceived(response as string, failReason as GMC_FailureReason)
-    Controller_Communication_Error(me.command,response)
+    Controller_Communication_Error(me.command,response, failReason)
 endfunc
 
 init parent := daq_objects
@@ -13452,7 +13456,7 @@ func ResponseReceived(response as string)
 endfunc
 
 func FailureReceived(response as string, failReason as GMC_FailureReason)
-    Controller_Communication_Error(me.command,response)
+    Controller_Communication_Error(me.command,response, failReason)
 endfunc
 
 init parent := daq_objects
@@ -13482,7 +13486,7 @@ func ResponseReceived(response as string)
 endfunc
 
 func FailureReceived(response as string, failReason as GMC_FailureReason)
-    Controller_Communication_Error(me.command,response)
+    Controller_Communication_Error(me.command,response, failReason)
 endfunc
 Enddec
 Declare GMCcom_RevAlrmA as GMCCommandExecV2
@@ -13507,7 +13511,7 @@ func ResponseReceived(response as string)
 endfunc
 
 func FailureReceived(response as string, failReason as GMC_FailureReason)
-    Controller_Communication_Error(me.command,response)
+    Controller_Communication_Error(me.command,response, failReason)
 endfunc
 Enddec
 Declare GMCcom_RevAlrmB as GMCCommandExecV2
@@ -13532,7 +13536,7 @@ func ResponseReceived(response as string)
 endfunc
 
 func FailureReceived(response as string, failReason as GMC_FailureReason)
-    Controller_Communication_Error(me.command,response)
+    Controller_Communication_Error(me.command,response, failReason)
 endfunc
 Enddec
 Declare GMCcom_Rod as GMCCommandExecV2
@@ -13575,7 +13579,7 @@ endfunc
 init parent := daq_objects
 
 func FailureReceived(response as string, failReason as GMC_FailureReason)
-    Controller_Communication_Error(me.command,response)
+    Controller_Communication_Error(me.command,response, failReason)
 endfunc
 Enddec
 Declare GMCcom_Stroke as GMCCommandExecV2
@@ -13596,7 +13600,7 @@ func ResponseReceived(response as string)
 endfunc
 
 func FailureReceived(response as string, failReason as GMC_FailureReason)
-    Controller_Communication_Error(me.command,response)
+    Controller_Communication_Error(me.command,response, failReason)
 endfunc
 
 init parent := daq_objects
@@ -13620,7 +13624,7 @@ func ResponseReceived(response as string)
 endfunc
 
 func FailureReceived(response as string, failReason as GMC_FailureReason)
-    Controller_Communication_Error(me.command,response)
+    Controller_Communication_Error(me.command,response, failReason)
 endfunc
 
 init parent := daq_objects
@@ -13663,7 +13667,7 @@ func ResponseReceived(response as string)
 endfunc
 
 func FailureReceived(response as string, failReason as GMC_FailureReason)
-    Controller_Communication_Error(me.command,response)
+    Controller_Communication_Error(me.command,response, failReason)
 endfunc
 
 init parent := daq_objects
@@ -13696,7 +13700,7 @@ func ResponseReceived(response as string)
 endfunc
 
 func FailureReceived(response as string, failReason as GMC_FailureReason)
-    Controller_Communication_Error(me.command,response)
+    Controller_Communication_Error(me.command,response, failReason)
 endfunc
 
 init parent := daq_objects
@@ -13723,7 +13727,7 @@ init commobject := galilcomm
 init parent := daq_objects
 
 func FailureReceived(response as string, failReason as GMC_FailureReason)
-    Controller_Communication_Error(me.command,response)
+    Controller_Communication_Error(me.command,response, failReason)
 endfunc
 Enddec
 Declare GMCcom_VppsiB as GMCCommandExecV2
@@ -13748,7 +13752,7 @@ init commobject := galilcomm
 init parent := daq_objects
 
 func FailureReceived(response as string, failReason as GMC_FailureReason)
-    Controller_Communication_Error(me.command,response)
+    Controller_Communication_Error(me.command,response, failReason)
 endfunc
 Enddec
 Declare GMCCommand as GMCCommandExecV2
@@ -16957,7 +16961,7 @@ Declare Label_77 as LabelV2
 Level 249471
 #Visible True
 #Lock False
-init value := "Software Version VPA 301 13-4-2014"
+init value := "Software Version VPA 301 15-4-2014"
 init parent := sys_setup_screen
 init xpos := 54
 init ypos := 770
