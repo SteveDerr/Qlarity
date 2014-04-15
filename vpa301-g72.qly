@@ -575,7 +575,7 @@ func Controller_Communication_Error(strObj as String,strResp as String, FailReas
     warning_sound()
     lbl_msg_Title.enabled=true
     lbl_msg_Title.value="Galil Communication Error: " + strObj
-    DebugMessage = "Global Function Controller_Communication_Error, FailureReceived response="+str(strResp)+", FailureReceived reason="+str(FailReasonResp)
+    DebugMessage = "Global Function Controller_Communication_Error, FailureReceived response="+strResp+", FailureReceived reason="+str(FailReasonResp)
     Write_To_Debug(lbl_msg_title.value, DebugMessage)
 endfunc
 func Cycle_To_Start()
@@ -11547,6 +11547,14 @@ Level 249370
 #Lock False
 init font := default_ttf
 init ptsize := 12
+
+
+func OnExceptionCaught(errstr as string, errtype as unibyte, errlevel as unibyte)
+    dim ExceptionText as string
+    ExceptionText="UncaughtException: "+errstr+ "\n"
+    Write_To_Debug(ExceptionText, str(me))
+    transmit(COM2, ExceptionText, false)
+endfunc
 Enddec
 Declare Fact_Set_Warning_screen as ScreenV2
 Level 249787
@@ -11713,7 +11721,7 @@ Level 249788
 #Lock False
 init connectiontype := gmc_useserial
 init serialformat := gmc_use_default
-init messagefilter := _cc_suppressallmessages
+init messagefilter := _cc_showallmessages
 
 
 init messagefont := default_ttf
@@ -13097,6 +13105,9 @@ endfunc
 
 func FailureReceived(response as string, failReason as GMC_FailureReason)
     Controller_Communication_Error(me.command,response, failReason)
+    REM @Debug throw added to help debug communicaiton error
+    throw(str(me), "Failure Received")
+
 endfunc
 Enddec
 Declare GMCCom_PowerUP_1 as GMCCommandExecV2
