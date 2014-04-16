@@ -356,6 +356,21 @@ dim currentvalue as string
     Dim CurrentTime as Integer
     Dim CurrentDate as String
     dim debugText as string
+    REM @debug this variable can be removed when we have finished debugging the serial communication
+    REM If we plan to use this, then make sure to set Tools->Settings->Compile->Extra exception tracking is checke
+    dim EnableComCheckVars as boolean
+    init EnableComCheckVars := false
+
+
+func CommReceive (data[] as byte) returns boolean
+    REM @debug remove this function before saving as main version
+
+    handles MSG_COMM_RECEIVE
+    Transmit(COM2, "RX:***" + data + "***\n", false)
+    return false
+
+endfunc
+
 
 Func Write_To_Debug(DebugDesc_ as charstr, DebugSource_ as string)
     REM Function gets date and time and outputs message to the debug screen and to port two if the error port is enabled.
@@ -441,6 +456,15 @@ Func Startup ()
 
     handles MSG_INIT
     userDirectMsg(default, _msg_post_init, 0, false)
+
+    REM @debug can remove this code when serial issues are sorted out.
+    if EnableComCheckVars then
+        GalilComm.messageFilter=_cc_ShowAllMessages
+    else
+        galilcomm.messageFilter=_cc_SuppressAllMessages
+    endif
+    REM @debug remove this from normal version
+    RegisterMsgHandler(default, msg_comm_receive, COM1)
 
 
 Endfunc
@@ -6625,6 +6649,33 @@ func click()
     GMCCommand.executeCommand = true
 endfunc
 Enddec
+Declare but_Com_Err_Vars as ButtonV2
+Level 249779
+#Visible True
+#Lock False
+init value := "Comm Debugging Code Off"
+init parent := debugscrn
+init xpos := 94
+init ypos := 638
+init width := 189
+init height := 54
+init font := helvb18_bdf
+
+REM @debug can remove this once serial communicaiton is sorte out.
+
+func click()
+
+    If value=="Comm Debugging Code On" then
+        value="Comm Debugging Code Off"
+        EnableComCheckVars=false
+    else
+        value="Comm Debugging Code On"
+        EnableComCheckVars=true
+
+    endif
+
+endfunc
+Enddec
 Declare but_Configure as ButtonV2
 Level 249473
 #Visible True
@@ -6762,6 +6813,11 @@ func click()
         but_Error_Port.Value="Error Port On"
     else
         but_Error_Port.Value="Error Port Off"
+    endif
+
+    REM @debug can remove once serial issue is worked out.
+    if EnableComCheckVars then
+        but_com_err_vars.Value="Comm Debugging Code On"
     endif
 
 
@@ -11580,6 +11636,18 @@ Level 249370
 #Lock False
 init font := default_ttf
 init ptsize := 12
+
+
+func OnExceptionCaught(errstr as string, errtype as unibyte, errlevel as unibyte)
+    dim ExceptionText as string
+    REM @debug can remove this code when done with serial communication
+    if EnableComCheckVars then
+
+        ExceptionText="UncaughtException: "+errstr+ "\n"
+        Write_To_Debug(ExceptionText, str(me))
+        transmit(COM2, ExceptionText, false)
+    endif
+endfunc
 Enddec
 Declare Fact_Set_Warning_screen as ScreenV2
 Level 249787
@@ -11746,7 +11814,7 @@ Level 249788
 #Lock False
 init connectiontype := gmc_useserial
 init serialformat := gmc_use_default
-init messagefilter := _cc_suppressallmessages
+init messagefilter := _cc_showallmessages
 
 
 init messagefont := default_ttf
@@ -13130,7 +13198,11 @@ endfunc
 
 func FailureReceived(response as string, failReason as GMC_FailureReason)
     Controller_Communication_Error(me.command,response, failReason)
-
+    REM @Debug throw added to help debug communicaiton error
+    REM can be removed when serial communication is sorted out
+    if EnableComCheckVars then
+        throw(str(me), "Failure Received")
+    endif
 
 endfunc
 Enddec
