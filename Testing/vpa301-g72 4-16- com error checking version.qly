@@ -17035,7 +17035,7 @@ Declare Label_77 as LabelV2
 Level 249471
 #Visible True
 #Lock False
-init value := "Software Version VPA 301 15-4-2014"
+init value := "Software Version VPA Com Check"
 init parent := sys_setup_screen
 init xpos := 54
 init ypos := 770
