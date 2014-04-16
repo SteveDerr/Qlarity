@@ -1172,7 +1172,7 @@ func Handle_Error(errorID as Integer)
 
 
     dim strTime as string
-
+REM Rem Buttons can only be set in Set_Error_Buttons
 '    if errorID==14 then 'we must force them to restart the pump
 '        but_Ignore_Error.enabled=false
 '    endif
@@ -1264,47 +1264,74 @@ func Init_Error_Popup_Screen(errorID as Integer)
 '    GMCcom_ErrCode.executeCommand=true
 '    GMCcom_LineNum.executeCommand=true
 
-    if errorID <8 then
-        If ErrorDisplayDisabled then
-            Set_Error_Buttons(1)
-        else
-            Set_Error_Buttons(0)
-        endif
+    if errorID > 0 and errorID <5 then
+        REM 1 = cylinder A at lower limit
+        REM 2 = cylinder A at upper limit
+        REM 3 = cylinder B at lower limit
+        REM 4 = cylinder B at upper limit
+        Set_Error_Buttons(2)
+    endif
+
+    if errorID > 4 and errorID < 8 then
+        REM 5 cyinlder A pressure warning limit hit
+        REM 6 cylinder B pressure warning limit hit
+        REM 7 Eceeded warning flow rate set for pressure control mode.
+
+        REM no reason to set buttons if ErrorDisplayDisabled, error screen is not shown
+        'If ErrorDisplayDisabled then
+        '    Set_Error_Buttons(1)
+        'else
+        Set_Error_Buttons(0)
+        'endif
     endif
 
     if errorID==8 or errorID==9 then
-        If NOT P_Cont_On then
-            Set_Error_Buttons(1)
-        else
-            Set_Error_Buttons(3)
-            Hold_This_Error=True
-        endif
+        REM Cylinder exceeded 25% compressibility
+        REM This error is mostly handled by Galil, just display a warning.
+
+        'If NOT P_Cont_On then
+        Set_Error_Buttons(1)
+        'else
+        '   Set_Error_Buttons(3)
+        '    Hold_This_Error=True
+        'endif
     endif
+
     if errorID==11 or errorID==14 then
+        REM 11 Position error
+        REM 14 DAQ loop has stopped
         RestartRequired=true
         'STOP ASKING ABOUT POWERUP AND _XQ0
         tmrPowerUp.enabled=false
     endif
     if errorID>9 and errorID<15 then
+        REM 10 Exceeded maximum flow rate set for pressure mode
+        REM 12 Cylinder A pressure greater than PMax
+        REM 13 Cylinder B pressure greater than PMax
         Set_Error_Buttons(2)
         Hold_This_Error=True
     endif
     if errorID>14 and errorID<19 then
+        REM 15 Cylinder B was not ready for transition
+        REM 16 Cylinder A was not ready for transition
+        REM 17 Cylinder A limit switch tripped in pressure mode. - Replaced with errors 19 and 20
+        REM 18 Cylinder B limit switch tripped in pressure mode. - Replaced with errors 19 and 20
         Set_Error_Buttons(3)
         Hold_This_Error=True
     endif
     If errorID==19 then
-        If ErrorDisplayDisabled then
-            Set_Error_Buttons(1)
-        else
-            Set_Error_Buttons(0)
-        endif
+        REM Limit switch hit while trying to match pressure. If in flow mode, Galil should handle and keep flowing,
+        REM in pressure mode the cylinder dies.
+        Set_Error_Buttons(1)
+
     endif
     If errorID==20 then
+        REM Limit switch and we don't know why.
         Set_Error_Buttons(3)
         Hold_This_Error=True
     endif
-    If errorID>19 then
+    If errorID>20 then
+        REM Controller errors
         Set_Error_Buttons(2)
         Hold_This_Error=True
         lbl_ErrCode.enabled=true
@@ -19983,7 +20010,7 @@ init bgcolor := clr_messagebackground
 Enddec
 Declare Limits_screen as ScreenV2
 Level 249956
-#Visible False
+#Visible True
 #Lock Me
 init width := 480
 init height := 800
