@@ -351,7 +351,7 @@ dim currentvalue as string
     Dim Exiting_Remote as Boolean
     Init Exiting_Remote:=false
     REM Debug and second port writing variables
-    Dim WriteErrorToPortTwo, WarnSpeedComCheck, OverSpeedComCheck, NewErrComCheck, PowerUpComCheck, PcurAComCheck, PcurBComCheck, MLtotComCheck as boolean
+    Dim WriteErrorToPortTwo, WarnSpeedComCheck, OverSpeedComCheck, NewErrComCheck, PowerUpComCheck, PcurAComCheck, PcurBComCheck, MLtotComCheck, DAQLoopComCheck as boolean
     init WriteErrorToPortTwo:=false
     Dim CurrentTime as Integer
     Dim CurrentDate as String
@@ -360,6 +360,7 @@ dim currentvalue as string
 Func Write_To_Debug(DebugDesc_ as charstr, DebugSource_ as string)
     REM Function gets date and time and outputs message to the debug screen and to port two if the error port is enabled.
     dim DateAndError as string
+
 
     CurrentTime=DateTimeFunctions_Maintenance.GetCurrentTime()
     CurrentDate=DateTimeFunctions_Maintenance.GetDateString("\nMM/dd/yyyy HH:mm:ss ", CurrentTime)
@@ -1797,6 +1798,7 @@ endfunc
 '    GMCCommand.command = "XQ#AUTO"
 '    GMCCommand.executeCommand = true
 '    DAQ_Warning_screen.enabled=true
+REM tmr_delay_check_Daq and GmcCom_daq items deleted since they weren't used anywhere. -SD
 '    tmr_delay_check_DAQ.enabled = true
 'endfunc
 
@@ -9427,7 +9429,7 @@ init ypos := 8
 init width := 464
 init height := 312
 init boxtype := eb_multilinescroll
-init maxlines := 200
+init maxlines := 50
 
 init font := helvr12_bdf
 init xinset := 1
@@ -12082,38 +12084,6 @@ endfunc
 init parent := daq_objects
 init enabled := false
 Enddec
-Declare GMCCom_DAQ as GMCCommandExecV2
-Level 249722
-#Visible True
-#Lock False
-init parent := daq_objects
-init commobject := galilcomm
-init command := "MG _XQ0"
-init enabled := true
-
-func ResponseReceived(response as string)
-'    dim temp as string
-'    dim status as float
-
-
-'    temp = Clip_String(response,2)
-'    check error
-'            Val(status,temp)
-'    on error
-'            _ClearException()
-'    enderr
-'    If status < 0 then
-'        Restart_DAQ()
-'    Else
-'        GMCPoll_DAQ.enabled=true
-'    endif
-endfunc
-
-func FailureReceived(response as string, failReason as GMC_FailureReason)
-
-    Controller_Communication_Error(me.command,response, failReason)
-endfunc
-Enddec
 Declare GMCCom_Debug as GMCCommandExecV2
 Level 249775
 #Visible True
@@ -14033,23 +14003,34 @@ func ResponseReceived (response as reference to string)
         _ClearException()
 '        debugEB.appendText="_XQ0 response "+response
     enderr
-    If status < 0 then
-'        DAQ_Warning_screen.enabled=true
-        tmr_CheckML.enabled=false
-'        Restart_DAQ()
-        gmcpoll_DAQ.enabled=false
-        gmcpoll_mltot.enabled=false
-        gmcpoll_mlcura.enabled=false
-        gmcpoll_mlcurb.enabled=false
-        gmcpoll_pcur.enabled=false
-        'shut down any active screens
-        If Flow_mode_screen.enabled then
-            Exit_Flow_Mode_screen()
+    If status==-1 then
+        REM If this is -1 our daq loop has stopped and we need to restart.
+        if DAQLoopComCheck then
+            REM make sure we are getting legitimate value
+
+    '        DAQ_Warning_screen.enabled=true
+            tmr_CheckML.enabled=false
+    '        Restart_DAQ()
+            gmcpoll_DAQ.enabled=false
+            gmcpoll_mltot.enabled=false
+            gmcpoll_mlcura.enabled=false
+            gmcpoll_mlcurb.enabled=false
+            gmcpoll_pcur.enabled=false
+            'shut down any active screens
+            If Flow_mode_screen.enabled then
+                Exit_Flow_Mode_screen()
+            endif
+            If Pressure_mode_screen.enabled then
+                Exit_Press_Mode_screen()
+            endif
+            Handle_Error(14)
+        else
+            REM Read a negative value, but haven't checked
+            DAQLoopComCheck=true
         endif
-        If Pressure_mode_screen.enabled then
-            Exit_Press_Mode_screen()
-        endif
-        Handle_Error(14)
+    else
+        REM Reset our com check if not a negative value.
+        DAQLoopComCheck=false
     endif
 endfunc
 
@@ -20573,17 +20554,6 @@ func timeout()
 endfunc
 
 init enabled := false
-Enddec
-Declare tmr_delay_check_DAQ as TimerV2
-Level 249358
-#Visible True
-#Lock False
-init timeperiod := 2
-init enabled := false
-
-func timeout()
-    GMCCom_DAQ.executeCommand=true
-endfunc
 Enddec
 Declare tmr_Delay_Get_Config as TimerV2
 Level 249359
