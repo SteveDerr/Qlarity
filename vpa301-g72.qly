@@ -1351,7 +1351,7 @@ func Init_Error_Popup_Screen(errorID as Integer)
         lbl_Rev1.enabled=false
         lbl_LineNum1.enabled=false
     endif
-
+    warning_sound()
     Error_Popup_Screen.enabled=true
     lbl_ErrNo.value=_FormatFloat(ErrorNoArray[0],3,0,_float_normal)
     lbl_ErrTime.value= ErrorTime0
@@ -11427,7 +11427,7 @@ init ptsize := 20
 
 func valueChanged()
     dim TargetPress as integer
-    gmccom_pmax.executecommand = true
+    'gmccom_pmax.executecommand = true
     check error
             val(TargetPress, Value)
         on error
@@ -19989,7 +19989,7 @@ init bgcolor := clr_messagebackground
 Enddec
 Declare Limits_screen as ScreenV2
 Level 249956
-#Visible False
+#Visible True
 #Lock Me
 init width := 480
 init height := 800
@@ -20287,7 +20287,7 @@ init enabled := false
 Enddec
 Declare Pressure_mode_screen as ScreenV2
 Level 249546
-#Visible False
+#Visible True
 #Lock False
 init parent := default
 init xpos := 0
