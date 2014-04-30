@@ -9508,7 +9508,7 @@ func screenEnabled()
 endfunc
 Enddec
 Declare DelimitedComm_1 as DelimitedCommV2
-Level 249335
+Level 249334
 #Visible True
 #Lock False
 
@@ -11625,6 +11625,8 @@ init width := 410
 init height := 566
 init boxtype := eb_multilinescroll
 init font := helvb12_bdf
+init value := ""
+init maxlines := 200
 Enddec
 Declare Error_Log_Screen as ScreenV2
 Level 249484
@@ -11692,7 +11694,7 @@ init enabled := false
 init bgcolor := clr_buttonbackgroundalt
 Enddec
 Declare G_55_PopupMenu_1 as G55PopupMenu
-Level 249336
+Level 249335
 #Visible True
 #Lock False
     init mainsubmenu := g_55_popupmenu_2
@@ -11709,7 +11711,7 @@ init xpos := 0
 init ypos := -80
 Enddec
 Declare G_55_PopupMenu_2 as G55PopupMenu
-Level 249337
+Level 249336
 #Visible True
 #Lock False
     init mainsubmenu := g_55_popupmenu_3
@@ -11726,7 +11728,7 @@ init xpos := 0
 init ypos := -80
 Enddec
 Declare G_55_PopupMenu_3 as G55PopupMenu
-Level 249338
+Level 249337
 #Visible True
 #Lock False
     init mainsubmenu := g_55_popupmenu_4
@@ -11743,7 +11745,7 @@ init xpos := 0
 init ypos := -80
 Enddec
 Declare G_55_PopupMenu_4 as G55PopupMenu
-Level 249339
+Level 249338
 #Visible True
 #Lock False
     init mainsubmenu := g_55_popupmenu_5
@@ -11760,7 +11762,7 @@ init xpos := 0
 init ypos := -80
 Enddec
 Declare G_55_PopupMenu_5 as G55PopupMenu
-Level 249340
+Level 249339
 #Visible True
 #Lock False
     init mainsubmenu := g_55_popupmenu_6
@@ -11777,7 +11779,7 @@ init xpos := 0
 init ypos := -80
 Enddec
 Declare G_55_PopupMenu_6 as G55PopupMenu
-Level 249341
+Level 249340
 #Visible True
 #Lock False
     init mainsubmenu := g_55_popupmenu_7
@@ -11794,7 +11796,7 @@ init xpos := 0
 init ypos := -80
 Enddec
 Declare G_55_PopupMenu_7 as G55PopupMenu
-Level 249342
+Level 249341
 #Visible True
 #Lock False
     init mainsubmenu := g_55_popupmenu_8
@@ -11811,7 +11813,7 @@ init xpos := 0
 init ypos := -80
 Enddec
 Declare G_55_PopupMenu_8 as G55PopupMenu
-Level 249343
+Level 249342
 #Visible True
 #Lock False
     init initialselected := 0
@@ -13701,6 +13703,8 @@ func ResponseReceived(response as string)
 
     Error_Log_Text="\nCurrent Values - PcurA: " +str(temp_PcurA) +", PcurB: " +str(temp_PcurB) +", Pcur: " +str(temp_Pcur) +", AveSp: " + str(temp_avesp)+", Pressure warning limit: " +eb_Pmax_Warn.Value +", Pressure Shutdown limit " + eb_PMax_1.value +", Flow Warning " + eb_flowRlim_Warn.value +", Flow Shutdown " + eb_FlowRlim_1.Value
     error_log_eb.Append(Error_log_text, true)
+    pv_errorlog.Save()
+
 
 
 
@@ -15608,7 +15612,7 @@ init image := Banner_Rev5
 init transparent := true
 Enddec
 Declare Image_16 as ImageV2
-Level 249333
+Level 249332
 #Visible True
 #Lock False
 init parent := welcome_screen
@@ -20461,26 +20465,41 @@ init width := 480
 init height := 800
 init enabled := false
 Enddec
-Declare pv_Limits as PersistentVariablesV2
+Declare pv_errorlog as PersistentVariablesV2
 Level 249361
+#Visible True
+#Lock False
+init savelist := "error_log_eb.value;"
+init filename := "errorlog.dat"
+Enddec
+Declare pv_Limits as PersistentVariablesV2
+Level 249360
 #Visible True
 #Lock False
 init savelist := "default.FlowRLim;default.FlowRLimWarn;default.PMaxWarn;default.PMax;default.ErrorDisplayDisabled;default.Open_Valves_at_Over_Pressure;default.flow_limit_disabled;default.psi_per_sec;"
 init filename := "LimPersist.dat"
+
+func RestoreComplete()
+
+endfunc
 Enddec
 Declare pv_Maintenance as PersistentVariablesV2
-Level 249359
+Level 249358
 #Visible True
 #Lock Me
 init savelist := "lbl_Maint_hrs.value;lbl_Date_of_Maint.value;default.MaintHours;"
 init filename := "Maint_Persist.dat"
 Enddec
 Declare pv_powerup as PersistentVariablesV2
-Level 249360
+Level 249359
 #Visible True
 #Lock False
 init savelist := "default.MLlastA;default.MLlastB;default.MLdeltaA;default.MLdeltaB;default.MLlasttot;default.timelast$;"
 init filename := "MLPersist.dat"
+
+func RestoreComplete()
+
+endfunc
 Enddec
 Declare rb_DHCP_Disabled as RadioButtonV2
 Level 249972
@@ -20666,7 +20685,7 @@ init enabled := false
 init transparent := false
 Enddec
 Declare tmr_Burn_New_Var as TimerV2
-Level 249351
+Level 249350
 #Visible True
 #Lock False
 init timertype := _tt_oneshot
@@ -20680,7 +20699,7 @@ func timeout()
 endfunc
 Enddec
 Declare tmr_Check_Connection as TimerV2
-Level 249357
+Level 249356
 #Visible True
 #Lock False
 init timertype := _tt_periodic
@@ -20698,7 +20717,7 @@ init timeperiod := 1
 init enabled := false
 Enddec
 Declare tmr_CheckML as TimerV2
-Level 249352
+Level 249351
 #Visible True
 #Lock False
 init timeunits := _tt_minutes
@@ -20716,7 +20735,7 @@ endfunc
 init enabled := false
 Enddec
 Declare tmr_Delay_Get_Config as TimerV2
-Level 249353
+Level 249352
 #Visible True
 #Lock False
 func timeout()
@@ -20728,7 +20747,7 @@ init timertype := _tt_oneshot
 init enabled := false
 Enddec
 Declare tmr_Delay_Init_Ramp as TimerV2
-Level 249356
+Level 249355
 #Visible True
 #Lock False
 init timertype := _tt_oneshot
@@ -20744,7 +20763,7 @@ init parent := default
 init timeperiod := 2
 Enddec
 Declare tmr_Delay_Start as TimerV2
-Level 249347
+Level 249346
 #Visible True
 #Lock False
 init timertype := _tt_oneshot
@@ -20781,7 +20800,7 @@ func timeout()
 endfunc
 Enddec
 Declare tmr_Disabled as TimerV2
-Level 249355
+Level 249354
 #Visible True
 #Lock False
 func timeout()
@@ -20804,7 +20823,7 @@ init timertype := _tt_oneshot
 init enabled := false
 Enddec
 Declare tmr_Fact_Set as TimerV2
-Level 249354
+Level 249353
 #Visible True
 #Lock False
 init enabled := false
@@ -20816,7 +20835,7 @@ func timeout()
 endfunc
 Enddec
 Declare tmr_FirstPowerUp as TimerV2
-Level 249358
+Level 249357
 #Visible True
 #Lock False
 init timeperiod := 5
@@ -20830,7 +20849,7 @@ func timeout()
 endfunc
 Enddec
 Declare tmr_Hide_Error_Display as TimerV2
-Level 249350
+Level 249349
 #Visible True
 #Lock False
 init enabled := false
@@ -20892,7 +20911,7 @@ func timeout()
 endfunc
 Enddec
 Declare tmr_Receive_Warning as TimerV2
-Level 249346
+Level 249345
 #Visible True
 #Lock False
 init parent := default
@@ -20905,7 +20924,7 @@ func timeout()
 endfunc
 Enddec
 Declare tmr_refill as TimerV2
-Level 249348
+Level 249347
 #Visible True
 #Lock False
 init enabled := false
@@ -20927,7 +20946,7 @@ func timeout()
 endfunc
 Enddec
 Declare tmr_restart_delay as TimerV2
-Level 249345
+Level 249344
 #Visible True
 #Lock False
 init parent := default
@@ -20970,7 +20989,7 @@ func timeout()
 endfunc
 Enddec
 Declare tmr_update_but_delay as TimerV2
-Level 249344
+Level 249343
 #Visible True
 #Lock False
 init parent := default
@@ -20985,7 +21004,7 @@ func timeout()
 endfunc
 Enddec
 Declare tmr_Wait_For_Refill as TimerV2
-Level 249349
+Level 249348
 #Visible True
 #Lock False
 init timeperiod := 1
@@ -21874,7 +21893,7 @@ init height := 800
 init enabled := False
 Enddec
 Declare Welcome_Screen as ScreenV2
-Level 249334
+Level 249333
 #Visible True
 #Lock False
 init width := 480
