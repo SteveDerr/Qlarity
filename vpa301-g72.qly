@@ -1176,7 +1176,7 @@ endfunc
 func Handle_Error(errorID as Integer)
     dim strTime as string
     Date_and_Time(strTime)
-    error_log_eb.Append("\n"+strtime+" Error ID "+str(ErrorID), true)
+    error_log_eb.Append("\n\n"+strtime+" Error ID "+str(ErrorID), true)
     gmccom_update_current_values.executeCommand=true
 
 
@@ -13681,15 +13681,15 @@ func ResponseReceived(response as string)
 
 
     avesp_len=find(response, 0, -1, " ")
-    pcura_len=find(response,avesp_len, -1, " ")
-    pcurb_len=find(response,pcura_len, -1, " ")
-    pcur_len=len(response)-(avesp_len+pcura_len+pcurb_len+3)
+    pcura_len=find(response,avesp_len+1, -1, " ")
+    pcurb_len=find(response,pcura_len+1, -1, " ")
+    pcur_len=len(response)-(pcurb_len)
 
 
     check error
     val(temp_avesp, left(response,avesp_len-1))
-    val(temp_pcura, mid(response,avesp_len+1,pcura_len))
-    val(temp_pcurb, mid(response,pcura_len+avesp_len+2,pcurb_len))
+    val(temp_pcura, mid(response,avesp_len+1,pcura_len-avesp_len))
+    val(temp_pcurb, mid(response,pcura_len+1,pcurb_len-pcura_len))
     val(temp_pcur,right(response,(pcur_len)))
     on error
         _clearexception()
