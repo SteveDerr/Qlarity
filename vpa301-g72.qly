@@ -1175,8 +1175,10 @@ func Get_Current_Config()
 endfunc
 func Handle_Error(errorID as Integer)
     dim strTime as string
-    error_log_eb.Append("\n"+strtime+"\nError ID "+str(ErrorID), true)
+    Date_and_Time(strTime)
+    error_log_eb.Append("\n"+strtime+" Error ID "+str(ErrorID), true)
     gmccom_update_current_values.executeCommand=true
+
 
 
 REM Rem Buttons can only be set in Set_Error_Buttons
@@ -1198,7 +1200,7 @@ REM Rem Buttons can only be set in Set_Error_Buttons
     if ErrorDisplayDisabled and errorID >4 and errorID<8 then
         'do not update the error log or display message
     else
-        debugText="Error ID "+str(ErrorID)+"\nCurrent Values - PcurA: " +str(PcurA) +", PcurB: " +str(PcurB) +", Pcur: " +str(Pcur) +", AveSp: " + str(currate)+", Pressure warning limit: " +eb_Pmax_Warn.Value +", Pressure Shutdown limit " + eb_PMax_1.value +", Flow Warning " + eb_flowRlim_Warn.value +", Flow Showdown " + eb_FlowRlim_1.Value
+        debugText="Error ID "+str(ErrorID)+"\nCurrent Values - PcurA: " +str(PcurA) +", PcurB: " +str(PcurB) +", Pcur: " +str(Pcur) +", AveSp: " + str(currate)+", Pressure warning limit: " +eb_Pmax_Warn.Value +", Pressure Shutdown limit " + eb_PMax_1.value +", Flow Warning " + eb_flowRlim_Warn.value +", Flow Shutdown " + eb_FlowRlim_1.Value
         Write_To_Debug(debugText, "Global Function Handle_Error")
 
         Date_and_Time(strTime)
@@ -8968,6 +8970,10 @@ init ypos := 40
 init width := 59
 init height := 46
 init borderstyle := bdr_compositeobject
+
+func screenEnabled()
+
+endfunc
 Enddec
 Declare DateTimeFunctions_Maintenance as DateTimeFunctions
 Level 249842
@@ -13665,25 +13671,26 @@ Level 249775
 #Lock False
 init parent := daq_objects
 init commobject := galilcomm
-init command := "MG AveSp, MG PcurA, MG PcurB, MG Pcur"
+init command := "MG AveSp,PcurA,PcurB,Pcur"
 
 func ResponseReceived(response as string)
     dim temp_AveSp, temp_PcurA, temp_PcurB, temp_Pcur as float
     dim respstr as string
-    dim Error_Log_Text, strtime as string
+    dim Error_Log_Text as string
     dim avesp_len, pcura_len, pcurb_len, pcur_len as integer
+
 
     avesp_len=find(response, 0, -1, " ")
     pcura_len=find(response,avesp_len, -1, " ")
     pcurb_len=find(response,pcura_len, -1, " ")
-    pcur_len=find(response,pcurb_len, -1, ";")
+    pcur_len=len(response)-(avesp_len+pcura_len+pcurb_len+3)
 
 
     check error
     val(temp_avesp, left(response,avesp_len-1))
-    val(temp_pcura, mid(response,avesp_len+1,pcura_len-1))
-    val(temp_pcurb, mid(response,pcura_len+1,pcurb_len-1))
-    val(temp_pcur,right(response,(len(response)-pcur_len)))
+    val(temp_pcura, mid(response,avesp_len+1,pcura_len))
+    val(temp_pcurb, mid(response,pcura_len+avesp_len+2,pcurb_len))
+    val(temp_pcur,right(response,(pcur_len)))
     on error
         _clearexception()
     enderr
@@ -13692,8 +13699,7 @@ func ResponseReceived(response as string)
     REM Get timestamp and write current values to the error log.
     REM Note not all errors will cause a warning display to be shown, but we want a record of them
 
-    Date_and_Time(strTime)
-    Error_Log_Text="\nCurrent Values - PcurA: " +str(temp_PcurA) +", PcurB: " +str(temp_PcurB) +", Pcur: " +str(temp_Pcur) +", AveSp: " + str(temp_avesp)+", Pressure warning limit: " +eb_Pmax_Warn.Value +", Pressure Shutdown limit " + eb_PMax_1.value +", Flow Warning " + eb_flowRlim_Warn.value +", Flow Showdown " + eb_FlowRlim_1.Value
+    Error_Log_Text="\nCurrent Values - PcurA: " +str(temp_PcurA) +", PcurB: " +str(temp_PcurB) +", Pcur: " +str(temp_Pcur) +", AveSp: " + str(temp_avesp)+", Pressure warning limit: " +eb_Pmax_Warn.Value +", Pressure Shutdown limit " + eb_PMax_1.value +", Flow Warning " + eb_flowRlim_Warn.value +", Flow Shutdown " + eb_FlowRlim_1.Value
     error_log_eb.Append(Error_log_text, true)
 
 
