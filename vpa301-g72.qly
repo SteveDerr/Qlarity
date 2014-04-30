@@ -1180,7 +1180,8 @@ func Handle_Error(errorID as Integer)
     REM Note not all of these errors will cause a warning display to be shown, but we want a record of them
 
     Date_and_Time(strTime)
-    temp_error_text=strTime + " Received error id "+str(errorID) + "\n"
+    debugText="Error ID "+str(ErrorID)+"\nCurrent Values - PcurA: " +str(PcurA) +", PcurB: " +str(PcurB) +", Pcur: " +str(Pcur) +", AveSp: " + str(currate)+", Pressure warning limit: " +eb_Pmax_Warn.Value +", Pressure Shutdown limit " + eb_PMax_1.value +", Flow Warning " + eb_flowRlim_Warn.value +", Flow Showdown " + eb_FlowRlim_1.Value
+    temp_error_text=strTime + " " + debugtext
     error_lb.AddString(temp_error_text)
 
 
@@ -1203,7 +1204,7 @@ REM Rem Buttons can only be set in Set_Error_Buttons
     if ErrorDisplayDisabled and errorID >4 and errorID<8 then
         'do not update the error log or display message
     else
-        debugText="Error ID "+str(ErrorID)+"\nCurrent Values - PcurA: " +str(PcurA) +", PcurB: " +str(PcurB) +", Pcur: " +str(Pcur) +", AveSp: " + str(currate)+", Pressure warning limit: " +eb_Pmax_Warn.Value +", Pressure Shutdown limit " + eb_PMax_1.value +", Flow Warning " + eb_flowRlim_Warn.value +", Flow Showdown " + eb_FlowRlim_1.Value
+
         Write_To_Debug(debugText, "Global Function Handle_Error")
 
 
