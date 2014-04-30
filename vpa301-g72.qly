@@ -11627,6 +11627,7 @@ init boxtype := eb_multilinescroll
 init font := helvb12_bdf
 init value := ""
 init maxlines := 200
+init edittype := eb_readonly_scroll
 Enddec
 Declare Error_Log_Screen as ScreenV2
 Level 249484
