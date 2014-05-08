@@ -394,7 +394,8 @@ Func Start_P_Mode()
     GMCPoll_Pready.enabled=true
 
     StartTime=DateTimeFunctions_Maintenance.GetCurrentTime()
-
+    delayms(500)
+    but_Pcont.enabled=true
 Endfunc
 Func Stop_P_Mode()
     Send_GMCcommand("ReStpP=1")
@@ -423,6 +424,7 @@ Func Stop_P_Mode()
     pv_maintenance.Save()
 REM Add delay to avoid crashing threads.
     delayms(500)
+    but_pcont.enabled=true
 endfunc
 Func Stop_Polling()
     GMCPoll_Ramping.enabled=false
@@ -7747,9 +7749,11 @@ func click()
             but_Limits_1.enabled=false
         value="STOP P CONTROL"
         P_Stop_Pressed = False
+        but_Pcont.enabled=false
         Start_P_Mode()
     else
         P_Stop_Pressed = true
+        but_pcont.enabled=false
         Stop_P_Mode()
         lbl_RampStatus.Value = "Pressure Control Mode Stopped"
 
