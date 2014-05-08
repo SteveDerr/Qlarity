@@ -11770,7 +11770,7 @@ init bgcolor := clr_labelbackground
 Enddec
 Declare Flow_mode_screen as ScreenV2
 Level 249582
-#Visible False
+#Visible True
 #Lock Me
 init parent := default
 init xpos := 0
@@ -14841,8 +14841,8 @@ func ResponseReceived (response as reference to string)
             If MLtotComCheck then
             REM Check twice before stopping
                 Tar_Vol_Reached = true
-            '    FlowStopped=True
-    '            Set_Flow_Buttons()
+                FlowStopped=True
+                Set_Flow_Buttons()
             else
                 MLtotComCheck=true
             endif
@@ -20783,7 +20783,7 @@ init marqueeptsize := 51
 Enddec
 Declare Sys_Setup_screen as ScreenV2
 Level 249472
-#Visible True
+#Visible False
 #Lock False
 init parent := default
 init xpos := -1
