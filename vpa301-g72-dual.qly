@@ -2243,7 +2243,9 @@ Func Set_Press_Buttons()
             But_Pcont.enabled=false
         endif
     endif
-    If P_Cont_on and Not RampComplete and ValueChanged then
+    REM 5-9-2014 Removed conditional "and Valuechanged" from if statement
+    REM trying to get the pause/continue button back. -SD
+    If P_Cont_on and Not RampComplete then
         But_Ramp.enabled= true
     else
         But_Ramp.enabled=false
@@ -6999,6 +7001,7 @@ init height := 50
 init font := helvb18_bdf
 
 func click()
+    REM Added error log to store accumulated errors to memory
     error_log_screen.enabled=true
 
 endfunc
