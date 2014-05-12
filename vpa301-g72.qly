@@ -14512,6 +14512,9 @@ func ResponseReceived (response as reference to string)
         REM FState is anything but zero, turn comcheck off
         FStateComCheck=false
     endif
+    If fstate==fstatelast then
+        return
+    endif
 
     If fstate == 1 then
         If (elps_a.bgcolor<>20 or elps_b.bgcolor<>160) then
