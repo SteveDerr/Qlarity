@@ -353,7 +353,7 @@ dim currentvalue as string
     DIM p_start_pressed as boolean
     init p_start_pressed:=false
     REM Debug and second port writing variables
-    Dim WriteErrorToPortTwo, WarnSpeedComCheck, OverSpeedComCheck, NewErrComCheck, PowerUpComCheck, PcurAComCheck, PcurBComCheck, MLtotComCheck, DAQLoopComCheck as boolean
+    Dim WriteErrorToPortTwo, WarnSpeedComCheck, OverSpeedComCheck, NewErrComCheck, PowerUpComCheck, PcurAComCheck, PcurBComCheck, MLtotComCheck, DAQLoopComCheck, FStateComCheck as boolean
     init WriteErrorToPortTwo:=false
     Dim CurrentTime as Integer
     Dim CurrentDate as String
@@ -1014,50 +1014,50 @@ func Exit_Segment(segment as integer)
     dim Stoprequired as Boolean
     LastSegment= false
     Stoprequired=true
-'decide if we need to end a segment
-'This is the last segment
-If Current_Segment== NumberofSegments then
+    'decide if we need to end a segment
+    'This is the last segment
+    If Current_Segment== NumberofSegments then
         'we are done
-    LastSegment= true
-    Stoprequired=true
-else
-    LastSegment= false
-    Next_Segment=Current_Segment+1
-   'determine if stoprequired before next segment
-'this is the first segment, or we are flowing and still flowing, or transitioning from Pramp to P
-    If segment==0 then
-        Stoprequired=False
+        LastSegment= true
+        Stoprequired=true
     else
-        If(( FState>0) and ((SegTypeArray[Next_Segment]==1) or (SegTypeArray[Next_Segment]==2))) then
+        LastSegment= false
+        Next_Segment=Current_Segment+1
+       'determine if stoprequired before next segment
+        'this is the first segment, or we are flowing and still flowing, or transitioning from Pramp to P
+        If segment==0 then
             Stoprequired=False
-        endif
-        If PState>0 and (SegTypeArray[Next_Segment]==3 or SegTypeArray[Next_Segment]==4) then
-            Stoprequired=False
-        endif
-    endif
-endif
-
-
-if not Stoprequired then
-    Start_Segment(Next_Segment)
-else
-    If FState>0 then
-        Stop_Flow()
-        tmr_refill.enabled=true
-        IF LastSegment then
-            lbl_Profile_Msg.value="Waiting for pump refill to complete"
+        else
+            If(( FState>0) and ((SegTypeArray[Next_Segment]==1) or (SegTypeArray[Next_Segment]==2))) then
+                Stoprequired=False
+            endif
+            If PState>0 and (SegTypeArray[Next_Segment]==3 or SegTypeArray[Next_Segment]==4) then
+                Stoprequired=False
+            endif
         endif
     endif
-    If PState>0 then
-        Stop_P_Mode()
-        tmr_refill.enabled=true
-        IF LastSegment then
-            lbl_Profile_Msg.value="Waiting for pump refill to complete"
+
+
+    if not Stoprequired then
+        Start_Segment(Next_Segment)
+    else
+        If FState>0 then
+            Stop_Flow()
+            tmr_refill.enabled=true
+            IF LastSegment then
+                lbl_Profile_Msg.value="Waiting for pump refill to complete"
+            endif
+        endif
+        If PState>0 then
+            Stop_P_Mode()
+            tmr_refill.enabled=true
+            IF LastSegment then
+                lbl_Profile_Msg.value="Waiting for pump refill to complete"
+            endif
         endif
     endif
-endif
-
 endfunc
+
 func Exit_Sys_Setup_Screen()
     Sys_Setup_screen.enabled=false
     Init_Title_screen()
@@ -1072,9 +1072,9 @@ func Exit_Title_Screen()
 endfunc
 
 func Exit_Vol_Cal_screen()
-     If GMCPoll_Flowing.enabled then  'stop motion
-           Stop_Flow()
-        endif
+    If GMCPoll_Flowing.enabled then  'stop motion
+        Stop_Flow()
+    endif
     lbl_ml_per_mm.BlinkPeriod=0
     vol_cal_screen.enabled = false
     GMCPoll_PcurA.enabled=false
@@ -1190,7 +1190,7 @@ REM Rem Buttons can only be set in Set_Error_Buttons
         return
     endif
     if errorID>11 and errorID<14 then '12 and 13 are exceeded max press A and B
-        If FlowStopped then  'only apply this error in flowmode
+        If flow_mode_screen.enabled==true then  'only apply this error in flowmode
             return
         endif
     endif
@@ -11760,7 +11760,7 @@ init bgcolor := clr_labelbackground
 Enddec
 Declare Flow_mode_screen as ScreenV2
 Level 249582
-#Visible False
+#Visible True
 #Lock Me
 init parent := default
 init xpos := 0
@@ -14452,14 +14452,23 @@ func ResponseReceived (response as reference to string)
 
     If FlowStopped and not Remote_Control then
         If fstate==0 then
-            GMCPoll_Flowing.enabled=false
-            Refilling=false
-            Set_Flow_Buttons()
-            'disable alarms
-            Disabled = True
+            REM ComCheck added
+            REM Make sure we read value twice before stopping the poll.
+            IF FStateComCheck then
+                GMCPoll_Flowing.enabled=false
+                Refilling=false
+                Set_Flow_Buttons()
+                'disable alarms
+                Disabled = True
+            else
+                debugText="Value of FState read as "+str(fstate)
+                Write_To_Debug(debugText, "GMCPoll_Flowing")
+                FStateComCheck=true
+            endif
 
         else
-'            return
+            FStateComCheck=false
+            'return
         endif
     endif
     If fstate==fstatelast then
@@ -20771,7 +20780,7 @@ init marqueeptsize := 51
 Enddec
 Declare Sys_Setup_screen as ScreenV2
 Level 249473
-#Visible True
+#Visible False
 #Lock False
 init parent := default
 init xpos := -1
