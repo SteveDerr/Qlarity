@@ -351,7 +351,7 @@ dim currentvalue as string
     Dim Exiting_Remote as Boolean
     Init Exiting_Remote:=false
     REM Debug and second port writing variables
-    Dim WriteErrorToPortTwo, WarnSpeedComCheck, OverSpeedComCheck, NewErrComCheck, PowerUpComCheck, PcurAComCheck, PcurBComCheck, MLtotComCheck, DAQLoopComCheck as boolean
+    Dim WriteErrorToPortTwo, WarnSpeedComCheck, OverSpeedComCheck, NewErrComCheck, PowerUpComCheck, PcurAComCheck, PcurBComCheck, MLtotComCheck, DAQLoopComCheck, FStateComCheck as boolean
     init WriteErrorToPortTwo:=false
     Dim CurrentTime as Integer
     Dim CurrentDate as String
@@ -1192,9 +1192,10 @@ REM Rem Buttons can only be set in Set_Error_Buttons
         return
     endif
     if errorID>11 and errorID<14 then '12 and 13 are exceeded max press A and B
-        If FlowStopped then  'only apply this error in flowmode
-            return
-        endif
+        REM This error is gererated by Galil and should only show up when the pump is stopped, always show it. -SD
+        'If FlowStopped then  'only apply this error in flowmode
+        '    return
+        'endif
     endif
     if ErrorDisplayDisabled and errorID==19 then
         return
@@ -14477,8 +14478,11 @@ func ResponseReceived (response as reference to string)
 '            return
         endif
     endif
-    If fstate==fstatelast then
-        return
+    if fstate<>0 then
+        REM Need to check twice if fstate=0
+        If fstate==fstatelast then
+            return
+        endif
     endif
     If fstate == 0 then
         If (elps_a.bgcolor<>160 or elps_b.bgcolor<>160) then
@@ -14490,17 +14494,25 @@ func ResponseReceived (response as reference to string)
             elps_b_3.bgcolor=160
         endif
         If not Remote_Control then
-            GMCPoll_Flowing.enabled=false
-            But_StartFlow.enabled=true
-            REM Set FlowStopped
-
-            FlowStopped=true
-            Set_Flow_Buttons()
-
-
-
+            if FStateComCheck then
+                REM Check twice before we stop polling
+                GMCPoll_Flowing.enabled=false
+                But_StartFlow.enabled=true
+                REM Set FlowStopped
+                FlowStopped=true
+                Set_Flow_Buttons()
+            else
+                REM FState read as 0, make sure to read twice
+                debugText=CurrentDate+"Value of FState read as "+str(FState)
+                Write_To_Debug(debugText, "GMCPoll_Flowing")
+                FStateComCheck=true
+            endif
         endif
+    else
+        REM FState is anything but zero, turn comcheck off
+        FStateComCheck=false
     endif
+
     If fstate == 1 then
         If (elps_a.bgcolor<>20 or elps_b.bgcolor<>160) then
             elps_a.bgcolor=20
