@@ -14465,8 +14465,11 @@ func ResponseReceived (response as reference to string)
             'return
         endif
     endif
-    If fstate==fstatelast then
-        return
+    REM Need to check if fstate=0 twice
+    if fstate<>0 then
+        If fstate==fstatelast then
+            return
+        endif
     endif
     If fstate == 0 then
         If (elps_a.bgcolor<>160 or elps_b.bgcolor<>160) then
@@ -14492,6 +14495,9 @@ func ResponseReceived (response as reference to string)
                 FStateComCheck=true
             endif
         endif
+    endif
+    If fstate==fstatelast then
+        return
     endif
     If fstate == 1 then
         If (elps_a.bgcolor<>20 or elps_b.bgcolor<>160) then
@@ -20579,7 +20585,7 @@ init enabled := false
 Enddec
 Declare Pressure_mode_screen as ScreenV2
 Level 249534
-#Visible False
+#Visible True
 #Lock False
 init parent := default
 init xpos := 0
@@ -20778,7 +20784,7 @@ init marqueeptsize := 51
 Enddec
 Declare Sys_Setup_screen as ScreenV2
 Level 249473
-#Visible True
+#Visible False
 #Lock False
 init parent := default
 init xpos := -1
