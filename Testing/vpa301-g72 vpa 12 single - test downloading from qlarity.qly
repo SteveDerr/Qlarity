@@ -2248,7 +2248,11 @@ func Update_Error_Arrays(ErNo as Integer,Ertime as String)
 endfunc
 
 func warning_sound()
-    Playnote(55,500)
+    If not tmr_error_beep_delay.enabled then
+        Playnote(55,500)
+        tmr_error_beep_delay.enabled = true
+    endif
+
 endfunc
 func Zero_Profile_Arrays()
     TarVolArray[0]=0
@@ -6342,7 +6346,7 @@ init height := 50
 init font := helvb18_bdf
 
 func click()
-    DebugScrn.enabled=false
+    del_err_log_popup.enabled=true
 endfunc
 Enddec
 Declare but_Close_All as ButtonV2
@@ -6818,8 +6822,7 @@ init height := 50
 init font := helvb18_bdf
 
 func click()
-
-
+    error_log_screen.enabled=true
 endfunc
 init xjustify := hjustify_leftalign
 Enddec
@@ -8148,6 +8151,7 @@ func click()
         Exit_Title_Screen()
         Init_Setup_screen()
         Setup = True
+        GMCCom_Debug.executeCommand=true
 
     endif
 endfunc
@@ -8703,7 +8707,7 @@ init showtime := false
 Enddec
 Declare Change_xdcr_Popup_Screen as PopupScreenV2
 Level 249990
-#Visible False
+#Visible True
 #Lock False
 init xpos := 80
 init ypos := 200
@@ -9323,7 +9327,7 @@ init value := "Delete the Error Log?"
 init parent := error_log_screen
 Enddec
 Declare DelimitedComm_1 as DelimitedCommV2
-Level 249385
+Level 249386
 #Visible False
 #Lock False
 
@@ -11262,7 +11266,7 @@ init scrollwidth := 40
 Enddec
 Declare Error_Log_Screen as ScreenV2
 Level 249887
-#Visible True
+#Visible False
 #Lock False
 init parent := default
 init xpos := 0
@@ -11322,7 +11326,7 @@ init enabled := false
 init bgcolor := clr_buttonbackgroundalt
 Enddec
 Declare G_55_PopupMenu_1 as G55PopupMenu
-Level 249386
+Level 249387
 #Visible True
 #Lock False
     init mainsubmenu := g_55_popupmenu_2
@@ -11339,7 +11343,7 @@ init xpos := 0
 init ypos := -80
 Enddec
 Declare G_55_PopupMenu_2 as G55PopupMenu
-Level 249388
+Level 249389
 #Visible True
 #Lock False
     init mainsubmenu := g_55_popupmenu_3
@@ -11356,7 +11360,7 @@ init xpos := 0
 init ypos := -80
 Enddec
 Declare G_55_PopupMenu_3 as G55PopupMenu
-Level 249389
+Level 249390
 #Visible True
 #Lock False
     init mainsubmenu := g_55_popupmenu_4
@@ -11373,7 +11377,7 @@ init xpos := 0
 init ypos := -80
 Enddec
 Declare G_55_PopupMenu_4 as G55PopupMenu
-Level 249390
+Level 249391
 #Visible True
 #Lock False
     init mainsubmenu := g_55_popupmenu_5
@@ -11390,7 +11394,7 @@ init xpos := 0
 init ypos := -80
 Enddec
 Declare G_55_PopupMenu_5 as G55PopupMenu
-Level 249387
+Level 249388
 #Visible True
 #Lock False
     init mainsubmenu := g_55_popupmenu_6
@@ -11407,7 +11411,7 @@ init xpos := 0
 init ypos := -80
 Enddec
 Declare G_55_PopupMenu_6 as G55PopupMenu
-Level 249391
+Level 249392
 #Visible True
 #Lock False
     init mainsubmenu := g_55_popupmenu_7
@@ -11424,7 +11428,7 @@ init xpos := 0
 init ypos := -80
 Enddec
 Declare G_55_PopupMenu_7 as G55PopupMenu
-Level 249392
+Level 249393
 #Visible True
 #Lock False
     init mainsubmenu := g_55_popupmenu_8
@@ -11441,7 +11445,7 @@ init xpos := 0
 init ypos := -80
 Enddec
 Declare G_55_PopupMenu_8 as G55PopupMenu
-Level 249393
+Level 249394
 #Visible True
 #Lock False
     init initialselected := 0
@@ -11742,7 +11746,7 @@ init command := "MG Debug"
 init enabled := true
 
 func ResponseReceived(response as string)
-    dim temp as integer
+    dim temp as float
     check error
         val(temp,response)
     on error
@@ -13013,25 +13017,23 @@ Level 249793
 #Lock False
 init parent := daq_objects
 init commobject := galilcomm
-init command := "MG AveSp,PcurA,PcurB,Pcur"
+init command := "MG AveSp,PcurA,Pcur"
 
 func ResponseReceived(response as string)
-    dim temp_AveSp, temp_PcurA, temp_PcurB, temp_Pcur as float
+    dim temp_AveSp, temp_PcurA, temp_Pcur as float
     dim respstr as string
     dim Error_Log_Text as string
-    dim avesp_len, pcura_len, pcurb_len, pcur_len as integer
+    dim avesp_len, pcura_len, pcur_len as integer
 
 
     avesp_len=find(response, 0, -1, " ")
     pcura_len=find(response,avesp_len+1, -1, " ")
-    pcurb_len=find(response,pcura_len+1, -1, " ")
-    pcur_len=len(response)-(pcurb_len)
+    pcur_len=len(response)-(pcura_len)
 
 
     check error
     val(temp_avesp, left(response,avesp_len-1))
     val(temp_pcura, mid(response,avesp_len+1,pcura_len-avesp_len))
-    val(temp_pcurb, mid(response,pcura_len+1,pcurb_len-pcura_len))
     val(temp_pcur,right(response,(pcur_len)))
     on error
         _clearexception()
@@ -13039,7 +13041,7 @@ func ResponseReceived(response as string)
 
     REM Get timestamp and write current values to the error log.
     REM Note not all errors will cause a warning display to be shown, but we want a record of them
-    Error_Log_Text="\nCurrent Values - PcurA: " +str(temp_PcurA) +", PcurB: " +str(temp_PcurB) +", Pcur: " +str(temp_Pcur) +", AveSp: " + str(temp_avesp)+", Pressure warning limit: " +eb_Pmax_Warn.Value +", Pressure Shutdown limit " + eb_PMax_1.value +", Flow Warning " + eb_flowRlim_Warn.value +", Flow Shutdown " + eb_FlowRlim_1.Value
+    Error_Log_Text="\nCurrent Values - PcurA: " +str(temp_PcurA) +", Pcur: " +str(temp_Pcur) +", AveSp: " + str(temp_avesp)+", Pressure warning limit: " +eb_Pmax_Warn.Value +", Pressure Shutdown limit " + eb_PMax_1.value +", Flow Warning " + eb_flowRlim_Warn.value +", Flow Shutdown " + eb_FlowRlim_1.Value
     error_log_eb.Append(Error_log_text, true)
     pv_errorlog.Save()
 endfunc
@@ -13061,20 +13063,16 @@ func ResponseReceived(response as string)
     dim unknownversion as boolean
     init unknownversion:=false
 
-    if response=="?" then
-        REM Galil doesn't know Version and/or Rev
+    version_len=find(response, 0, -1, " ")
+    rev_len=len(response)-(version_len)
+    check error
+       val(tempVersion, left(response,version_len-1))
+       val(tempRev, right(response,rev_len))
+    on error
+        _clearexception()
         unknownversion=true
-    else
-        version_len=find(response, 0, -1, " ")
-        rev_len=len(response)-(version_len)
-        check error
-           val(tempVersion, left(response,version_len-1))
-           val(tempRev, right(response,rev_len))
-        on error
-            _clearexception()
-            unknownversion=true
-        enderr
-    endif
+    enderr
+
     if tempRev<GalilRev or tempVersion<GalilVersion or unknownversion then
         lbl_update_galil_text.value="Older version of Galil code detected. Would you like to update to version "+str(galilversion)+" rev "+str(galilrev)+"?"
         update_galil_popup.enabled=true
@@ -13088,7 +13086,8 @@ func ResponseReceived(response as string)
 endfunc
 
 func FailureReceived(response as string, failReason as GMC_FailureReason)
-    Controller_Communication_Error("DAQ",response)
+    lbl_update_galil_text.value="Older or missing version of Galil code detected. Would you like to update to version "+str(galilversion)+" rev "+str(galilrev)+"?"
+    update_galil_popup.enabled=true
 endfunc
 Enddec
 Declare GMCcom_VolpCyl as GMCCommandExecV2
@@ -14617,7 +14616,7 @@ init image := Banner_Rev5
 init transparent := true
 Enddec
 Declare Image_16 as ImageV2
-Level 249383
+Level 249384
 #Visible True
 #Lock False
 init parent := welcome_screen
@@ -19287,38 +19286,8 @@ init bgcolor := clr_screenbackground
 init enabled := false
 init transparent := false
 Enddec
-Declare tmr_10sec_delay as TimerV2
-Level 249407
-#Visible True
-#Lock False
-init timeperiod := 10
-init timertype := _tt_oneshot
-init enabled := false
-
-func timeout()
-    GMCCom_First_PowerUP.executeCommand=true
-    tmr_FirstPowerUp.enabled=false
-
-endfunc
-
-init parent := default
-Enddec
-Declare tmr_1sec_delay as TimerV2
-Level 249408
-#Visible True
-#Lock False
-init timeperiod := 1
-init timertype := _tt_oneshot
-init enabled := false
-
-func timeout()
-    GMCCom_First_PowerUP.executeCommand=true
-    tmr_FirstPowerUp.enabled=false
-
-endfunc
-Enddec
 Declare tmr_Burn_New_Var as TimerV2
-Level 249399
+Level 249400
 #Visible True
 #Lock False
 init timertype := _tt_oneshot
@@ -19332,7 +19301,7 @@ func timeout()
 endfunc
 Enddec
 Declare tmr_Check_Connection as TimerV2
-Level 249405
+Level 249406
 #Visible True
 #Lock False
 init timertype := _tt_periodic
@@ -19353,7 +19322,7 @@ init timeperiod := 1
 init enabled := false
 Enddec
 Declare tmr_CheckML as TimerV2
-Level 249400
+Level 249401
 #Visible True
 #Lock False
 init timeunits := _tt_minutes
@@ -19371,7 +19340,7 @@ endfunc
 init enabled := false
 Enddec
 Declare tmr_delay_check_DAQ as TimerV2
-Level 249401
+Level 249402
 #Visible True
 #Lock False
 init timeperiod := 2
@@ -19382,7 +19351,7 @@ func timeout()
 endfunc
 Enddec
 Declare tmr_Delay_Get_Config as TimerV2
-Level 249402
+Level 249403
 #Visible True
 #Lock False
 func timeout()
@@ -19394,7 +19363,7 @@ init timertype := _tt_oneshot
 init enabled := false
 Enddec
 Declare tmr_Delay_Start as TimerV2
-Level 249395
+Level 249396
 #Visible True
 #Lock False
 init timertype := _tt_oneshot
@@ -19431,7 +19400,7 @@ func timeout()
 endfunc
 Enddec
 Declare tmr_Disabled as TimerV2
-Level 249404
+Level 249405
 #Visible True
 #Lock False
 func timeout()
@@ -19444,8 +19413,24 @@ init timeperiod := 5
 init timertype := _tt_oneshot
 init enabled := false
 Enddec
+Declare tmr_error_beep_delay as TimerV2
+Level 249408
+#Visible True
+#Lock False
+init timeperiod := 2
+init timertype := _tt_oneshot
+init enabled := false
+
+func timeout()
+    GMCCom_First_PowerUP.executeCommand=true
+    tmr_FirstPowerUp.enabled=false
+
+endfunc
+
+init parent := default
+Enddec
 Declare tmr_Fact_Set as TimerV2
-Level 249403
+Level 249404
 #Visible True
 #Lock False
 init enabled := false
@@ -19457,7 +19442,7 @@ func timeout()
 endfunc
 Enddec
 Declare tmr_FirstPowerUp as TimerV2
-Level 249406
+Level 249407
 #Visible True
 #Lock False
 init timeperiod := 5
@@ -19471,7 +19456,7 @@ func timeout()
 endfunc
 Enddec
 Declare tmr_Hide_Error_Display as TimerV2
-Level 249398
+Level 249399
 #Visible True
 #Lock False
 init enabled := false
@@ -19533,7 +19518,7 @@ func timeout()
 endfunc
 Enddec
 Declare tmr_Receive_Warning as TimerV2
-Level 249394
+Level 249395
 #Visible True
 #Lock False
 init parent := default
@@ -19546,7 +19531,7 @@ func timeout()
 endfunc
 Enddec
 Declare tmr_refill as TimerV2
-Level 249396
+Level 249397
 #Visible True
 #Lock False
 init enabled := false
@@ -19587,7 +19572,7 @@ func timeout()
 endfunc
 Enddec
 Declare tmr_Wait_For_Refill as TimerV2
-Level 249397
+Level 249398
 #Visible True
 #Lock False
 init timeperiod := 1
@@ -20338,8 +20323,8 @@ init height := 800
 init enabled := False
 Enddec
 Declare Welcome_Screen as ScreenV2
-Level 249384
-#Visible False
+Level 249385
+#Visible True
 #Lock Me
 init width := 480
 init height := 800
