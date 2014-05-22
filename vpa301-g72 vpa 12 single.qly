@@ -465,6 +465,7 @@ Func Startup ()
 
     handles MSG_INIT
     userDirectMsg(default, _msg_post_init, 0, false)
+    SetSystemSetting(SYS_USEDRAWCACHE, CACHE_ENABLED, SYSACT_DONOW)
 
 
 Endfunc
@@ -8761,7 +8762,7 @@ init enabled := False
 Enddec
 Declare Cycle_Popup_Screen as PopupScreenV2
 Level 249974
-#Visible False
+#Visible True
 #Lock False
 init xpos := 80
 init ypos := 200
@@ -13990,7 +13991,7 @@ func ResponseReceived (response as reference to string)
         lbl_P_Act.BlinkPeriod=2000
         lbl_P_Act.fgColor=225
 
-        Playnote(59,500)
+        Warning_Sound()
         lbl_Flow_Instructions.value = str(PRange)
         lbl_Pressure_Warning.enabled=true
     else
@@ -19485,13 +19486,11 @@ Declare tmr_error_beep_delay as TimerV2
 Level 249408
 #Visible True
 #Lock False
-init timeperiod := 2
+init timeperiod := 10
 init timertype := _tt_oneshot
 init enabled := false
 
 func timeout()
-    GMCCom_First_PowerUP.executeCommand=true
-    tmr_FirstPowerUp.enabled=false
 
 endfunc
 
