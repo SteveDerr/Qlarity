@@ -178,8 +178,9 @@ dim currentvalue as string
     Dim VolpCyl as Float
     Dim Ramp_Pending as Boolean
     init Ramp_Pending :=false
-    Dim PState as Float
-    init PState := 0
+    Dim PState,Pstate_LastUpdateState as Float
+    init PState:= 0
+    init PState_LastUpdateState:=0
     Dim PStatelast as Float
     Dim Transducer as string
     Dim Cylinder as String
@@ -189,7 +190,8 @@ dim currentvalue as string
     Dim Setup as Boolean
     Init Setup := False
     dim fstate as float
-    dim fstatelast as float
+    dim fstatelast, FState_LastUpdateState as float
+    init FState_LastUpdateState:=0
     dim Remote_Control as boolean
     Init Remote_Control :=false
     dim Target_Volume as float
@@ -212,8 +214,9 @@ dim currentvalue as string
     dim CalMode as boolean
     init CalMode :=false
     dim PrevValue as string
-    dim P_Stop_Pressed as boolean
+    dim P_Stop_Pressed, F_Stop_Pressed as boolean
     init P_Stop_Pressed:=false
+    init F_Stop_Pressed:=false
     dim ValueChanged as boolean
     init ValueChanged:=false
     dim RampHold as boolean
@@ -353,7 +356,7 @@ dim currentvalue as string
     DIM p_start_pressed as boolean
     init p_start_pressed:=false
     REM Debug and second port writing variables
-    Dim WriteErrorToPortTwo, WarnSpeedComCheck, OverSpeedComCheck, NewErrComCheck, PowerUpComCheck, PcurAComCheck, PcurBComCheck, MLtotComCheck, DAQLoopComCheck, FStateComCheck as boolean
+    Dim WriteErrorToPortTwo, WarnSpeedComCheck, OverSpeedComCheck, NewErrComCheck, PowerUpComCheck, PcurAComCheck, PcurBComCheck, MLtotComCheck, DAQLoopComCheck as boolean
     init WriteErrorToPortTwo:=false
     Dim CurrentTime as Integer
     Dim CurrentDate as String
@@ -471,7 +474,7 @@ endfunc
 func Stop_Flow()
     GMCCommand.command = "XQ#STPBOTH,1"
     GMCCommand.executeCommand = true
-    FlowStopped=True
+'    FlowStopped=True
     Pumping=false
 '    lbl_Flow_Instructions.value="Flow Stopped"
 '    Set_Flow_Buttons()
@@ -925,7 +928,7 @@ func Exit_Power_Up_screen()
     GMCPoll_NewErr.enabled=true
     GMCPoll_Remote.enabled=false
     P_Cont_On = false
-    FlowStopped=true
+'    FlowStopped=true
 endfunc
 func Exit_Press_Mode_screen()
     exitingpscreen=true
@@ -1379,7 +1382,7 @@ func Init_Flow_Mode_screen()
     gmcpoll_mltot.enabled=true
     GMCPoll_PcurA.enabled=true
     GMCPoll_PcurB.enabled=true
-    FlowStopped=True
+'    FlowStopped=True
     eb_FlowR.Value="0"
     mlpermin=0
     eb_Tar_Vol.Value="INF"
@@ -2100,14 +2103,14 @@ Func Set_Flow_Buttons()
             _ClearException()
         enderr
     endif
-    if rateentered<= 0 or CycleComplete== false or (Refilling and Flowstopped) or Fstate==2 or Fstate==5 or (eb_Tar_Vol.Value=="Invalid" and Flowstopped) then
+    if CycleComplete== false or F_Stop_Pressed or (eb_Tar_Vol.Value=="Invalid" and Flowstopped) then
         But_StartFlow.enabled=false
     else
         But_StartFlow.enabled=true
     endif
     If FlowStopped then
         but_StartFlow.Value="START"
-        If not Refilling and Fstate<>2 and Fstate<>5 then
+        If not Refilling then
             but_CycToStart.enabled=true
             but_ZeroVol.enabled = true
             but_ZeroXdcrs_2.enabled=true
@@ -8683,6 +8686,8 @@ func click()
     endif
     If But_StartFlow.value=="STOP" then
         'Stop motion
+        REM F_Stop_Pressed acts as a request to stop. Set it to to false once FState is read as 0.
+        F_Stop_Pressed=true
         Stop_Flow()
         tmr_update_but_delay.enabled=true
         return
@@ -11763,7 +11768,7 @@ init bgcolor := clr_labelbackground
 Enddec
 Declare Flow_mode_screen as ScreenV2
 Level 249572
-#Visible False
+#Visible True
 #Lock Me
 init parent := default
 init xpos := 0
@@ -14447,74 +14452,55 @@ func ResponseReceived (response as reference to string)
 '        debugEB.appendText="FState response "+response
     enderr
 
-    IF fstate>6 then
+    IF fstate>6 or fstate<0 then
         REM Known bad value
         debugtext="Value of FState read as "+str(fstate)
         Write_To_Debug(debugtext, "GMCPoll_Flowing")
+        return
     endif
 
-    If FlowStopped and not Remote_Control then
-        If fstate==0 then
-            GMCPoll_Flowing.enabled=false
-            Refilling=false
-            Set_Flow_Buttons()
-            'disable alarms
-            Disabled = True
-        else
-            FStateComCheck=false
-            'return
-        endif
-    endif
-    REM Need to check if fstate=0 twice
-    if fstate<>0 then
-        If fstate==fstatelast then
+    if fstate==fstatelast then
+        REM Verified response, do normal update
+        if FState==FState_LastUpdateState then
+            REM Already updated for this state, do nothing.
             return
         endif
-    endif
-    If fstate == 0 then
-        If (elps_a.bgcolor<>160 or elps_b.bgcolor<>160) then
+        If fstate==0 then
+            F_Stop_Pressed=false
+            FlowStopped=true
             elps_a.bgcolor=160
             elps_b.bgcolor=160
             elps_a_2.bgcolor=160
             elps_b_2.bgcolor=160
             elps_a_3.bgcolor=160
             elps_b_3.bgcolor=160
-        endif
-        If not Remote_Control then
-            REM ComCheck added
-            REM Make sure we read value twice before stopping the poll.
-            IF FStateComCheck then
+            If not Remote_Control then
+                REM Don't change buttons or turn poll off if in remote display.
                 GMCPoll_Flowing.enabled=false
                 But_StartFlow.enabled=true
-                REM Set FlowStopped
-                FlowStopped=true
                 Set_Flow_Buttons()
-            else
-                debugText="Value of FState read as "+str(fstate)
-                Write_To_Debug(debugText, "GMCPoll_Flowing")
-                FStateComCheck=true
+                REM Disable alarms
+                Disabled = True
             endif
         endif
-    endif
-    If fstate==fstatelast then
-        return
-    endif
-    If fstate == 1 then
-        If (elps_a.bgcolor<>20 or elps_b.bgcolor<>160) then
+
+        If fstate == 1 then
+            'If (elps_a.bgcolor<>20 or elps_b.bgcolor<>160) then
+            REM We avoid unnecessary updates already.
             elps_a.bgcolor=20
             elps_b.bgcolor=160
             elps_a_2.bgcolor=20
             elps_b_2.bgcolor=160
             elps_a_3.bgcolor=20
             elps_b_3.bgcolor=160
+
+            if Tar_Vol_Reached then
+                elps_a.bgcolor=160
+            endif
         endif
 
-        if Tar_Vol_Reached then
-            elps_a.bgcolor=160
-        endif
-    endif
-    If fstate == 2 then
-        if (elps_a.bgcolor<>20 or elps_b.bgcolor<>20) then
+        If fstate == 2 then
+            'if (elps_a.bgcolor<>20 or elps_b.bgcolor<>20) then
             elps_a.bgcolor=20
             elps_b.bgcolor=20
             elps_a_2.bgcolor=20
@@ -14522,9 +14508,9 @@ func ResponseReceived (response as reference to string)
             elps_a_3.bgcolor=20
             elps_b_3.bgcolor=20
         endif
-    endif
-    If fstate == 3 then
-        if (elps_a.bgcolor<>252 or elps_b.bgcolor<>20) then
+
+        If fstate == 3 then
+        'if (elps_a.bgcolor<>252 or elps_b.bgcolor<>20) then
             elps_a.bgcolor=252
             elps_b.bgcolor=20
             elps_a_2.bgcolor=252
@@ -14532,23 +14518,22 @@ func ResponseReceived (response as reference to string)
             elps_a_3.bgcolor=252
             elps_b_3.bgcolor=20
         endif
-   endif
-    If fstate == 4 then
-        if (elps_a.bgcolor<>160 or elps_b.bgcolor<>20) then
+
+        If fstate == 4 then
+        'if (elps_a.bgcolor<>160 or elps_b.bgcolor<>20) then
             elps_a.bgcolor=160
             elps_b.bgcolor=20
             elps_a_2.bgcolor=160
             elps_b_2.bgcolor=20
             elps_a_3.bgcolor=160
             elps_b_3.bgcolor=20
+            if Tar_Vol_Reached then
+                elps_b.bgcolor=160
+            endif
         endif
 
-        if Tar_Vol_Reached then
-            elps_b.bgcolor=160
-        endif
-    endif
-    If fstate == 5 then
-        if (elps_a.bgcolor<>20 or elps_b.bgcolor<>20) then
+        If fstate == 5 then
+        'if (elps_a.bgcolor<>20 or elps_b.bgcolor<>20) then
             elps_a.bgcolor=20
             elps_b.bgcolor=20
             elps_a_2.bgcolor=20
@@ -14556,9 +14541,9 @@ func ResponseReceived (response as reference to string)
             elps_a_3.bgcolor=20
             elps_b_3.bgcolor=20
         endif
-    endif
-    If fstate == 6 then
-        if (elps_a.bgcolor<>20 or elps_b.bgcolor<>252) then
+
+        If fstate == 6 then
+        'if (elps_a.bgcolor<>20 or elps_b.bgcolor<>252) then
             elps_a.bgcolor=20
             elps_b.bgcolor=252
             elps_a_2.bgcolor=20
@@ -14566,18 +14551,25 @@ func ResponseReceived (response as reference to string)
             elps_a_3.bgcolor=20
             elps_b_3.bgcolor=252
         endif
-    endif
-    if fstate==3 or fstate==6 then
-        Refilling=true
+
+        if fstate==3 or fstate==6 then
+            Refilling=true
+        else
+            Refilling=false
+        endif
+
+
+        If fstate>0 then
+            lbl_Current_Mode.value="FLOW"
+        elseif PState== 0 then
+            lbl_Current_Mode.value="IDLE"
+        endif
+
     else
-        Refilling=false
+        REM FState different than last check, set FStateLast, don't update.
+        fstatelast=fstate
     endif
-    fstatelast=fstate
-    If fstate>0 then
-        lbl_Current_Mode.value="FLOW"
-    elseif PState== 0 then
-        lbl_Current_Mode.value="IDLE"
-    endif
+
 endfunc
 
 init height := 40
@@ -14844,7 +14836,7 @@ func ResponseReceived (response as reference to string)
             If MLtotComCheck then
             REM Check twice before stopping
                 Tar_Vol_Reached = true
-                FlowStopped=True
+'                FlowStopped=True
                 Set_Flow_Buttons()
             else
                 MLtotComCheck=true
@@ -15243,106 +15235,113 @@ func ResponseReceived (response as reference to string)
 '        debugEB.appendText="PState response "+response
     enderr
 
-    if PState>6 then
+    if PState>6 or PState<0 then
         REM Known bad value
         debugtext="Value of PState read as "+str(PState)
         Write_To_Debug(debugtext, "GMCPoll_PState_status")
-    endif
-
-    If P_Stop_Pressed and not Remote_Control then
-        If PState==0 then
-            GMCPoll_PState_status.enabled = false
-            elps_a_1.bgcolor=160
-            elps_b_1.bgcolor=160
-            Set_Press_Buttons()
-            P_Stop_Pressed=False
-            Refilling=false
-            Set_Press_Buttons()
-            lbl_RampStatus.Value="Pressure Control Stopped"
-            return
-        else
-            return
-        endif
-    endif
-    If PState==PStatelast then
         return
     endif
 
-    PStatelast=PState
-    If PState ==0  then
-        elps_a_1.bgcolor=160
-        elps_b_1.bgcolor=160
-        elps_a_2.bgcolor=160
-        elps_b_2.bgcolor=160
-        elps_a_3.bgcolor=160
-        elps_b_3.bgcolor=160
-        lbl_Current_Mode.value="IDLE"
-        If but_PCont.value == "STOP P CONTROL" then
-            but_PCont.value="START P CONTROL"
-            P_Cont_On = false
-            Pumping=false
-            Set_Press_Buttons()
+    if PState==PStateLast then
+        REM verified response, do normal update.
+        if PState==PState_LastUpdateState then
+            REM Already updated for this state, do nothing.
+            return
         endif
 
-    endif
-    If PState ==1 and (elps_a_1.bgcolor<>20 or elps_b_1.bgcolor<>160) then
-        elps_a_1.bgcolor=20
-        elps_b_1.bgcolor=160
-        elps_a_2.bgcolor=20
-        elps_b_2.bgcolor=160
-        elps_a_3.bgcolor=20
-        elps_b_3.bgcolor=160
-    endif
-    If PState ==2 and (elps_a_1.bgcolor<>20 or elps_b_1.bgcolor<>160) then
-        elps_a_1.bgcolor=20
-        elps_b_1.bgcolor=160
-        elps_a_2.bgcolor=20
-        elps_b_2.bgcolor=160
-        elps_a_3.bgcolor=20
-        elps_b_3.bgcolor=160
-    endif
-    If PState ==3 and (elps_a_1.bgcolor<>252 or elps_b_1.bgcolor<>20) then
-        elps_a_1.bgcolor=252
-        elps_b_1.bgcolor=20
-        elps_a_2.bgcolor=252
-        elps_b_2.bgcolor=20
-        elps_a_3.bgcolor=252
-        elps_b_3.bgcolor=20
-    endif
-    If PState ==4 and (elps_a_1.bgcolor<>160 or elps_b_1.bgcolor<>20) then
-        elps_a_1.bgcolor=160
-        elps_b_1.bgcolor=20
-        elps_a_2.bgcolor=160
-        elps_b_2.bgcolor=20
-        elps_a_3.bgcolor=160
-        elps_b_3.bgcolor=20
-    endif
-    If PState ==5 and (elps_a_1.bgcolor<>160 or elps_b_1.bgcolor<>20) then
-        elps_a_1.bgcolor=160
-        elps_b_1.bgcolor=20
-        elps_a_2.bgcolor=160
-        elps_b_2.bgcolor=20
-        elps_a_3.bgcolor=160
-        elps_b_3.bgcolor=20
-    endif
-    If PState ==6 and(elps_a_1.bgcolor<>20 or elps_b_1.bgcolor<>252) then
-        elps_a_1.bgcolor=20
-        elps_b_1.bgcolor=252
-        elps_a_2.bgcolor=20
-        elps_b_2.bgcolor=252
-        elps_a_3.bgcolor=20
-        elps_b_3.bgcolor=252
-    endif
-    if PState==3 or PState==6 then
-        Refilling=true
+        REM Only update if in a different state.
+        PState_LastUpdateState=PState
+        if PState==0 then
+            P_Cont_On = false
+            Pumping=false
+            P_Stop_Pressed=False
+            Refilling=false
+            elps_a_1.bgcolor=160
+            elps_b_1.bgcolor=160
+            elps_a_2.bgcolor=160
+            elps_b_2.bgcolor=160
+            elps_a_3.bgcolor=160
+            elps_b_3.bgcolor=160
+            lbl_Current_Mode.value="IDLE"
+            If not Remote_Control then
+                REM don't change buttons or turn poll off if in remote display.
+                Set_Press_Buttons()
+                GMCPoll_PState_status.enabled = false
+                lbl_RampStatus.Value="Pressure Control Stopped"
+            endif
+
+        endif
+
+        If PState ==1 and (elps_a_1.bgcolor<>20 or elps_b_1.bgcolor<>160) then
+            elps_a_1.bgcolor=20
+            elps_b_1.bgcolor=160
+            elps_a_2.bgcolor=20
+            elps_b_2.bgcolor=160
+            elps_a_3.bgcolor=20
+            elps_b_3.bgcolor=160
+        endif
+
+        If PState ==2 and (elps_a_1.bgcolor<>20 or elps_b_1.bgcolor<>160) then
+            elps_a_1.bgcolor=20
+            elps_b_1.bgcolor=160
+            elps_a_2.bgcolor=20
+            elps_b_2.bgcolor=160
+            elps_a_3.bgcolor=20
+            elps_b_3.bgcolor=160
+        endif
+
+        If PState ==3 and (elps_a_1.bgcolor<>252 or elps_b_1.bgcolor<>20) then
+            elps_a_1.bgcolor=252
+            elps_b_1.bgcolor=20
+            elps_a_2.bgcolor=252
+            elps_b_2.bgcolor=20
+            elps_a_3.bgcolor=252
+            elps_b_3.bgcolor=20
+        endif
+
+        If PState ==4 and (elps_a_1.bgcolor<>160 or elps_b_1.bgcolor<>20) then
+            elps_a_1.bgcolor=160
+            elps_b_1.bgcolor=20
+            elps_a_2.bgcolor=160
+            elps_b_2.bgcolor=20
+            elps_a_3.bgcolor=160
+            elps_b_3.bgcolor=20
+        endif
+
+        If PState ==5 and (elps_a_1.bgcolor<>160 or elps_b_1.bgcolor<>20) then
+            elps_a_1.bgcolor=160
+            elps_b_1.bgcolor=20
+            elps_a_2.bgcolor=160
+            elps_b_2.bgcolor=20
+            elps_a_3.bgcolor=160
+            elps_b_3.bgcolor=20
+        endif
+
+        If PState ==6 and(elps_a_1.bgcolor<>20 or elps_b_1.bgcolor<>252) then
+            elps_a_1.bgcolor=20
+            elps_b_1.bgcolor=252
+            elps_a_2.bgcolor=20
+            elps_b_2.bgcolor=252
+            elps_a_3.bgcolor=20
+            elps_b_3.bgcolor=252
+        endif
+
+        if PState==3 or PState==6 then
+            Refilling=true
+        else
+            Refilling=false
+        endif
+        if PState>0 then
+            lbl_Current_Mode.value="PRESSURE"
+        elseIF FState==0 then
+            lbl_Current_Mode.value="IDLE"
+        endif
+
     else
-        Refilling=false
+        REM PState is different from last check, set PStateLast, don't update.
+        PStateLast=PState
     endif
-    if PState>0 then
-        lbl_Current_Mode.value="PRESSURE"
-    elseIF FState==0 then
-        lbl_Current_Mode.value="IDLE"
-    endif
+
 
 endfunc
 init enabled := false
