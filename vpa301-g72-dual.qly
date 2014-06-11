@@ -191,7 +191,7 @@ dim currentvalue as string
     Init Setup := False
     dim fstate as float
     dim fstatelast, FState_LastUpdateState as float
-    init FState_LastUpdateState:=0
+    init FState_LastUpdateState:=-1
     dim Remote_Control as boolean
     Init Remote_Control :=false
     dim Target_Volume as float
@@ -470,6 +470,7 @@ func Start_Flow()
 
 
     fstatelast=12
+    FState_LastUpdateState=-1
     GMCPoll_Flowing.enabled=true
 
 
@@ -1740,6 +1741,7 @@ func Init_Remote_Display()
     GMCPoll_MLtot.enabled=true
     GMCPoll_PcurA.enabled=true
     GMCPoll_PcurB.enabled=true
+    FState_LastUpdateState=-1
     GMCPoll_Flowing.enabled=true
     GMCPoll_PState_status.enabled=true
     GMCcom_VolumeA.executeCommand=true
@@ -8750,7 +8752,6 @@ func click()
         Flow_Pressed = stop
         'Stop motion
         Stop_Flow()
-        return
     else
         REM Flow_Pressed acts like a latch, set here and reset when FState is not 0.
         flow_pressed = start
@@ -12683,10 +12684,11 @@ func ResponseReceived(response as string)
         LineNo=3
 '        Highlight_Line("Pos",LineNo)
         lbl_Flow_Instructions.value="Operator terminal was restarted for an unknown reason."
-
+        FState_LastUpdateState=-1
         GMCPoll_Flowing.enabled=true
         Disabled = false
         FlowStopped=False
+        FState_LastUpdateState=-1
         GMCPoll_Flowing.enabled=true
         InitComplete=true
         CycleComplete=true
@@ -14209,12 +14211,11 @@ func ResponseReceived (response as reference to string)
     If cycle == 0 then
         GMCPoll_Cycle.enabled=false
         Cycle_Popup_Screen.enabled=false
+        flow_pressed=none
         If Estop then
             cyclecomplete=false
         else
             cyclecomplete=true
-            REM Flow_pressed acts like a latch, set when cycle is pressed and reset when cycle is complete.
-            flow_pressed=none
         endif
         Set_Press_Buttons()
         Set_Flow_Buttons()
