@@ -442,7 +442,7 @@ Func Stop_Polling()
     GMCPoll_MLcurB.enabled=false
     GMCPoll_Pcur.enabled=false
     GMCPoll_Finding.enabled=false
-    GMCPoll_Flowing.enabled=false
+    gmcpoll_fstate.enabled=false
 
 endfunc
 Func Startup ()
@@ -471,7 +471,7 @@ func Start_Flow()
 
     fstatelast=12
     FState_LastUpdateState=-1
-    GMCPoll_Flowing.enabled=true
+    gmcpoll_fstate.enabled=true
 
 
 endfunc
@@ -1080,7 +1080,7 @@ func Exit_Title_Screen()
 endfunc
 
 func Exit_Vol_Cal_screen()
-    If GMCPoll_Flowing.enabled then  'stop motion
+    If gmcpoll_fstate.enabled then  'stop motion
         Stop_Flow()
     endif
     lbl_ml_per_mm.BlinkPeriod=0
@@ -1105,7 +1105,7 @@ func Exit_Remote_Display()
     GMCPoll_MLtot.enabled=false
     GMCPoll_PcurA.enabled=false
     GMCPoll_PcurB.enabled=false
-    GMCPoll_Flowing.enabled=false
+    gmcpoll_fstate.enabled=false
     GMCPoll_PState_status.enabled=false
     GMCPoll_MLcurA.enabled=false
     GMCPoll_MLcurB.enabled=false
@@ -1742,7 +1742,7 @@ func Init_Remote_Display()
     GMCPoll_PcurA.enabled=true
     GMCPoll_PcurB.enabled=true
     FState_LastUpdateState=-1
-    GMCPoll_Flowing.enabled=true
+    gmcpoll_fstate.enabled=true
     GMCPoll_PState_status.enabled=true
     GMCcom_VolumeA.executeCommand=true
     GMCcom_VolumeB.executeCommand=true
@@ -8942,7 +8942,7 @@ init height := 50
 init font := helvb18_bdf
 
 func click()
-        If NOT GMCPoll_Flowing.enabled then
+        If NOT gmcpoll_fstate.enabled then
             GMCCommand.command = "XQ#ZEROML,1"
             GMCCommand.executeCommand = true
         else
@@ -11831,7 +11831,7 @@ init bgcolor := clr_labelbackground
 Enddec
 Declare Flow_mode_screen as ScreenV2
 Level 249572
-#Visible True
+#Visible False
 #Lock Me
 init parent := default
 init xpos := 0
@@ -11980,7 +11980,7 @@ Declare g_72_ver_lbl as LabelV2
 Level 249460
 #Visible True
 #Lock False
-init value := "Terminal Version VPA 301 12-May-2014"
+init value := "Terminal Version VPA 301 Development"
 init parent := sys_setup_screen
 init xpos := 20
 init ypos := 744
@@ -12685,11 +12685,11 @@ func ResponseReceived(response as string)
 '        Highlight_Line("Pos",LineNo)
         lbl_Flow_Instructions.value="Operator terminal was restarted for an unknown reason."
         FState_LastUpdateState=-1
-        GMCPoll_Flowing.enabled=true
+        gmcpoll_fstate.enabled=true
         Disabled = false
         FlowStopped=False
         FState_LastUpdateState=-1
-        GMCPoll_Flowing.enabled=true
+        gmcpoll_fstate.enabled=true
         InitComplete=true
         CycleComplete=true
 '        tmr_CheckML.enabled=true
@@ -14497,7 +14497,85 @@ init yinset := 0
 init ypos := 0
 init ptsize := 12
 Enddec
-Declare GMCPoll_Flowing as GMCPollV2
+Declare GMCPoll_FlowingA as GMCPollV2
+Level 249741
+#Visible True
+#Lock False
+init parent := daq_objects
+init command := "MG FlowingA"
+init commobject := galilcomm
+init enabled := false
+
+func ResponseReceived (response as reference to string)
+    dim respstr as string
+
+
+    respstr = Clip_String(response,2)
+
+    check error
+             Val(FlowingA,respstr)
+    on error
+            _ClearException()
+    enderr
+    If FlowingA == 0 then
+        but_Start_Flow_Man_A.Value="START FLOW - A"
+        lbl_Manual_Control_Msg.value="Cylinder A flow volume completed"
+        GMCPoll_FlowingA.enabled=false
+        ReadytoFlowA=False
+        Set_Manual_Flow_Buttons()
+    endif
+endfunc
+
+
+
+init height := 40
+init font := helvr18_bdf
+init width := 40
+init xinset := 1
+init xpos := 0
+init yinset := 0
+init ypos := 0
+init ptsize := 12
+Enddec
+Declare GMCPoll_FlowingB as GMCPollV2
+Level 249742
+#Visible True
+#Lock False
+init parent := daq_objects
+init command := "MG FlowingB"
+init commobject := galilcomm
+init enabled := false
+
+func ResponseReceived (response as reference to string)
+    dim respstr as string
+
+    respstr = Clip_String(response,2)
+
+    check error
+             Val(FlowingB,respstr)
+    on error
+            _ClearException()
+    enderr
+    If FlowingB == 0 then
+        but_Start_Flow_Man_B.Value="START FLOW - B"
+        lbl_Manual_Control_Msg.value="Cylinder B flow volume completed"
+        GMCPoll_FlowingB.enabled=false
+        ReadytoFlowB=False
+        Set_Manual_Flow_Buttons()
+    endif
+endfunc
+
+
+init height := 40
+init font := helvr18_bdf
+init width := 40
+init xinset := 1
+init xpos := 0
+init yinset := 0
+init ypos := 0
+init ptsize := 12
+Enddec
+Declare GMCPoll_FState as GMCPollV2
 Level 249685
 #Visible True
 #Lock False
@@ -14546,7 +14624,7 @@ func ResponseReceived (response as reference to string)
             elps_b_3.bgcolor=160
             If not Remote_Control then
                 REM Don't change buttons or turn poll off if in remote display.
-                GMCPoll_Flowing.enabled=false
+                gmcpoll_fstate.enabled=false
                 But_StartFlow.enabled=true
                 Set_Flow_Buttons()
                 REM Disable alarms
@@ -14665,84 +14743,6 @@ func ResponseReceived (response as reference to string)
     endif
 
 endfunc
-
-init height := 40
-init font := helvr18_bdf
-init width := 40
-init xinset := 1
-init xpos := 0
-init yinset := 0
-init ypos := 0
-init ptsize := 12
-Enddec
-Declare GMCPoll_FlowingA as GMCPollV2
-Level 249741
-#Visible True
-#Lock False
-init parent := daq_objects
-init command := "MG FlowingA"
-init commobject := galilcomm
-init enabled := false
-
-func ResponseReceived (response as reference to string)
-    dim respstr as string
-
-
-    respstr = Clip_String(response,2)
-
-    check error
-             Val(FlowingA,respstr)
-    on error
-            _ClearException()
-    enderr
-    If FlowingA == 0 then
-        but_Start_Flow_Man_A.Value="START FLOW - A"
-        lbl_Manual_Control_Msg.value="Cylinder A flow volume completed"
-        GMCPoll_FlowingA.enabled=false
-        ReadytoFlowA=False
-        Set_Manual_Flow_Buttons()
-    endif
-endfunc
-
-
-
-init height := 40
-init font := helvr18_bdf
-init width := 40
-init xinset := 1
-init xpos := 0
-init yinset := 0
-init ypos := 0
-init ptsize := 12
-Enddec
-Declare GMCPoll_FlowingB as GMCPollV2
-Level 249742
-#Visible True
-#Lock False
-init parent := daq_objects
-init command := "MG FlowingB"
-init commobject := galilcomm
-init enabled := false
-
-func ResponseReceived (response as reference to string)
-    dim respstr as string
-
-    respstr = Clip_String(response,2)
-
-    check error
-             Val(FlowingB,respstr)
-    on error
-            _ClearException()
-    enderr
-    If FlowingB == 0 then
-        but_Start_Flow_Man_B.Value="START FLOW - B"
-        lbl_Manual_Control_Msg.value="Cylinder B flow volume completed"
-        GMCPoll_FlowingB.enabled=false
-        ReadytoFlowB=False
-        Set_Manual_Flow_Buttons()
-    endif
-endfunc
-
 
 init height := 40
 init font := helvr18_bdf
@@ -14923,7 +14923,7 @@ func ResponseReceived (response as reference to string)
     enderr
 
 
-    If MLtot>0 and GMCPoll_Flowing.enabled then
+    If MLtot>0 and gmcpoll_fstate.enabled then
         If MLtot >= Target_Volume then
 
 
@@ -20678,7 +20678,7 @@ init enabled := false
 Enddec
 Declare Pressure_mode_screen as ScreenV2
 Level 249534
-#Visible True
+#Visible False
 #Lock False
 init parent := default
 init xpos := 0
@@ -20877,7 +20877,7 @@ init marqueeptsize := 51
 Enddec
 Declare Sys_Setup_screen as ScreenV2
 Level 249473
-#Visible False
+#Visible True
 #Lock False
 init parent := default
 init xpos := -1
