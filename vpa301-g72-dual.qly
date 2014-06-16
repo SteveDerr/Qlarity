@@ -1242,6 +1242,8 @@ func Init_Config_Screen()
 endfunc
 
 func Init_Const_P_Screen()
+    p_stop_pressed=false
+    p_start_pressed=false
     pressure_mode_screen.enabled = true
     gmcpoll_mlcura.enabled=true
     gmcpoll_mlcurb.enabled=true
@@ -20877,7 +20879,7 @@ init marqueeptsize := 51
 Enddec
 Declare Sys_Setup_screen as ScreenV2
 Level 249473
-#Visible True
+#Visible False
 #Lock False
 init parent := default
 init xpos := -1
@@ -20914,7 +20916,7 @@ init height := 312
 Enddec
 Declare Title_Screen as ScreenV2
 Level 249820
-#Visible False
+#Visible True
 #Lock Me
 init parent := default
 init xpos := 0
