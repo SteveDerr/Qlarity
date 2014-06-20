@@ -7121,6 +7121,10 @@ func click()
     If Vol_Cal_screen.enabled then
         but_Start_Flow_Cal.enabled=false
     endif
+    if flow_mode_screen.enabled==true then
+        flow_pressed=none
+    endif
+
     Cycle_Popup_Screen.enabled=false
     CycleComplete=false
 endfunc
@@ -9078,7 +9082,7 @@ init enabled := false
 Enddec
 Declare Cycle_Popup_Screen as PopupScreenV2
 Level 249980
-#Visible False
+#Visible True
 #Lock False
 init xpos := 80
 init ypos := 200
