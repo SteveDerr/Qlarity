@@ -1389,7 +1389,7 @@ func Init_Flow_Mode_screen()
     gmcpoll_mltot.enabled=true
     GMCPoll_PcurA.enabled=true
     GMCPoll_PcurB.enabled=true
-'    FlowStopped=True
+    flow_pressed=none
     eb_FlowR.Value="0"
     mlpermin=0
     eb_Tar_Vol.Value="INF"
