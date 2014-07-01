@@ -1730,6 +1730,8 @@ func Init_Vol_Cal_Screen ()
     but_Cylinder_Select.Value="CYL A"
     But_Cylinder_Select.inactive=false
     But_Valve_Select.inactive=false
+    eb_cal_start.enabled=true
+    eb_flow_vol.enabled=true
 
 endfunc
 func Init_Remote_Display()
@@ -2141,7 +2143,7 @@ Func Set_Flow_Buttons()
     elseif FState==0 then
         but_startflow.Value="START"
         set_case=2
-        if cyclecomplete and rateentered<>0 and eb_tar_vol.Value<>"Invalid" then
+        if cyclecomplete and rateentered<>0 and eb_tar_vol.Value<>"Invalid" and targetentered>mltot then
             but_Startflow.enabled=true
         else
             but_startflow.enabled=false
@@ -6281,6 +6283,10 @@ func click()
     But_Start_Flow_Cal.enabled=false
     eb_ml_measured.enabled=false
     But_Accept_Vol_Calc.enabled=false
+
+    but_fill_to_start.enabled=true
+    eb_cal_start.enabled=true
+    eb_flow_vol.enabled=true
 endfunc
 Enddec
 Declare but_AIn as ButtonV2
@@ -6470,6 +6476,13 @@ func click()
                 but_Accept_Vol_Calc.enabled=true
                 lbl_vol_cal_msg_b.value="Press ACCEPT to save the new value, or enter a new measured volume."
                 _Keysetfocus(eb_ml_measured,true)
+                but_start_flow_cal.enabled=false
+                but_fill_to_start.enabled=false
+                but_cylinder_select.inactive=true
+                but_valve_select.inactive=true
+                eb_cal_start.enabled=false
+                eb_flow_vol.enabled=false
+                REM User now only has option to accept or ext out of screen.
 
             endif
         endif
@@ -9082,7 +9095,7 @@ init enabled := false
 Enddec
 Declare Cycle_Popup_Screen as PopupScreenV2
 Level 249980
-#Visible True
+#Visible False
 #Lock False
 init xpos := 80
 init ypos := 200
@@ -9805,6 +9818,10 @@ init font := helvb18_bdf
 init xinset := 1
 init yinset := 0
 init ptsize := 20
+
+func valueChanged()
+
+endfunc
 Enddec
 Declare eb_dummy as EditBoxV2
 Level 249771
@@ -9893,6 +9910,10 @@ init font := helvb18_bdf
 init xinset := 1
 init yinset := 0
 init ptsize := 20
+
+func valueChanged()
+
+endfunc
 Enddec
 Declare eb_FlowR as EditBoxV2
 Level 249562
@@ -20559,7 +20580,15 @@ func EnterPressed()
                 NewML=CalStartML-CalFlowML
             endif
             If InStartPos then
-                but_Start_Flow_Cal.enabled=true
+                If But_Cylinder_Select.Value=="CYL A" then
+                    if mlcura>temp then
+                        but_Start_Flow_Cal.enabled=true
+                    endif
+                else
+                    if mlcurb>temp then
+                        but_Start_Flow_Cal.enabled=true
+                    endif
+                endif
             endif
         else
             but_Start_Flow_Cal.enabled=false
@@ -20684,7 +20713,7 @@ init enabled := false
 Enddec
 Declare Pressure_mode_screen as ScreenV2
 Level 249534
-#Visible False
+#Visible True
 #Lock False
 init parent := default
 init xpos := 0
@@ -20920,7 +20949,7 @@ init height := 312
 Enddec
 Declare Title_Screen as ScreenV2
 Level 249820
-#Visible True
+#Visible False
 #Lock Me
 init parent := default
 init xpos := 0
