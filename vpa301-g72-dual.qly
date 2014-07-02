@@ -8785,6 +8785,8 @@ func click()
         REM Flow_Pressed acts like latch, set here and reset when FState is 0.
         set_Flow_Pressed(stop)
         'Stop motion
+        gmccommand.command="HX1"
+        gmccommand.executeCommand=true
         Stop_Flow()
     else
         REM Flow_Pressed acts like a latch, set here and reset when FState is not 0.
