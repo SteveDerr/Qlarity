@@ -1399,6 +1399,7 @@ func Init_Flow_Mode_screen()
     eb_Tar_Vol.Value="INF"
     mlmax=2000000000
    lbl_Current_Flow_Rate.value="0.00"
+   fstate_lastupdatestate=-1
    gmcpoll_fstate.enabled=true
    Set_Flow_Buttons()
 endfunc
@@ -1654,6 +1655,7 @@ func Init_Profile_Screen()
     but_ZeroXdcrs_1.enabled=false
     but_CycToStart_2.enabled=false
     Profile_Definition_Complete=false
+    fstate_lastupdatestate=-1
     gmcpoll_fstate.enabled=true
 
 endfunc
@@ -12728,7 +12730,6 @@ func ResponseReceived(response as string)
         LineNo=3
 '        Highlight_Line("Pos",LineNo)
         lbl_Flow_Instructions.value="Operator terminal was restarted for an unknown reason."
-        FState_LastUpdateState=-1
         Disabled = false
         FlowStopped=False
         FState_LastUpdateState=-1
@@ -14788,6 +14789,7 @@ func ResponseReceived (response as reference to string)
         elseif PState== 0 then
             lbl_Current_Mode.value="IDLE"
         endif
+        fstate_lastupdatestate=fstate
 
     else
         REM FState different than last check, set FStateLast, don't update.
