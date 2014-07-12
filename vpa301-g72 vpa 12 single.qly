@@ -8762,7 +8762,7 @@ init enabled := False
 Enddec
 Declare Cycle_Popup_Screen as PopupScreenV2
 Level 249974
-#Visible True
+#Visible False
 #Lock False
 init xpos := 80
 init ypos := 200
@@ -13083,11 +13083,12 @@ func ResponseReceived(response as string)
     dim unknownversion as boolean
     init unknownversion:=false
 
+
     version_len=find(response, 0, -1, " ")
     rev_len=len(response)-(version_len)
     check error
-       val(tempVersion, left(response,version_len-1))
-       val(tempRev, right(response,rev_len))
+      val(tempVersion, left(response,version_len-1))
+      val(tempRev, right(response,rev_len))
     on error
         _clearexception()
         unknownversion=true
@@ -13107,12 +13108,14 @@ func ResponseReceived(response as string)
         Get_Current_Config()
     endif
 
-
 endfunc
 
 func FailureReceived(response as string, failReason as GMC_FailureReason)
-    lbl_update_galil_text.value="Older or missing version of Galil code detected. Would you like to update to version "+str(galilversion)+" rev "+str(galilrev)+"?"
-    update_galil_popup.enabled=true
+    if FailReason==GMC_FailBadCommand then
+        rem if we failed because of bad variable, ask to install new version.
+        lbl_update_galil_text.value="Older or missing version of Galil code detected. Would you like to update to version "+str(galilversion)+" rev "+str(galilrev)+"?"
+        update_galil_popup.enabled=true
+    endif
 endfunc
 Enddec
 Declare GMCcom_VolpCyl as GMCCommandExecV2
@@ -19362,10 +19365,11 @@ init timertype := _tt_periodic
 
 func timeout()
 
+
     If GalilComm.IsConnectionPending()<>true then
         me.enabled=false
         GMCCom_Version_and_Rev.executeCommand=true
-        REM Moved both of these to after our version and rev check (if up to date, and if user cancels update)
+         REM Moved both of these to after our version and rev check (if up to date, and if user cancels update)
         REM for testing the ability to download Galil code from the Qlarity
         'tmr_FirstPowerUp.enabled=true
         'Get_Current_Config()
