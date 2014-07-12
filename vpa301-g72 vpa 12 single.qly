@@ -15950,7 +15950,7 @@ Declare Label_77 as LabelV2
 Level 249518
 #Visible True
 #Lock False
-init value := "Software Ver VPA S301-12 22-May-2014 "
+init value := "Software Ver VPA S301-12 12-July-2014 "
 init parent := sys_setup_screen
 init xpos := 20
 init ypos := 731
@@ -20471,7 +20471,7 @@ Include BDFfont "y:/customer files/vpa 2/operator terminal/software/g72/g72 to r
 Include BDFfont "y:/customer files/vpa 2/operator terminal/software/g72/g72 to ron/veramono32.bdf" As veramono32
 Include TTfont "y:/customer files/vpa 2/operator terminal/software/g72/vera.ttf" As default
 Include TTfont "y:/customer files/vpa 2/operator terminal/software/g72/verabd.ttf" As VeraBd
-Include _binary "../galil_code/vpacds3310-vpa-12-single-binary.dmc" As VPACDS3310_VPA_12_Single_Binary
+Include _binary "galil_code/vpacds3310-vpa-12-single-binary.dmc" As VPACDS3310_VPA_12_Single_Binary
 #config colormap "Clr_Banner := 3;Clr_ButtonBackground := 219;Clr_ButtonBackgroundAlt := 223;Clr_ButtonForeground := 0;Clr_ButtonForegroundAlt := 2;Clr_FillColor := 15;Clr_LabelBackground := 223;Clr_LabelForeground := 2;Clr_MessageBackground := 254;Clr_ScreenBackground := 255;Clr_ScreenForeground := 2;Clr_SoftkeybarBackground := 183;Clr_SoftkeybarButtonBg := 255;Clr_SoftkeybarButtonFg := 2;"
 #hide #ifnot opt_colormap%
 #hide #option opt_colormap%
