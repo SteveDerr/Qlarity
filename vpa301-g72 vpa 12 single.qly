@@ -6077,8 +6077,10 @@ init height := 80
 init font := helvb18_bdf
 
 func click()
-   if eb_passcode.Value=="7777" then
-    Change_xdcr_Popup_Screen.enabled=true
+    if eb_passcode.Value=="7777" then
+        Change_xdcr_Popup_Screen.enabled=true
+    else
+        warning_sound()
     endif
     request_change_xdcr_popup_screen.enabled=false
 endfunc
@@ -7938,7 +7940,7 @@ Level 249633
 #Lock False
 init value := "SAVE NEW CONFIG"
 init parent := config_screen
-init xpos := 325
+init xpos := 329
 init ypos := 743
 init width := 139
 init height := 49
@@ -8119,14 +8121,9 @@ init height := 70
 init font := helvb18_bdf
 
 func click()
-    If rb_DHCP_Enabled.isChecked then
-        GMCCommand.command = "DH1;BN"
-        GMCCommand.executeCommand = true
-    else
-        'send IA
-        GMCCommand.command = "DH0;IA " + eb_IP_1.value +","+ eb_IP_2.value +","+ eb_IP_3.value +","+eb_IP_4.value +";BN"
-        GMCCommand.executeCommand = true
-    endif
+    'send IA
+    GMCCommand.command = "IA " + eb_IP_1.value +","+ eb_IP_2.value +","+ eb_IP_3.value +","+eb_IP_4.value +";BN"
+    GMCCommand.executeCommand = true
     IP_Address_Screen.enabled=false
 endfunc
 Enddec
@@ -8740,7 +8737,7 @@ Enddec
 Declare Config_screen as ScreenV2
 Level 249664
 #Visible False
-#Lock False
+#Lock Me
 init parent := default
 init xpos := 0
 init ypos := 0
@@ -11332,7 +11329,7 @@ init ptsize := 12
 Enddec
 Declare Fact_Set_Warning_screen as ScreenV2
 Level 249806
-#Visible False
+#Visible True
 #Lock False
 init parent := default
 init xpos := 0
@@ -18854,7 +18851,7 @@ endfunc
 Enddec
 Declare P_Cal_screen as ScreenV2
 Level 249694
-#Visible False
+#Visible True
 #Lock False
 init parent := default
 init xpos := 0
