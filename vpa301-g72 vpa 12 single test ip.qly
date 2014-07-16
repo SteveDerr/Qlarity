@@ -1264,6 +1264,10 @@ func Init_Flow_Mode_screen()
    Set_Flow_Buttons()
 endfunc
 
+func Set_G72_IP(IPADR[] as byte)
+    SetSystemSetting(SYS_IPADDRESS,IPADR, SYSACT_ALWAYS)
+endfunc
+
 func Init_IP_Address_screen()
     dim addr[] as byte
     dim addrStr as string
@@ -8007,7 +8011,7 @@ init height := 50
 init font := helvb18_bdf
 
 func click()
-
+    soft_reset_popup.enabled=true
 
 endfunc
 Enddec
@@ -8246,10 +8250,10 @@ func click()
         val(g72_ip_byte[1],eb_ip_6.value)
         val(g72_ip_byte[2],eb_ip_7.value)
         val(g72_ip_byte[3],eb_ip_8.value)
-        SetSystemSetting(SYS_IPADDRESS,g72_ip_byte,SYSACT_ALWAYS)
         SetSystemSetting(SYS_DHCP, False, SYSACT_ALWAYS)
+        Set_G72_IP(g72_ip_byte)
     endif
-
+    SetSystemSetting(SYS_SAVE,FALSE,SYSACT_DONOW)
     GMCCommand.command = "IA " + eb_IP_5.value +","+ eb_IP_6.value +","+ eb_IP_7.value +","+eb_IP_8.value +";BN"
     IP_Address_Screen.enabled=false
 endfunc
@@ -15041,7 +15045,7 @@ init enabled := False
 Enddec
 Declare IP_Address_Screen as ScreenV2
 Level 249957
-#Visible True
+#Visible False
 #Lock False
 init width := 480
 init height := 800
@@ -16200,7 +16204,7 @@ Declare Label_77 as LabelV2
 Level 249506
 #Visible True
 #Lock False
-init value := "Software Ver VPA S301-12 16-July-2014 "
+init value := "Software Ver VPA S301-12 Test IP"
 init parent := sys_setup_screen
 init xpos := 20
 init ypos := 731
@@ -18715,7 +18719,7 @@ init bgcolor := clr_messagebackground
 
 init font := helvb18_bdf
 
-init enabled := false
+init enabled := true
 init xinset := 1
 init yinset := 0
 init ptsize := 20
@@ -18738,7 +18742,7 @@ init bgcolor := clr_messagebackground
 
 init font := helvb18_bdf
 
-init enabled := false
+init enabled := true
 init xinset := 1
 init yinset := 0
 init ptsize := 20
