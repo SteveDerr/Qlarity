@@ -8236,16 +8236,17 @@ init height := 70
 init font := helvb18_bdf
 
 func click()
-    dim g72_ip_byte[] as byte
+    dim g72_ip_byte[4] as byte
 
     If rb_g_72_dhcp_enabled.isChecked then
+
+        SetSystemSetting(SYS_DHCP, True, SYSACT_ALWAYS)
+    else
         val(g72_ip_byte[0],eb_ip_5.value)
         val(g72_ip_byte[1],eb_ip_6.value)
         val(g72_ip_byte[2],eb_ip_7.value)
         val(g72_ip_byte[3],eb_ip_8.value)
         SetSystemSetting(SYS_IPADDRESS,g72_ip_byte,SYSACT_ALWAYS)
-        SetSystemSetting(SYS_DHCP, True, SYSACT_ALWAYS)
-    else
         SetSystemSetting(SYS_DHCP, False, SYSACT_ALWAYS)
     endif
 
@@ -15040,7 +15041,7 @@ init enabled := False
 Enddec
 Declare IP_Address_Screen as ScreenV2
 Level 249957
-#Visible False
+#Visible True
 #Lock False
 init width := 480
 init height := 800
