@@ -178,7 +178,8 @@ dim currentvalue as string
     Dim Setup as Boolean
     Init Setup := False
     dim fstate as float
-    dim fstatelast as float
+    dim fstatelast, FState_LastUpdateState as float
+    init FState_LastUpdateState:=-1
     dim Remote_Control as boolean
     Init Remote_Control :=false
     dim Target_Volume as float
@@ -352,6 +353,8 @@ dim currentvalue as string
     Dim CurrentTime as Integer
     Dim CurrentDate as String
     dim debugText as string
+    enum button as none:=0, start:=1, stop:=2, cycle:=3
+    dim flow_pressed as button
 
 Func Write_To_Debug(DebugDesc_ as charstr, DebugSource_ as string)
     REM Function gets date and time and outputs message to the debug screen and to port two if the error port is enabled.
@@ -458,7 +461,7 @@ Func Stop_Polling()
 
     GMCPoll_Pcur.enabled=false
     GMCPoll_Finding.enabled=false
-    GMCPoll_Flowing.enabled=false
+    gmcpoll_fstate.enabled=false
 
 endfunc
 Func Startup ()
@@ -487,7 +490,8 @@ func Start_Flow()
 
 
     fstatelast=12
-    GMCPoll_Flowing.enabled=true
+    FState_LastUpdateState=-1
+    'gmcpoll_fstate.enabled=true
 
 
 endfunc
@@ -615,7 +619,7 @@ func Cycle_To_Start()
     Cycle_Popup_Screen.enabled=true
     GMCPoll_Cycle.enabled=true
     lbl_Cycle_Msg_2.value="Cylinders moving to ML Start position"
-
+    set_flow_pressed(cycle)
     set_Flow_Buttons()
     Set_Press_Buttons()
 endfunc
@@ -957,6 +961,7 @@ func Exit_Flow_Mode_screen()
     eb_FlowR.Value=""
     eb_tar_vol.Value="INF"
     flow_mode_screen.enabled=false
+    gmcpoll_fstate.enabled=false
     Init_Title_screen()
 endfunc
 func Exit_Profile_Screen()
@@ -970,6 +975,7 @@ func Exit_Profile_Screen()
     GMCPoll_CurFlow.enabled=false
     tmr_Profile_Times.enabled=false
     tmr_segment.enabled=false
+    gmcpoll_fstate.enabled=false
 endfunc
 func Exit_Segment(segment as integer)
     dim Stoprequired as Boolean
@@ -1032,7 +1038,7 @@ func Exit_Title_Screen()
 endfunc
 
 func Exit_Vol_Cal_screen()
-     If GMCPoll_Flowing.enabled then  'stop motion
+     If gmcpoll_fstate.enabled then  'stop motion
            Stop_Flow()
         endif
     lbl_ml_per_mm.BlinkPeriod=0
@@ -1056,7 +1062,7 @@ func Exit_Remote_Display()
     GMCPoll_MLtot.enabled=false
     GMCPoll_PcurA.enabled=false
 
-    GMCPoll_Flowing.enabled=false
+    gmcpoll_fstate.enabled=false
     GMCPoll_PState_status.enabled=false
     GMCPoll_MLcurA.enabled=false
 
@@ -1254,6 +1260,7 @@ func Init_Flow_Mode_screen()
     gmcpoll_pcur.enabled =true
     gmcpoll_mltot.enabled=true
     GMCPoll_PcurA.enabled=true
+    set_flow_pressed(none)
     GMCPoll_Wait4op.enabled=true
     FlowStopped=True
     eb_FlowR.Value="0"
@@ -1261,6 +1268,8 @@ func Init_Flow_Mode_screen()
     eb_Tar_Vol.Value="INF"
     mlmax=2000000000
    lbl_Current_Flow_Rate.value="0.00"
+   fstate_lastupdatestate=-1
+   gmcpoll_fstate.enabled=true
    Set_Flow_Buttons()
 endfunc
 
@@ -1489,6 +1498,8 @@ func Init_Profile_Screen()
     but_ZeroXdcrs_1.enabled=false
     but_CycToStart_2.enabled=false
     Profile_Definition_Complete=false
+    fstate_lastupdatestate=-1
+    gmcpoll_FState.enabled=true
 
 endfunc
 func Init_Setup_screen()
@@ -1579,8 +1590,8 @@ func Init_Remote_Display()
     gmcpoll_Flow_Rate.enabled=true
     GMCPoll_MLtot.enabled=true
     GMCPoll_PcurA.enabled=true
-
-    GMCPoll_Flowing.enabled=true
+    FState_LastUpdateState=-1
+    gmcpoll_fstate.enabled=true
     GMCPoll_PState_status.enabled=true
     GMCcom_VolumeA.executeCommand=true
 
@@ -1895,9 +1906,13 @@ Func Set_Error_Buttons(CaseNo as Integer)
 
 endfunc
 Func Set_Flow_Buttons()
+    REM Function to show or hide the Start/Stop, cycle, zero volume, zero xdcrs, open valves, quit and mode(?) buttons.
+    REM Also set the text of the Start/Stop button and the flow mode status.
+    REM Requires current FState, the rate entered, the target volume, which button was pressed if updating from a user
+    REM event and if rate or volume to pump has changed.
+    dim set_case as integer
     dim rateentered as float
     dim targetentered as float
-
 
     eb_FlowR.enabled=true
     eb_Tar_Vol.enabled = true
@@ -1906,66 +1921,119 @@ Func Set_Flow_Buttons()
     If eb_FlowR.Value=="" then
         rateentered= 0
     else
-
         check error
             val(rateentered,eb_FlowR.Value)
         on error
             _ClearException()
         enderr
     endif
+
     if eb_Tar_Vol.Value=="INF" then
         targetentered=2000000000
     else
-
         check error
             val(targetentered,eb_Tar_Vol.Value)
         on error
             _ClearException()
         enderr
     endif
-    if rateentered<= 0 or CycleComplete== false or (Refilling and Flowstopped) or Fstate==2 or Fstate==5 or eb_Tar_Vol.Value=="Invalid" then
-        But_StartFlow.enabled=false
-    else
-        But_StartFlow.enabled=true
-    endif
-    If FlowStopped then
-        but_StartFlow.Value="START"
-        If not Refilling and Fstate<>2 and Fstate<>5 then
-            but_CycToStart.enabled=true
-            but_ZeroVol.enabled = true
-            but_ZeroXdcrs_2.enabled=true
-            but_OpenValves_2.enabled=true
-            but_QuitFlow.enabled=true
-            but_Set_Mode_1.enabled=false
+
+    if flow_pressed==start then
+        but_startflow.Value="STOP"
+        but_UpdateFlow.enabled=false
+        lbl_Flow_Instructions.value="Flowing at constant rate."
+        set_case=1
+    elseif flow_pressed==stop then
+        lbl_Flow_Instructions.value="Waiting for cylinders to stop."
+
+        set_case=0
+    elseif flow_pressed==cycle then
+        but_UpdateFlow.enabled=false
+        but_startflow.Value="STOP"
+        lbl_Flow_Instructions.value="Cycling cylinders to start position."
+        set_case=1
+    elseif FState<>0 then
+        but_startflow.Value="STOP"
+        but_startflow.enabled=true
+        set_case=1
+        if valuechanged then
+            but_UpdateFlow.enabled=true
+        else
+            but_UpdateFlow.enabled=false
         endif
+    elseif FState==0 then
+        but_startflow.Value="START"
+        set_case=2
+        if cyclecomplete and rateentered<>0 and eb_tar_vol.Value<>"Invalid" and targetentered>mltot then
+            but_Startflow.enabled=true
+        else
+            but_startflow.enabled=false
+        endif
+    endif
 
-        but_Limits.enabled=true
-
-    else
-        but_StartFlow.Value="STOP"
+    if set_case==0 then
+        REM Do nothing
+    elseif set_case==1 then
         but_CycToStart.enabled=false
         but_ZeroVol.enabled = false
-        but_Set_Mode_1.enabled=false
-        but_Limits.enabled=false
-        but_QuitFlow.enabled=false
         but_ZeroXdcrs_2.enabled=false
         but_OpenValves_2.enabled=false
-    endif
-    if ValueChanged and not FlowStopped then
-        but_UpdateFlow.enabled=true
-    else
-        but_UpdateFlow.enabled=false
-    endif
-
-    if PmpMode == 0 then
-        but_Set_Mode_1.value ="RECEIVE MODE"
-        but_Set_Mode.value ="RECEIVE MODE"
-    else
-        but_Set_Mode_1.value="PUMP MODE"
-        but_Set_Mode.value="PUMP MODE"
+        but_QuitFlow.enabled=false
+        but_Set_Mode_1.enabled=false
+    elseif set_case==2 then
+        but_CycToStart.enabled=true
+        but_ZeroVol.enabled = true
+        but_ZeroXdcrs_2.enabled=true
+        but_OpenValves_2.enabled=true
+        but_QuitFlow.enabled=true
+        but_Set_Mode_1.enabled=false
     endif
 
-    'Messages
+    REM Old code below for reference
+    'if CycleComplete== false or F_Stop_Pressed or (eb_Tar_Vol.Value=="Invalid" and Flowstopped) then
+    '    But_StartFlow.enabled=false
+    'else
+    '    But_StartFlow.enabled=true
+    'endif
+    'If FlowStopped then
+    '    but_StartFlow.Value="START"
+    '    If not Refilling then
+    '        but_CycToStart.enabled=true
+    '        but_ZeroVol.enabled = true
+    '        but_ZeroXdcrs_2.enabled=true
+    '        but_OpenValves_2.enabled=true
+    '        but_QuitFlow.enabled=true
+    '        but_Set_Mode_1.enabled=false
+    '    endif
+
+    '    but_Limits.enabled=true
+
+    'else
+    '    but_StartFlow.Value="STOP"
+    '    but_CycToStart.enabled=false
+    '    but_ZeroVol.enabled = false
+    '    but_Set_Mode_1.enabled=false
+    '    but_Limits.enabled=true
+    '    but_QuitFlow.enabled=false
+    '    but_ZeroXdcrs_2.enabled=false
+    '    but_OpenValves_2.enabled=false
+    'endif
+    'if ValueChanged and not FlowStopped then
+    '    but_UpdateFlow.enabled=true
+    '    valueChanged=false
+    'else
+    '    but_UpdateFlow.enabled=false
+    'endif
+
+    'if PmpMode == 0 then
+    '    but_Set_Mode_1.value ="RECEIVE MODE"
+    '    but_Set_Mode.value ="RECEIVE MODE"
+    'else
+    '    but_Set_Mode_1.value="PUMP MODE"
+    '    but_Set_Mode.value="PUMP MODE"
+    'endif
+
+    REM Messages
     if rateentered<= 0 then
         lbl_Flow_Instructions.value="Flow Rate must be entered to start"
     endif
@@ -1975,7 +2043,14 @@ Func Set_Flow_Buttons()
     if CycleComplete==false then
         lbl_Flow_Instructions.value="Cycle Required to Start"
     endif
+    if FlowStopped then
+        lbl_Flow_Instructions.bgColor=clr_messagebackground
+        lbl_Current_Flow_Rate.value=""
+        lbl_Flow_Instructions.bgColor=26
+'        lbl_Flow_Instructions.value="Flowing at constant rate"
+    endif
 endfunc
+
 Func Set_Manual_Flow_Buttons()
     If ReadytoFlowA and not RefillingA then
         but_Start_Flow_Man_A.enabled=true
@@ -2319,6 +2394,14 @@ func Zero_Profile_Arrays()
     Seg_Start_Time=0
     LastSegment= false
     Next_Segment=0
+endfunc
+
+func set_flow_pressed(flow_pressed_ as button)
+    flow_pressed=flow_pressed_
+    tmr_reset_flow_pressed.enabled=true
+    if flow_pressed==none then
+        tmr_reset_flow_pressed.enabled=false
+    endif
 endfunc
 
 #ifnot Galil_mcV2_src_GalilCommV2
@@ -6876,6 +6959,9 @@ func click()
     If Vol_Cal_screen.enabled then
         but_Start_Flow_Cal.enabled=false
     endif
+    if flow_mode_screen.enabled==true then
+        set_flow_pressed(none)
+    endif
     Cycle_Popup_Screen.enabled=false
     CycleComplete=false
 endfunc
@@ -8316,16 +8402,20 @@ func click()
         'return
     endif
     If But_StartFlow.value=="STOP" then
+        REM Flow_Pressed acts like latch, set here and reset when FState is 0.
+        set_Flow_Pressed(stop)
         'Stop motion
+        gmccommand.command="HX1"
+        gmccommand.executeCommand=true
         Stop_Flow()
-        Set_Flow_Buttons()
-        return
     else
+        REM Flow_Pressed acts like a latch, set here and reset when FState is not 0.
+        set_flow_pressed(start)
         Send_FlowR(mlmax,mlpermin)
         Start_Flow()
         'Tar_Vol_Reached=false
-        Set_Flow_Buttons()
     endif
+    Set_Flow_Buttons()
 
 endfunc
 Enddec
@@ -8597,12 +8687,9 @@ init height := 50
 init font := helvb18_bdf
 
 func click()
-        If NOT GMCPoll_Flowing.enabled then
-            GMCCommand.command = "XQ#ZEROML,1"
-            GMCCommand.executeCommand = true
-        else
-            Warning_Sound()
-        endif
+
+        GMCCommand.command = "XQ#ZEROML,1"
+        GMCCommand.executeCommand = true
 
 endfunc
 Enddec
@@ -9339,7 +9426,7 @@ init value := "Delete the Error Log?"
 init parent := error_log_screen
 Enddec
 Declare DelimitedComm_1 as DelimitedCommV2
-Level 249386
+Level 249385
 #Visible False
 #Lock False
 
@@ -11329,7 +11416,7 @@ init ptsize := 12
 Enddec
 Declare Fact_Set_Warning_screen as ScreenV2
 Level 249806
-#Visible True
+#Visible False
 #Lock False
 init parent := default
 init xpos := 0
@@ -11341,7 +11428,7 @@ init bgcolor := clr_labelbackground
 Enddec
 Declare Flow_mode_screen as ScreenV2
 Level 249624
-#Visible False
+#Visible True
 #Lock Me
 init parent := default
 init xpos := 0
@@ -11352,7 +11439,7 @@ init enabled := false
 init bgcolor := clr_buttonbackgroundalt
 Enddec
 Declare G_55_PopupMenu_1 as G55PopupMenu
-Level 249387
+Level 249386
 #Visible True
 #Lock False
     init mainsubmenu := g_55_popupmenu_2
@@ -11369,7 +11456,7 @@ init xpos := 0
 init ypos := -80
 Enddec
 Declare G_55_PopupMenu_2 as G55PopupMenu
-Level 249389
+Level 249388
 #Visible True
 #Lock False
     init mainsubmenu := g_55_popupmenu_3
@@ -11386,7 +11473,7 @@ init xpos := 0
 init ypos := -80
 Enddec
 Declare G_55_PopupMenu_3 as G55PopupMenu
-Level 249390
+Level 249389
 #Visible True
 #Lock False
     init mainsubmenu := g_55_popupmenu_4
@@ -11403,7 +11490,7 @@ init xpos := 0
 init ypos := -80
 Enddec
 Declare G_55_PopupMenu_4 as G55PopupMenu
-Level 249391
+Level 249390
 #Visible True
 #Lock False
     init mainsubmenu := g_55_popupmenu_5
@@ -11420,7 +11507,7 @@ init xpos := 0
 init ypos := -80
 Enddec
 Declare G_55_PopupMenu_5 as G55PopupMenu
-Level 249388
+Level 249387
 #Visible True
 #Lock False
     init mainsubmenu := g_55_popupmenu_6
@@ -11437,7 +11524,7 @@ init xpos := 0
 init ypos := -80
 Enddec
 Declare G_55_PopupMenu_6 as G55PopupMenu
-Level 249392
+Level 249391
 #Visible True
 #Lock False
     init mainsubmenu := g_55_popupmenu_7
@@ -11454,7 +11541,7 @@ init xpos := 0
 init ypos := -80
 Enddec
 Declare G_55_PopupMenu_7 as G55PopupMenu
-Level 249393
+Level 249392
 #Visible True
 #Lock False
     init mainsubmenu := g_55_popupmenu_8
@@ -11471,7 +11558,7 @@ init xpos := 0
 init ypos := -80
 Enddec
 Declare G_55_PopupMenu_8 as G55PopupMenu
-Level 249394
+Level 249393
 #Visible True
 #Lock False
     init initialselected := 0
@@ -12050,11 +12137,10 @@ func ResponseReceived(response as string)
         LineNo=3
 '        Highlight_Line("Pos",LineNo)
         lbl_Flow_Instructions.value="Operator terminal was restarted for an unknown reason."
-
-        GMCPoll_Flowing.enabled=true
         Disabled = false
         FlowStopped=False
-        GMCPoll_Flowing.enabled=true
+        FState_LastUpdateState=-1
+        gmcpoll_fstate.enabled=true
         InitComplete=true
         CycleComplete=true
 '        tmr_CheckML.enabled=true
@@ -13320,6 +13406,7 @@ func ResponseReceived (response as reference to string)
     If cycle == 0 then
         GMCPoll_Cycle.enabled=false
         Cycle_Popup_Screen.enabled=false
+        set_flow_pressed(none)
         If Estop then
             cyclecomplete=false
         else
@@ -13520,161 +13607,6 @@ init yinset := 0
 init ypos := 0
 init ptsize := 12
 Enddec
-Declare GMCPoll_Flowing as GMCPollV2
-Level 249731
-#Visible True
-#Lock False
-init commobject := galilcomm
-init parent := daq_objects
-init enabled := false
-init command := "MG FState"
-
-func ResponseReceived (response as reference to string)
-    dim respstr as string
-
-
-    respstr = Clip_String(response,2)
-    check error
-        Val(fstate,respstr)
-    on error
-        _ClearException()
-'        debugEB.appendText="FState response "+response
-    enderr
-
-    IF fstate>6 then
-        REM Known bad value
-        debugtext="Value of FState read as "+str(fstate)
-        Write_To_Debug(debugtext, "GMCPoll_Flowing")
-    endif
-
-    If FlowStopped and not Remote_Control then
-        If fstate==0 then
-            GMCPoll_Flowing.enabled=false
-            Refilling=false
-            Set_Flow_Buttons()
-            'disable alarms
-            Disabled = True
-
-        else
-            FStateComCheck=false
-            'return
-        endif
-    endif
-    REM Need to check if fstate=0 twice
-    If fstate==fstatelast then
-        return
-    endif
-    If fstate == 0 then
-        If (elps_a.bgcolor<>160) then
-            elps_a.bgcolor=160
-
-            elps_a_2.bgcolor=160
-
-            elps_a_3.bgcolor=160
-
-        endif
-        If not Remote_Control then
-            REM ComCheck added
-            REM Make sure we read value twice before stopping the poll.
-            IF FStateComCheck then
-                GMCPoll_Flowing.enabled=false
-                But_StartFlow.enabled=true
-                Set_Flow_Buttons()
-            else
-                debugText="Value of FState read as "+str(fstate)
-                Write_To_Debug(debugText, "GMCPoll_Flowing")
-                FStateComCheck=true
-            endif
-        endif
-    endif
-    If fstate == 1 then
-        If (elps_a.bgcolor<>20) then
-            elps_a.bgcolor=20
-
-            elps_a_2.bgcolor=20
-
-            elps_a_3.bgcolor=20
-
-        endif
-
-        if Tar_Vol_Reached then
-            elps_a.bgcolor=160
-        endif
-    endif
-    If fstate == 2 then
-        if (elps_a.bgcolor<>20) then
-            elps_a.bgcolor=20
-
-            elps_a_2.bgcolor=20
-
-            elps_a_3.bgcolor=20
-
-        endif
-    endif
-    If fstate == 3 then
-        if (elps_a.bgcolor<>252) then
-            elps_a.bgcolor=252
-
-            elps_a_2.bgcolor=252
-
-            elps_a_3.bgcolor=252
-
-        endif
-   endif
-    If fstate == 4 then
-        if (elps_a.bgcolor<>160) then
-            elps_a.bgcolor=160
-
-            elps_a_2.bgcolor=160
-
-            elps_a_3.bgcolor=160
-
-        endif
-
-
-    endif
-    If fstate == 5 then
-        if (elps_a.bgcolor<>20) then
-            elps_a.bgcolor=20
-
-            elps_a_2.bgcolor=20
-
-            elps_a_3.bgcolor=20
-
-        endif
-    endif
-    If fstate == 6 then
-        if (elps_a.bgcolor<>20) then
-            elps_a.bgcolor=20
-
-            elps_a_2.bgcolor=20
-
-            elps_a_3.bgcolor=20
-
-        endif
-    endif
-    if fstate ==3 or fstate==6 then
-        Refilling=true
-    else
-        Refilling=false
-    endif
-    fstatelast=fstate
-    If fstate>0 then
-        lbl_Current_Mode.value="FLOW"
-    elseif PState== 0 then
-        lbl_Current_Mode.value="IDLE"
-    endif
-endfunc
-
-init height := 40
-init font := helvr18_bdf
-init width := 40
-init xinset := 1
-init xpos := 0
-init yinset := 0
-init ypos := 0
-init ptsize := 12
-Enddec
 Declare GMCPoll_FlowingA as GMCPollV2
 Level 249777
 #Visible True
@@ -13704,6 +13636,195 @@ func ResponseReceived (response as reference to string)
     endif
 endfunc
 
+
+
+init height := 40
+init font := helvr18_bdf
+init width := 40
+init xinset := 1
+init xpos := 0
+init yinset := 0
+init ypos := 0
+init ptsize := 12
+Enddec
+Declare GMCPoll_FState as GMCPollV2
+Level 249731
+#Visible True
+#Lock False
+init commobject := galilcomm
+init parent := daq_objects
+init enabled := false
+init command := "MG FState"
+
+func ResponseReceived (response as reference to string)
+    dim respstr as string
+
+
+    respstr = Clip_String(response,2)
+    check error
+        Val(fstate,respstr)
+    on error
+        _ClearException()
+'        debugEB.appendText="FState response "+response
+    enderr
+
+    IF fstate>6 or fstate<0 then
+        REM Known bad value
+        debugtext="Value of FState read as "+str(fstate)
+        Write_To_Debug(debugtext, "GMCPoll_Flowing")
+        return
+    endif
+
+    if fstate==fstatelast then
+        REM Verified response, do normal update
+        if FState==0 and FState_LastUpdateState<>0 then
+            REM Make sure we set flow buttons when coming from or changing to 0
+            set_flow_buttons()
+        endif
+        if FState<>0 and FState_LastUpdateState==0 then
+            REM Make sure we set flow buttons when coming from or changing to 0
+            set_flow_buttons()
+        endif
+        if FState==FState_LastUpdateState then
+            REM Already updated for this state, do nothing.
+            return
+        endif
+        If fstate==0 then
+            if flow_pressed==stop then
+                REM Stop was pressed, we have stopped.
+                set_flow_pressed(none)
+            endif
+            'F_Stop_Pressed=false
+            FlowStopped=true
+            elps_a.bgcolor=160
+            'elps_b.bgcolor=160
+            elps_a_2.bgcolor=160
+            elps_b_2.bgcolor=160
+            elps_a_3.bgcolor=160
+            elps_b_3.bgcolor=160
+            If not Remote_Control then
+                REM Don't change buttons or turn poll off if in remote display.
+                REM Don't turn fstate poll when we read 0.
+                'gmcpoll_fstate.enabled=false
+                But_StartFlow.enabled=true
+                Set_Flow_Buttons()
+                REM Disable alarms
+                Disabled = True
+            endif
+        endif
+
+        If fstate == 1 then
+            if flow_pressed==start then
+                REM Start was pressed, we have started
+                set_flow_pressed(none)
+            endif
+            'If (elps_a.bgcolor<>20 or elps_b.bgcolor<>160) then
+            REM We avoid unnecessary updates already.
+            elps_a.bgcolor=20
+            'elps_b.bgcolor=160
+            elps_a_2.bgcolor=20
+            elps_b_2.bgcolor=160
+            elps_a_3.bgcolor=20
+            elps_b_3.bgcolor=160
+
+            if Tar_Vol_Reached then
+                elps_a.bgcolor=160
+            endif
+        endif
+
+        If fstate == 2 then
+            if flow_pressed==start then
+                REM Start was pressed, we have started
+                set_flow_pressed(none)
+            endif
+            'if (elps_a.bgcolor<>20 or elps_b.bgcolor<>20) then
+            elps_a.bgcolor=20
+            'elps_b.bgcolor=20
+            elps_a_2.bgcolor=20
+            elps_b_2.bgcolor=20
+            elps_a_3.bgcolor=20
+            elps_b_3.bgcolor=20
+        endif
+
+        If fstate == 3 then
+            if flow_pressed==start then
+                REM Start was pressed, we have started
+                set_flow_pressed(none)
+            endif
+        'if (elps_a.bgcolor<>252 or elps_b.bgcolor<>20) then
+            elps_a.bgcolor=252
+            'elps_b.bgcolor=20
+            elps_a_2.bgcolor=252
+            elps_b_2.bgcolor=20
+            elps_a_3.bgcolor=252
+            elps_b_3.bgcolor=20
+        endif
+
+        If fstate == 4 then
+            if flow_pressed==start then
+                REM Start was pressed, we have started
+                set_flow_pressed(none)
+            endif
+        'if (elps_a.bgcolor<>160 or elps_b.bgcolor<>20) then
+            elps_a.bgcolor=160
+            'elps_b.bgcolor=20
+            elps_a_2.bgcolor=160
+            elps_b_2.bgcolor=20
+            elps_a_3.bgcolor=160
+            elps_b_3.bgcolor=20
+            if Tar_Vol_Reached then
+                'elps_b.bgcolor=160
+            endif
+        endif
+
+        If fstate == 5 then
+            if flow_pressed==start then
+                REM Start was pressed, we have started
+                set_flow_pressed(none)
+            endif
+        'if (elps_a.bgcolor<>20 or elps_b.bgcolor<>20) then
+            elps_a.bgcolor=20
+            'elps_b.bgcolor=20
+            elps_a_2.bgcolor=20
+            elps_b_2.bgcolor=20
+            elps_a_3.bgcolor=20
+            elps_b_3.bgcolor=20
+        endif
+
+        If fstate == 6 then
+            if flow_pressed==start then
+                REM Start was pressed, we have started
+                set_flow_pressed(none)
+            endif
+        'if (elps_a.bgcolor<>20 or elps_b.bgcolor<>252) then
+            elps_a.bgcolor=20
+            'elps_b.bgcolor=252
+            elps_a_2.bgcolor=20
+            elps_b_2.bgcolor=252
+            elps_a_3.bgcolor=20
+            elps_b_3.bgcolor=252
+        endif
+
+        if fstate==3 or fstate==6 then
+            Refilling=true
+        else
+            Refilling=false
+        endif
+
+
+        If fstate>0 then
+            lbl_Current_Mode.value="FLOW"
+        elseif PState== 0 then
+            lbl_Current_Mode.value="IDLE"
+        endif
+        fstate_lastupdatestate=fstate
+
+    else
+        REM FState different than last check, set FStateLast, don't update.
+        fstatelast=fstate
+    endif
+
+endfunc
 
 
 init height := 40
@@ -13835,7 +13956,7 @@ func ResponseReceived (response as reference to string)
         _ClearException()
 '        debugEB.appendText="MLtot response "+response
     enderr
-    If MLtot>0 and GMCPoll_Flowing.enabled then
+    If MLtot>0 and gmcpoll_fstate.enabled then
         If MLtot >= Target_Volume then
 
             If MLtotComCheck then
@@ -14650,7 +14771,7 @@ init image := Banner_Rev5
 init transparent := true
 Enddec
 Declare Image_16 as ImageV2
-Level 249384
+Level 249383
 #Visible True
 #Lock False
 init parent := welcome_screen
@@ -15947,7 +16068,7 @@ Declare Label_77 as LabelV2
 Level 249518
 #Visible True
 #Lock False
-init value := "Software Ver VPA S301-12 12-July-2014 "
+init value := "Software Ver VPA S301-12 16-July-2014 "
 init parent := sys_setup_screen
 init xpos := 20
 init ypos := 731
@@ -18851,7 +18972,7 @@ endfunc
 Enddec
 Declare P_Cal_screen as ScreenV2
 Level 249694
-#Visible True
+#Visible False
 #Lock False
 init parent := default
 init xpos := 0
@@ -19307,7 +19428,7 @@ init marqueeptsize := 51
 Enddec
 Declare Sys_Setup_screen as ScreenV2
 Level 249531
-#Visible True
+#Visible False
 #Lock False
 init parent := default
 init xpos := -1
@@ -19341,7 +19462,7 @@ init enabled := false
 init transparent := false
 Enddec
 Declare tmr_Burn_New_Var as TimerV2
-Level 249400
+Level 249399
 #Visible True
 #Lock False
 init timertype := _tt_oneshot
@@ -19355,7 +19476,7 @@ func timeout()
 endfunc
 Enddec
 Declare tmr_Check_Connection as TimerV2
-Level 249406
+Level 249405
 #Visible True
 #Lock False
 init timertype := _tt_periodic
@@ -19377,7 +19498,7 @@ init timeperiod := 1
 init enabled := false
 Enddec
 Declare tmr_CheckML as TimerV2
-Level 249401
+Level 249400
 #Visible True
 #Lock False
 init timeunits := _tt_minutes
@@ -19395,7 +19516,7 @@ endfunc
 init enabled := false
 Enddec
 Declare tmr_delay_check_DAQ as TimerV2
-Level 249402
+Level 249401
 #Visible True
 #Lock False
 init timeperiod := 2
@@ -19406,7 +19527,7 @@ func timeout()
 endfunc
 Enddec
 Declare tmr_Delay_Get_Config as TimerV2
-Level 249403
+Level 249402
 #Visible True
 #Lock False
 func timeout()
@@ -19418,7 +19539,7 @@ init timertype := _tt_oneshot
 init enabled := false
 Enddec
 Declare tmr_Delay_Start as TimerV2
-Level 249396
+Level 249395
 #Visible True
 #Lock False
 init timertype := _tt_oneshot
@@ -19455,7 +19576,7 @@ func timeout()
 endfunc
 Enddec
 Declare tmr_Disabled as TimerV2
-Level 249405
+Level 249404
 #Visible True
 #Lock False
 func timeout()
@@ -19469,7 +19590,7 @@ init timertype := _tt_oneshot
 init enabled := false
 Enddec
 Declare tmr_Error_Banner as TimerV2
-Level 249409
+Level 249408
 #Visible True
 #Lock False
 init parent := default
@@ -19484,7 +19605,7 @@ init timertype := _tt_oneshot
 init enabled := false
 Enddec
 Declare tmr_error_beep_delay as TimerV2
-Level 249408
+Level 249407
 #Visible True
 #Lock False
 init timeperiod := 10
@@ -19498,7 +19619,7 @@ endfunc
 init parent := default
 Enddec
 Declare tmr_Fact_Set as TimerV2
-Level 249404
+Level 249403
 #Visible True
 #Lock False
 init enabled := false
@@ -19510,7 +19631,7 @@ func timeout()
 endfunc
 Enddec
 Declare tmr_FirstPowerUp as TimerV2
-Level 249407
+Level 249406
 #Visible True
 #Lock False
 init timeperiod := 5
@@ -19524,7 +19645,7 @@ func timeout()
 endfunc
 Enddec
 Declare tmr_Hide_Error_Display as TimerV2
-Level 249399
+Level 249398
 #Visible True
 #Lock False
 init enabled := false
@@ -19586,7 +19707,7 @@ func timeout()
 endfunc
 Enddec
 Declare tmr_Receive_Warning as TimerV2
-Level 249395
+Level 249394
 #Visible True
 #Lock False
 init parent := default
@@ -19599,7 +19720,7 @@ func timeout()
 endfunc
 Enddec
 Declare tmr_refill as TimerV2
-Level 249397
+Level 249396
 #Visible True
 #Lock False
 init enabled := false
@@ -19618,6 +19739,20 @@ func timeout()
         endif
 
     endif
+endfunc
+Enddec
+Declare tmr_reset_flow_pressed as TimerV2
+Level 249409
+#Visible True
+#Lock False
+init parent := default
+init timeperiod := 5
+init timertype := _tt_oneshot
+init enabled := false
+
+func timeout()
+    set_flow_pressed(none)
+    set_flow_buttons()
 endfunc
 Enddec
 Declare tmr_Segment as TimerV2
@@ -19640,7 +19775,7 @@ func timeout()
 endfunc
 Enddec
 Declare tmr_Wait_For_Refill as TimerV2
-Level 249398
+Level 249397
 #Visible True
 #Lock False
 init timeperiod := 1
@@ -20391,8 +20526,8 @@ init height := 800
 init enabled := False
 Enddec
 Declare Welcome_Screen as ScreenV2
-Level 249385
-#Visible False
+Level 249384
+#Visible True
 #Lock Me
 init width := 480
 init height := 800
