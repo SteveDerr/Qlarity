@@ -1,6 +1,6 @@
 #AUTO
 TLA=9.5;TKA=9.8;TM 1000
-Rev=2.211;Version=3.0;CylNum=1;Frstim=0
+Rev=2.212;Version=3.0;CylNum=1;Frstim=0
 RampA=0;StT2A=0;OvrPresA=0;RstPosA=0;
 MO;CE 2;CN 1;MT -1;KPvel=4;KDvel=30;KIvel=0;FlowRA=0;FloVolA=0
 KP 4;KD 30;KI 0;OverLim=0;ZCA=0;CONTA=0;lpD=50
@@ -613,7 +613,7 @@ PfsVA=5.000
 BSLead = 5
 ECtsPR = 20000
 'MotorRed = 25;'test vpa
-MotorRed = 50;'standard units
+'MotorRed = 50;'standard units
 TotStke = 320
 Margin = 5
 EN

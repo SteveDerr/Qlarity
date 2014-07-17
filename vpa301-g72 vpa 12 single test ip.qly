@@ -676,6 +676,11 @@ func DispKP(obj as EditBoxV2)
     PopupKP.min = obj.min
     PopupKP.max = obj.max
     PopupKP.MaxAfterDecimal = obj.DecimalPlaces
+
+     If currenteb==eb_flowr then
+        eb_flowr.DecimalPlaces=3
+        PopupKP.MaxAfterDecimal = 3
+    endif
 endfunc
 
 func _D(data as string)
@@ -1837,7 +1842,12 @@ func Send_FlowR(Vol as float,FlowRate as Float)
     endif
     Send_GMCcommand(strCommand)
     Target_Volume=Vol
-    lbl_Current_Flow_Rate.value = _formatfloat(-FlowRate,6,2,_FLOAT_NORMAL)
+
+    If eb_flowr.DecimalPlaces==2 then
+        lbl_Current_Flow_Rate.value = _formatfloat(-FlowRate,6,2,_FLOAT_NORMAL)
+    else
+        lbl_Current_Flow_Rate.value = _formatfloat(-FlowRate,6,3,_FLOAT_NORMAL)
+    endif
 endfunc
 func Send_GMCcommand(strCommand as string)
     GMCCommand.command = strCommand
@@ -1961,6 +1971,12 @@ Func Set_Error_Buttons(CaseNo as Integer)
 
 endfunc
 Func Set_Flow_Buttons()
+    REM Function to show or hide the Start/Stop, cycle, zero volume, zero xdcrs, open valves, quit and mode(?) buttons.
+    REM Also set the text of the Start/Stop button and the flow mode status.
+    REM Requires current FState, the rate entered, the target volume, which button was pressed if updating from a user
+    REM event and if rate or volume to pump has changed.
+
+
     dim rateentered as float
     dim targetentered as float
 
@@ -11598,7 +11614,7 @@ init bgcolor := clr_labelbackground
 Enddec
 Declare Flow_mode_screen as ScreenV2
 Level 249612
-#Visible False
+#Visible True
 #Lock Me
 init parent := default
 init xpos := 0
@@ -13490,7 +13506,12 @@ func ResponseReceived (response as reference to string)
         _ClearException()
 '        debugEB.appendText="AveSp response "+response
     enderr
-    lbl_Current_Flow_Rate.value=_FormatFloat(CurRate,6,2,_FLOAT_NORMAL)
+    'lbl_Current_Flow_Rate.value=_FormatFloat(CurRate,6,2,_FLOAT_NORMAL)
+    If eb_flowr.DecimalPlaces==2 then
+        lbl_Current_Flow_Rate.value=_FormatFloat(CurRate,6,2,_FLOAT_NORMAL)
+    else
+        lbl_Current_Flow_Rate.value=_FormatFloat(CurRate,6,3,_FLOAT_NORMAL)
+    endif
     lbl_Current_Flow_Rate_1.value=_FormatFloat(CurRate,6,2,_FLOAT_NORMAL)
     lbl_Current_Flow_Rate_2.value=_FormatFloat(CurRate,6,2,_FLOAT_NORMAL)
     If Remote_Control and PState>0 then
@@ -19232,6 +19253,15 @@ func EnterPressed()
         on error
             _ClearException()
         enderr
+
+        If mlpermin<1 then
+            eb_FlowR.DecimalPlaces=3
+
+        else
+            eb_FlowR.DecimalPlaces=2
+
+        endif
+
         If eb_Tar_Vol.Value=="INF"  then
             mlmax=2000000000
             Tar_Vol_Reached=False
