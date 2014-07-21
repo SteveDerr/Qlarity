@@ -16913,7 +16913,7 @@ Declare Label_77 as LabelV2
 Level 249483
 #Visible True
 #Lock False
-init value := "Software Ver VPA S301-12 18-July-2014 "
+init value := "Software Ver VPA S301-12 21-July-2014 "
 init parent := sys_setup_screen
 init xpos := 20
 init ypos := 731
@@ -20285,7 +20285,7 @@ init enabled := false
 Enddec
 Declare Pressure_mode_screen as ScreenV2
 Level 249554
-#Visible True
+#Visible False
 #Lock False
 init parent := default
 init xpos := 0
@@ -20559,7 +20559,7 @@ init parent := default
 Enddec
 Declare Sys_Setup_screen as ScreenV2
 Level 249496
-#Visible False
+#Visible True
 #Lock False
 init parent := default
 init xpos := -1
