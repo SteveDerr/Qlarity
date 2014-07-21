@@ -4090,7 +4090,9 @@ private func Parse(data[] as byte)
     'Note the (count - 1) is because we started the count at one.  We started the
     'count at one because parsing the data for curResponse out is easier when we do
     if pendingCmdCount <> count - 1 then
-        Retransmit("Unexpected controller response")
+        debugtext="Unexpected controller response: "+str(data)
+        Write_To_Debug(debugtext, "GalilCommV2 function parse")
+        'Retransmit("Unexpected controller response")
     else
         loopTerm := (pendingPktTail + 1) mod GMC_MaxPendingStreams
         i := tailIdx
