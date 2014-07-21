@@ -810,6 +810,14 @@ func Display_Error_Message_Detected(ErrorNum as Integer)
         lbl_Error_Msg.value="Data acquisition loop stopped. Pump has stopped"
         Return
     endif
+    If ErrorNum == 19 then
+        lbl_Error_Msg.value="Limit switch hit while trying to match pressure. Re-Zero transducers or change start position to avoid this error."
+        Return
+    endif
+    If ErrorNum == 20 then
+        lbl_Error_Msg.value="Limit switch hit for unknown reasons. Restart and initialize the pump"
+        Return
+    endif
     If ErrorNum > 99 then
         lbl_Error_Msg.value="Command error reported by the controller"
         Return
@@ -1942,6 +1950,7 @@ func Send_Kprop(Kterm as float,Kxterm as float,Dterm as float,Iterm as float,Max
 
     GMCCommand.command = "BV"
     GMCCommand.executeCommand = true
+    DelayMS(1000)
 
 endfunc
 
@@ -1965,6 +1974,7 @@ func Send_MLPmm(factor as float,Cyl as string)
 
         GMCCommand.command = "XQ#CALCNTA,1"
         GMCCommand.executeCommand = true
+        Delayms(1000)
     Elseif Cyl=="B" then
         strCommand = "MLPmmB=" + str(factor)
         GMCCommand.command = strCommand
@@ -2007,6 +2017,7 @@ func Send_PfsV(Scale_Factor as float,xdcr as String)
 
     GMCCommand.command = "XQ#VSCALE,1"
     GMCCommand.executeCommand = true
+    DelayMS(1000)
 
 endfunc
 Func Set_Error_Buttons(CaseNo as Integer)
@@ -2216,6 +2227,7 @@ Func Set_Mode(mode as Float)
     GMCCommand.executeCommand = true
     GMCCommand.command = "XQ#STRTPOS,1"
     GMCCommand.executeCommand = true
+    Delayms(1000)
 endfunc
 
 Func Set_PRange(xdcr as integer)
@@ -8412,7 +8424,7 @@ func click()
         'send DontOpn=0
         GMCCommand.command = "DontOpn=0"
         GMCCommand.executeCommand = true
-        GMCCommand.command = "BV"
+        'GMCCommand.command = "BV"
         GMCCommand.executeCommand = true
 
     Else
@@ -8420,11 +8432,12 @@ func click()
         'send DontOpn=1
         GMCCommand.command = "DontOpn=1"
         GMCCommand.executeCommand = true
-        GMCCommand.command = "BV"
+        'GMCCommand.command = "BV"
         GMCCommand.executeCommand = true
     endif
     'send PMax
     GMCCommand.command = "PMax=" + str(PMax)+";BV"
+    DelayMS(1000)
     GMCCommand.executeCommand = true
     pv_limits.Save()
     Exit_Limits_screen()
@@ -8456,6 +8469,7 @@ func click()
     'burn value BV
     GMCCommand.command = "BV"
     GMCCommand.executeCommand = true
+    DelayMS(1000)
 endfunc
 Enddec
 Declare but_Set_IP as ButtonV2
@@ -8498,6 +8512,7 @@ func click()
     GMCCommand.command = "IA " + eb_IP_1.value +","+ eb_IP_2.value +","+ eb_IP_3.value +","+eb_IP_4.value
     GMCCommand.executeCommand = true
     GMCCommand.command = "SM " + eb_gal_sm_1.value +","+eb_gal_sm_2.value+","+eb_gal_sm_3.value+","+eb_gal_sm_4.value +";BN"
+    Delayms(1000)
     GMCCommand.executeCommand=true
     IP_Address_Screen.enabled=false
 endfunc
@@ -8893,6 +8908,7 @@ func click()
     If but_transducer_select.value=="A" then
         GMCCommand.command = "XQ#ZEROVA,1"
         GMCCommand.executeCommand = true
+        DelayMS(1000)
         lbl_p_cal_msg.value="Increase pressure then enter the pressure indicated by the calibration standard."
     endif
     If but_transducer_select.value=="B" then
@@ -8990,7 +9006,7 @@ func click()
 
         GMCCommand.command = "XQ#ZEROML,1"
         GMCCommand.executeCommand = true
-
+        DelayMS(1000)
 endfunc
 Enddec
 Declare but_ZeroXdcrs as ButtonV2
@@ -15784,7 +15800,7 @@ init enabled := False
 Enddec
 Declare IP_Address_Screen as ScreenV2
 Level 249950
-#Visible True
+#Visible False
 #Lock Me
 init width := 480
 init height := 800
@@ -20269,7 +20285,7 @@ init enabled := false
 Enddec
 Declare Pressure_mode_screen as ScreenV2
 Level 249554
-#Visible False
+#Visible True
 #Lock False
 init parent := default
 init xpos := 0
@@ -20543,7 +20559,7 @@ init parent := default
 Enddec
 Declare Sys_Setup_screen as ScreenV2
 Level 249496
-#Visible True
+#Visible False
 #Lock False
 init parent := default
 init xpos := -1
@@ -20587,6 +20603,7 @@ init timeperiod := 20
 func timeout()
     GMCCommand.command = "BV"
     GMCCommand.executeCommand = true
+    delayms(1000)
     tmr_Burn_New_Var.enabled=false
 endfunc
 Enddec
