@@ -202,6 +202,31 @@ RE
 #LOSPPA
 SPlow=_SPA;SPhigh=SPlow+2;FracLo=(@ABS[PmpSpdA]-_SPA)*1000;FracHi=2000-FracLo
 EN
+#LSLOOP
+IF (_LFA=0)
+  ZCA=0
+  ReStpP=1
+  IF (PmpMode=1)&((PState=4)|(PState=5))
+      NewErr=1;Errline=_ED;ErrMsg=19
+  ELSE
+    StCylA=0;NewErr=1;Errline=_ED;ErrMsg=20;HX2
+    JS#ClsAout;JS#OpnAin;JS#SETPST
+    IF StCylB=3;JS#OpnBout;ENDIF
+  ENDIF
+ENDIF
+IF (_LRA=0)
+  ZCA=0
+  ReStpP=1
+  IF (PmpMode=0)&((PState=4)|(PState=5))
+    NewErr=1;Errline=_ED;ErrMsg=19
+  ELSE
+    StCylA=0;NewErr=1;Errline=_ED;ErrMsg=20;HX2
+    JS#ClsAout;JS#OpnAin;JS#SETPST
+    IF StCylB=3;JS#OpnBout;ENDIF
+  ENDIF
+ENDIF
+JP#LSLOOP
+EN
 #MASTPLP
 JS#NEWSP,Ramping=1
 IF (ReStpP=1)
@@ -223,6 +248,7 @@ IF ZCA >0
   HX2;HX5;SHA
 ENDIF
 JS#ZEROOF
+HX3
 EN
 #MLSCALA
 MLPmmA=(3.14159*RodDia[RodSize]*RodDia[RodSize])/4000
@@ -384,9 +410,11 @@ ZCA=0;PmodeA=0;JS#SETKVA
 EN
 #SETKPA
 MOA;KP 0;KD 0;KI 0;KgainA=KPP;DgainA=KDP;IgainA=KIP;SHA
+IF _XQ3<0;XQ#LSLOOP,3;ENDIF
 EN
 #SETKVA
 MOA;KP KPvel;KD KDvel;KI KIvel;KgainA=0;DgainA=0;IgainA=0;SHA
+HX3
 EN
 #SETPST
 IF  StCylA=3
