@@ -203,7 +203,7 @@ dim currentvalue as string
     dim CalMode as boolean
     init CalMode :=false
     dim PrevValue as string
-    dim P_Stop_Pressed as boolean
+    dim P_Stop_Pressed, P_Start_Pressed as boolean
     init P_Stop_Pressed:=false
     dim ValueChanged as boolean
     init ValueChanged:=false
@@ -2324,19 +2324,19 @@ Func Set_Press_Buttons()
             _ClearException()
         enderr
     endif
-    If P_Cont_On then
-        but_Pcont.Value="STOP P CONTROL"
-        If not P_Stop_pressed then
-            But_Pcont.enabled=true
-        endif
-    else
-        but_Pcont.Value="START P CONTROL"
-    endif
-    if rampentered>0 and CycleComplete and not P_Stop_pressed and not Refilling then
+    if rampentered>0 and CycleComplete and not P_Start_pressed and not Refilling then
         But_Pcont.enabled=true
     else
         But_Pcont.enabled=false
     endif
+    If P_Cont_On then
+        but_Pcont.Value="STOP P CONTROL"
+        But_Pcont.enabled=true
+    else
+        but_Pcont.Value="START P CONTROL"
+    endif
+
+
     If P_Cont_on and Not RampComplete and ValueChanged then
         But_Ramp.enabled= true
     else
@@ -7858,6 +7858,7 @@ func click()
     If value == "START P CONTROL" then
         'this put in to prevent an immediate push of another button
         'may be set differently later
+        P_Start_Pressed=true
         but_ZeroXdcrs.enabled=false
         but_CycToStart_1.enabled = false
         but_OpenValves.enabled=false
@@ -7866,6 +7867,7 @@ func click()
         value="STOP P CONTROL"
         P_Stop_Pressed = False
         Start_P_Mode()
+
     else
         P_Stop_Pressed = true
         value = "START P CONTROL"
@@ -15213,12 +15215,8 @@ func ResponseReceived (response as reference to string)
 
     if PState==PStateLast then
         REM verified response, do normal update.
-        if PState==PState_LastUpdateState then
-            REM Already updated for this state, do nothing.
-            return
-        endif
 
-        If PState_LastUpdateState==0 then
+        If PState_LastUpdateState==0 and not Remote_Display.enabled then
             Set_Press_Buttons()
         endif
 
@@ -15236,10 +15234,16 @@ func ResponseReceived (response as reference to string)
             elps_a_3.bgcolor=160
 
             lbl_Current_Mode.value="IDLE"
-            Set_Press_Buttons()
+            if not remote_display.enabled then
+                Set_Press_Buttons()
+            endif
             lbl_RampStatus.Value="Pressure Control Stopped"
         else
+            P_Start_Pressed=false
             P_Cont_On=true
+            if not remote_display.enabled then
+                Set_Press_Buttons()
+            endif
         endif
 
         If PState ==0  then
@@ -15648,8 +15652,8 @@ Level 249802
 #Visible True
 #Lock False
 init parent := title_screen
-init xpos := -8
-init ypos := -3
+init xpos := 0
+init ypos := 0
 init image := G_72_OpeningScreen
 Enddec
 Declare Image_10 as ImageV2
@@ -20342,7 +20346,7 @@ init enabled := false
 Enddec
 Declare Pressure_mode_screen as ScreenV2
 Level 249555
-#Visible True
+#Visible False
 #Lock False
 init parent := default
 init xpos := 0
@@ -20638,8 +20642,8 @@ init enabled := false
 Enddec
 Declare Title_Screen as ScreenV2
 Level 249809
-#Visible False
-#Lock Me
+#Visible True
+#Lock False
 init parent := default
 init xpos := 0
 init ypos := 0
@@ -20648,6 +20652,10 @@ init height := 800
 init bgcolor := clr_screenbackground
 init enabled := false
 init transparent := false
+
+func screenEnabled()
+
+endfunc
 Enddec
 Declare tmr_Burn_New_Var as TimerV2
 Level 249366
@@ -20978,7 +20986,7 @@ func timeout()
             but_PressureMode.enabled=true
             but_FlowMode.enabled=true
 
-            GMCPoll_PState_Status.enabled=false
+            'GMCPoll_PState_Status.enabled=false
             exitingpscreen=false
         else
             Set_Press_Buttons()
