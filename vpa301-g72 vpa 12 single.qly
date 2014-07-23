@@ -476,13 +476,13 @@ Func Startup ()
 
     handles MSG_INIT
     dim fb as syscmd_feedback
-    GetSystemSetting(SYS_FEEDBACK_TYPE, fb, SYSREAD_SAVED)
-    if (fb or FBTYPE_SERIAL) <> 0xFFFF then
-        fb = fb and FBTYPE_SERIAL
-        SetSystemSetting(SYS_FEEDBACK_TYPE, fb, SYSACT_ALWAYS)
+    GetSystemSetting (SYS_FEEDBACK_TYPE, fb, SYSREAD_SAVED)
+
+    if fb <> FBTYPE_SERIAL then
+        SetSystemSetting(SYS_FEEDBACK_TYPE, FBTYPE_SERIAL,SYSACT_ALWAYS)
+        SetSystemSetting(SYS_SAVE, false, SYSACT_ALWAYS)
     endif
     SetSystemSetting(SYS_USEDRAWCACHE, CACHE_ENABLED, SYSACT_DONOW)
-    SetSystemSetting(SYS_SAVE, false, SYSACT_ALWAYS)
     userDirectMsg(default, _msg_post_init, 0, false)
 
 Endfunc
@@ -9161,7 +9161,7 @@ init parent := default
 Enddec
 Declare Config_screen as ScreenV2
 Level 249630
-#Visible False
+#Visible True
 #Lock Me
 init parent := default
 init xpos := 0
@@ -20642,7 +20642,7 @@ init enabled := false
 Enddec
 Declare Title_Screen as ScreenV2
 Level 249809
-#Visible True
+#Visible False
 #Lock False
 init parent := default
 init xpos := 0
