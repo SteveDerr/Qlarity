@@ -2570,14 +2570,13 @@ func Init_Update_Popup(state as integer, knownolder as boolean)
         but_update_cancel.enabled=true
         gmccom_prange.executeCommand=true
         ddl_pressure_xdcr_2.enabled=false
-        eb_motorRed.enabled=false
+        ddl_motorRed.enabled=false
         lbl_update_bg_1.enabled=false
         lbl_update_bg_2.enabled=false
     elseif state==1 then
         lbl_update_galil_text.value="Please enter the correct transducer and gear reducer ratio"
         ddl_pressure_xdcr_2.enabled=true
-        eb_motorRed.enabled=true
-        eb_motorRed.Value="50"
+        ddl_motorRed.enabled=true
         lbl_update_bg_1.enabled=true
         lbl_update_bg_2.enabled=true
     endif
@@ -8807,14 +8806,19 @@ init font := helvb18_bdf
 
 func click()
     dim new_motorred as float
+
     if ddl_pressure_xdcr_2.enabled==false then
         Init_Update_Popup(1,false)
     else
-        if ddl_pressure_xdcr_2.selected==-1 then
+        if ddl_pressure_xdcr_2.selected==-1 or ddl_motorRed.selected==-1 then
             warning_sound()
             return
         endif
-        val(new_motorred, eb_motorred.Value)
+        if ddl_motorred.selected==1 then
+            new_motorred=20
+        elseif ddl_motorred.selected==2 then
+            new_motorred=50
+        endif
         Update_Galil_Code(ddl_pressure_xdcr_2.selected, new_motorred)
     endif
 endfunc
@@ -9213,6 +9217,25 @@ Level 249822
 #Visible True
 #Lock False
 init parent := system_maintenance_screen
+Enddec
+Declare ddl_motorRed as DropDownListV2
+Level 249989
+#Visible True
+#Lock False
+init parent := update_galil_popup
+init xpos := 16
+init ypos := 297
+init width := 173
+init height := 31
+init selectonpress := False
+init curseltext := ""
+init initiallistcontent := "20:1;50:1;"
+init font := helvb14_bdf
+init selected := -1
+
+func ValueChanged()
+
+endfunc
 Enddec
 Declare ddl_Pressure_Xdcr as DropDownListV2
 Level 249980
@@ -10959,41 +10982,6 @@ init font := helvb18_bdf
 init xinset := 1
 init yinset := 0
 init ptsize := 20
-Enddec
-Declare eb_MotorRed as EditBoxV2
-Level 249989
-#Visible True
-#Lock False
-init parent := update_galil_popup
-init xpos := 16
-init ypos := 298
-init width := 173
-init height := 30
-init fgcolor := clr_buttonforeground
-init bgcolor := clr_buttonbackground
-init value := ""
-
-init usesoftkeybar := false
-init maxlines := 1
-init min := 1
-init max := 100
-init charlimit := 5
-init xjustify := hjustify_center
-init yjustify := vjustify_center
-init boxtype := eb_numericstrict
-init decimalplaces := 2
-
-func focusOff()
-    appendtext = ""
-endfunc
-init font := helvb18_bdf
-init xinset := 1
-init yinset := 0
-init ptsize := 20
-
-func valueChanged()
-
-endfunc
 Enddec
 Declare eb_New_Dgain as EditBoxV2
 Level 249517
@@ -20620,7 +20608,7 @@ init parent := default
 Enddec
 Declare Sys_Setup_screen as ScreenV2
 Level 249497
-#Visible False
+#Visible True
 #Lock False
 init parent := default
 init xpos := -1
@@ -20642,7 +20630,7 @@ init enabled := false
 Enddec
 Declare Title_Screen as ScreenV2
 Level 249809
-#Visible True
+#Visible False
 #Lock False
 init parent := default
 init xpos := 0
@@ -21653,7 +21641,7 @@ init value := "Current Values"
 Enddec
 Declare Update_Galil_Popup as PopupScreenV2
 Level 249990
-#Visible False
+#Visible True
 #Lock False
 init xpos := 80
 init ypos := 200
