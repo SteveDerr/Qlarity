@@ -8307,7 +8307,7 @@ init font := helvb18_bdf
 func click()
     REM we need to disable the serial port so we can upload through ethernet.
     If ddl_update_com.selected==1 then
-        SetSystemSetting(SYS_FEEDBACK_TYPE, FBTYPE_UDP,SYSACT_ONBOOT)
+        SetSystemSetting(SYS_FEEDBACK_TYPE, FBTYPE_UDP,SYSACT_ALWAYS)
         SetSystemSetting(SYS_SAVE, false, SYSACT_ALWAYS)
     endif
     SoftReset(RESET_LOADAPP)
@@ -8814,9 +8814,9 @@ func click()
             warning_sound()
             return
         endif
-        if ddl_motorred.selected==1 then
+        if ddl_motorred.selected==0 then
             new_motorred=20
-        elseif ddl_motorred.selected==2 then
+        elseif ddl_motorred.selected==1 then
             new_motorred=50
         endif
         Update_Galil_Code(ddl_pressure_xdcr_2.selected, new_motorred)
@@ -16962,7 +16962,7 @@ Declare Label_77 as LabelV2
 Level 249484
 #Visible True
 #Lock False
-init value := "Software Ver VPA S301-12 22-July-2014 "
+init value := "Software Ver VPA S301-12 25-July-2014 "
 init parent := sys_setup_screen
 init xpos := 20
 init ypos := 731
