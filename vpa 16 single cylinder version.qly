@@ -740,6 +740,14 @@ func Display_Error_Message_Detected(ErrorNum as Integer)
         lbl_Error_Msg.value="Data acquisition loop stopped. Pump has stopped"
         Return
     endif
+    If ErrorNum == 19 then
+        lbl_Error_Msg.value="Limit switch hit while trying to match pressure. Re-Zero transducers or change start position to avoid this error."
+        Return
+    endif
+    If ErrorNum == 20 then
+        lbl_Error_Msg.value="Limit switch hit for unknown reasons. Restart and initialize the pump."
+        Return
+    endif
     If ErrorNum > 99 then
         lbl_Error_Msg.value="Command error reported by the controller"
         Return
@@ -1198,6 +1206,17 @@ func Init_Error_Popup_Screen(errorID as Integer)
     endif
     if errorID>9 then
         Set_Error_Buttons(2)
+        Hold_This_Error=True
+    endif
+    If errorID==19 then
+        REM Limit switch hit while trying to match pressure. If in flow mode, Galil should handle and keep flowing,
+        REM in pressure mode the cylinder dies.
+        Set_Error_Buttons(1)
+
+    endif
+    If errorID==20 then
+        REM Limit switch and we don't know why.
+        Set_Error_Buttons(3)
         Hold_This_Error=True
     endif
     Error_Popup_Screen.enabled=true
@@ -5859,7 +5878,7 @@ Level 249535
 init value := "FACTORY SETTINGS"
 init parent := sys_setup_screen
 init xpos := 100
-init ypos := 315
+init ypos := 287
 init width := 250
 init height := 50
 init font := helvb18_bdf
@@ -5877,7 +5896,7 @@ Level 249538
 init value := "MAINTENANCE"
 init parent := sys_setup_screen
 init xpos := 100
-init ypos := 435
+init ypos := 394
 init width := 250
 init height := 50
 init font := helvb18_bdf
@@ -5895,7 +5914,7 @@ Level 249537
 init value := "VALVE CONTROL"
 init parent := sys_setup_screen
 init xpos := 100
-init ypos := 375
+init ypos := 341
 init width := 250
 init height := 50
 init font := helvb18_bdf
@@ -6442,7 +6461,7 @@ Level 249532
 init value := "CONFIGURE"
 init parent := sys_setup_screen
 init xpos := 100
-init ypos := 135
+init ypos := 126
 init width := 250
 init height := 50
 init font := helvb18_bdf
@@ -6901,7 +6920,7 @@ Level 249533
 init value := "VOLUME CALIBRATION"
 init parent := sys_setup_screen
 init xpos := 100
-init ypos := 195
+init ypos := 180
 init width := 250
 init height := 50
 init font := helvb18_bdf
@@ -6965,7 +6984,7 @@ Level 249531
 init value := "INITIALIZE"
 init parent := sys_setup_screen
 init xpos := 40
-init ypos := 75
+init ypos := 71
 init width := 250
 init height := 50
 init font := helvb18_bdf
@@ -7010,7 +7029,7 @@ Level 249540
 init value := "IP ADDRESS"
 init parent := sys_setup_screen
 init xpos := 100
-init ypos := 555
+init ypos := 500
 init width := 250
 init height := 50
 init font := helvb18_bdf
@@ -7084,7 +7103,7 @@ Level 249539
 init value := "SET LIMITS"
 init parent := sys_setup_screen
 init xpos := 100
-init ypos := 495
+init ypos := 448
 init width := 250
 init height := 50
 init font := helvb18_bdf
@@ -7394,7 +7413,7 @@ Level 249534
 init value := "PRESSURE CALIBRATION"
 init parent := sys_setup_screen
 init xpos := 100
-init ypos := 255
+init ypos := 234
 init width := 250
 init height := 50
 init font := helvb18_bdf
@@ -15654,9 +15673,9 @@ Level 249530
 #Lock False
 init value := "Software Version VPA301 Development"
 init parent := sys_setup_screen
-init xpos := 50
-init ypos := 770
-init width := 380
+init xpos := 20
+init ypos := 744
+init width := 440
 init height := 25
 
 init font := default_ttf
@@ -18152,9 +18171,9 @@ Level 249529
 init value := "Calibration factors and Alarm Limits have been reset to factory settings.  VPA should be initialized again for settings to be correct."
 init parent := sys_setup_screen
 init xpos := 20
-init ypos := 675
+init ypos := 669
 init width := 440
-init height := 90
+init height := 73
 
 init borderstyle := bdr_bumpborder
 init xjustify := hjustify_leftalign
