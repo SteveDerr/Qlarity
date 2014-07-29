@@ -2045,7 +2045,7 @@ Func Set_Press_Buttons()
         enderr
     endif
 
-    if rampentered>0 and tarpresentered>0 and CycleComplete and not P_Start_pressed and not Refilling then
+    if rampentered>0 and tarpresentered>0 and CycleComplete and not P_Start_pressed and not Refilling and not P_Stop_Pressed then
         But_Pcont.enabled=true
     else
         But_Pcont.enabled=false
@@ -18788,7 +18788,7 @@ init enabled := false
 Enddec
 Declare Pressure_mode_screen as ScreenV2
 Level 249599
-#Visible False
+#Visible True
 #Lock False
 init parent := default
 init xpos := 0
@@ -18970,7 +18970,7 @@ init marqueeptsize := 51
 Enddec
 Declare Sys_Setup_screen as ScreenV2
 Level 249541
-#Visible True
+#Visible False
 #Lock False
 init parent := default
 init xpos := -1
