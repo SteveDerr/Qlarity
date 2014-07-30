@@ -10,6 +10,7 @@ dim currentvalue as string
 
 
     dim PowerUp as float
+    dim PowerUp_LastState as integer
     dim PowerUpDetected as boolean
     init PowerUpDetected := false
     dim SPlast as float
@@ -12323,15 +12324,20 @@ func ResponseReceived(response as string)
     on error
             _ClearException()
     enderr
-       if temp==0 then
-'        tmr_CheckML.enabled=true
-        return
+    if temp==PowerUp_LastState then
+        REM verified response, do normal update
+        if temp==0 then
+            'tmr_CheckML.enabled=true
+            return
+        elseif temp==1 then
+            tmrpowerup.enabled=false
+            tmr_CheckML.enabled=false
+            'probably need to exit the current screen
+            close_all()
+            Init_Power_Up_Screen()
+        endif
     else
-        tmrpowerup.enabled=false
-        tmr_CheckML.enabled=false
-        'probably need to exit the current screen
-        close_all()
-        Init_Power_Up_Screen()
+        PowerUp_LastState=temp
     endif
 
 endfunc
@@ -18779,7 +18785,7 @@ endfunc
 Enddec
 Declare Power_Up_Screen as ScreenV2
 Level 249888
-#Visible False
+#Visible True
 #Lock Me
 init width := 480
 init height := 800
@@ -18788,7 +18794,7 @@ init enabled := false
 Enddec
 Declare Pressure_mode_screen as ScreenV2
 Level 249599
-#Visible True
+#Visible False
 #Lock False
 init parent := default
 init xpos := 0
