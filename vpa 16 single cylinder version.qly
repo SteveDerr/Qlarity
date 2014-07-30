@@ -1902,9 +1902,13 @@ Func Set_Error_Buttons(CaseNo as Integer)
 
 endfunc
 Func Set_Flow_Buttons()
+    REM Function to show or hide the Start/Stop, cycle, zero volume, zero xdcrs, open valves, quit and mode(?) buttons.
+    REM Also set the text of the Start/Stop button and the flow mode status.
+    REM Requires current FState, the rate entered, the target volume, which button was pressed if updating from a user
+    REM event and if rate or volume to pump has changed.
+    dim set_case as integer
     dim rateentered as float
     dim targetentered as float
-
 
     eb_FlowR.enabled=true
     eb_Tar_Vol.enabled = true
@@ -1913,66 +1917,146 @@ Func Set_Flow_Buttons()
     If eb_FlowR.Value=="" then
         rateentered= 0
     else
-
         check error
             val(rateentered,eb_FlowR.Value)
         on error
             _ClearException()
         enderr
     endif
+
     if eb_Tar_Vol.Value=="INF" then
         targetentered=2000000000
     else
-
         check error
             val(targetentered,eb_Tar_Vol.Value)
         on error
             _ClearException()
         enderr
     endif
-    if rateentered<= 0 or CycleComplete== false or (Refilling and Flowstopped) or Fstate==2 or Fstate==5 or eb_Tar_Vol.Value=="Invalid" then
-        But_StartFlow.enabled=false
-    else
-        But_StartFlow.enabled=true
-    endif
-    If FlowStopped then
-        but_StartFlow.Value="START"
-        If not Refilling and Fstate<>2 and Fstate<>5 then
-            but_CycToStart.enabled=true
-            but_ZeroVol.enabled = true
-            but_ZeroXdcrs_2.enabled=true
-            but_OpenValves_2.enabled=true
-            but_QuitFlow.enabled=true
-            but_Set_Mode_1.enabled=false
+
+    if flow_pressed==start then
+        but_startflow.Value="STOP"
+        but_UpdateFlow.enabled=false
+        lbl_Flow_Instructions.value="Flowing at constant rate."
+        set_case=1
+    elseif flow_pressed==stop then
+        lbl_Flow_Instructions.value="Waiting for cylinders to stop."
+
+        set_case=0
+    elseif flow_pressed==cycle then
+        but_UpdateFlow.enabled=false
+        but_startflow.Value="STOP"
+        lbl_Flow_Instructions.value="Cycling cylinders to start position."
+        set_case=1
+    elseif FState<>0 then
+        but_startflow.Value="STOP"
+        but_startflow.enabled=true
+        set_case=1
+        if valuechanged then
+            but_UpdateFlow.enabled=true
+        else
+            but_UpdateFlow.enabled=false
         endif
+    elseif FState==0 then
+        but_startflow.Value="START"
+        set_case=2
+        if cyclecomplete and rateentered<>0 and eb_tar_vol.Value<>"Invalid" and targetentered>mltot then
+            but_Startflow.enabled=true
+        else
+            but_startflow.enabled=false
+        endif
+    endif
 
-        but_Limits.enabled=true
-
-    else
-        but_StartFlow.Value="STOP"
+    if set_case==0 then
+        REM Do nothing
+    elseif set_case==1 then
         but_CycToStart.enabled=false
         but_ZeroVol.enabled = false
-        but_Set_Mode_1.enabled=false
-        but_Limits.enabled=false
-        but_QuitFlow.enabled=false
         but_ZeroXdcrs_2.enabled=false
         but_OpenValves_2.enabled=false
-    endif
-    if ValueChanged and not FlowStopped then
-        but_UpdateFlow.enabled=true
-    else
-        but_UpdateFlow.enabled=false
-    endif
-
-    if PmpMode == 0 then
-        but_Set_Mode_1.value ="RECEIVE MODE"
-        but_Set_Mode.value ="RECEIVE MODE"
-    else
-        but_Set_Mode_1.value="PUMP MODE"
-        but_Set_Mode.value="PUMP MODE"
+        but_QuitFlow.enabled=false
+        but_Set_Mode_1.enabled=false
+    elseif set_case==2 then
+        but_CycToStart.enabled=true
+        but_ZeroVol.enabled = true
+        but_ZeroXdcrs_2.enabled=true
+        but_OpenValves_2.enabled=true
+        but_QuitFlow.enabled=true
+        but_Set_Mode_1.enabled=false
     endif
 
-    'Messages
+    REM Old code below for reference
+    'dim rateentered as float
+    'dim targetentered as float
+
+
+    'eb_FlowR.enabled=true
+    'eb_Tar_Vol.enabled = true
+    'lbl_Flow_Instructions.value=""
+
+    'If eb_FlowR.Value=="" then
+    '    rateentered= 0
+    'else
+
+     '   check error
+    '        val(rateentered,eb_FlowR.Value)
+    '    on error
+    '        _ClearException()
+    '    enderr
+    'endif
+    'if eb_Tar_Vol.Value=="INF" then
+    '    targetentered=2000000000
+    'else
+
+     '   check error
+     '       val(targetentered,eb_Tar_Vol.Value)
+     '   on error
+     '       _ClearException()
+     '   enderr
+    'endif
+    'if rateentered<= 0 or CycleComplete== false or (Refilling and Flowstopped) or Fstate==2 or Fstate==5 or eb_Tar_Vol.Value=="Invalid" then
+    '    But_StartFlow.enabled=false
+    'else
+    '    But_StartFlow.enabled=true
+    'endif
+    'If FlowStopped then
+    '    but_StartFlow.Value="START"
+    '    If not Refilling and Fstate<>2 and Fstate<>5 then
+    '        but_CycToStart.enabled=true
+    '        but_ZeroVol.enabled = true
+    '        but_ZeroXdcrs_2.enabled=true
+    '        but_OpenValves_2.enabled=true
+    '        but_QuitFlow.enabled=true
+    '        but_Set_Mode_1.enabled=false
+    '   endif
+
+    '   but_Limits.enabled=true
+
+    'else
+    '    but_StartFlow.Value="STOP"
+    '    but_CycToStart.enabled=false
+    '    but_ZeroVol.enabled = false
+    '    but_Set_Mode_1.enabled=false
+    '    but_Limits.enabled=false
+    '    but_QuitFlow.enabled=false
+    '    but_ZeroXdcrs_2.enabled=false
+    '    but_OpenValves_2.enabled=false
+    'endif
+    'if ValueChanged and not FlowStopped then
+    '    but_UpdateFlow.enabled=true
+    'else
+    '    but_UpdateFlow.enabled=false
+    'endif
+
+    'if PmpMode == 0 then
+    '    but_Set_Mode_1.value ="RECEIVE MODE"
+    '    but_Set_Mode.value ="RECEIVE MODE"
+    'else
+    '    but_Set_Mode_1.value="PUMP MODE"
+    '    but_Set_Mode.value="PUMP MODE"
+    'endif
+
+    REM Messages
     if rateentered<= 0 then
         lbl_Flow_Instructions.value="Flow Rate must be entered to start"
     endif
@@ -1982,7 +2066,14 @@ Func Set_Flow_Buttons()
     if CycleComplete==false then
         lbl_Flow_Instructions.value="Cycle Required to Start"
     endif
+    if FlowStopped then
+        lbl_Flow_Instructions.bgColor=clr_messagebackground
+        lbl_Current_Flow_Rate.value=""
+        lbl_Flow_Instructions.bgColor=26
+'        lbl_Flow_Instructions.value="Flowing at constant rate"
+    endif
 endfunc
+
 Func Set_Manual_Flow_Buttons()
     If ReadytoFlowA and not RefillingA then
         but_Start_Flow_Man_A.enabled=true
@@ -10974,7 +11065,7 @@ init xpos := 13
 init ypos := 95
 init width := 20
 init height := 16
-init bgcolor := 161
+init bgcolor := 20
 Enddec
 Declare elps_A_1 as RectangleV2
 Level 249581
@@ -18785,7 +18876,7 @@ endfunc
 Enddec
 Declare Power_Up_Screen as ScreenV2
 Level 249888
-#Visible True
+#Visible False
 #Lock Me
 init width := 480
 init height := 800
@@ -18794,7 +18885,7 @@ init enabled := false
 Enddec
 Declare Pressure_mode_screen as ScreenV2
 Level 249599
-#Visible False
+#Visible True
 #Lock False
 init parent := default
 init xpos := 0
