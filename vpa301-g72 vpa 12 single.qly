@@ -347,7 +347,7 @@ dim currentvalue as string
     dim GalilVersion as integer
     init GalilVersion:=3
     dim GalilRev as float
-    init GalilRev:=2.213
+    init GalilRev:=2.214
     REM Debug and second port writing variables
     Dim WriteErrorToPortTwo, WarnSpeedComCheck, OverSpeedComCheck, NewErrComCheck, PowerUpComCheck, PcurAComCheck, MLtotComCheck, DAQLoopComCheck, FStateComCheck, Wait4opComCheck as boolean
     init WriteErrorToPortTwo:=false
@@ -16962,7 +16962,7 @@ Declare Label_77 as LabelV2
 Level 249484
 #Visible True
 #Lock False
-init value := "Software Ver VPA S301-12 25-July-2014 "
+init value := "Software Ver VPA S301-12 11-Aug.-2014 "
 init parent := sys_setup_screen
 init xpos := 20
 init ypos := 731
@@ -21641,7 +21641,7 @@ init value := "Current Values"
 Enddec
 Declare Update_Galil_Popup as PopupScreenV2
 Level 249990
-#Visible True
+#Visible False
 #Lock False
 init xpos := 80
 init ypos := 200
