@@ -21767,26 +21767,26 @@ Includesys Library "Galil_mcV2.qlib"
 #hide Includesys reference to Library "common.lib"
 #hide library basic source necessary
 #SetFile -1 "*r%global%"
-Include Bitmap "y:/customer files/vpa 2/operator terminal/software/g72/g72 to ron/banner_rev5.bmp" As Banner_Rev5
-Include Bitmap "y:/customer files/vpa 2/operator terminal/software/g72/g72 to ron/qlarity.bmp" As default
-Include Bitmap "y:/customer files/vpa 2/operator terminal/software/g72/g72 to ron/g-72_openingscreen.bmp" As G_72_OpeningScreen
-Include BDFfont "y:/customer files/vpa 2/operator terminal/software/g72/g72 to ron/helvr08.bdf" As default
-Include BDFfont "y:/customer files/vpa 2/operator terminal/software/g72/g72 to ron/helvr14.bdf" As Helv14
-Include BDFfont "y:/customer files/vpa 2/operator terminal/software/g72/g72 to ron/helvb10.bdf" As helvb10
-Include BDFfont "y:/customer files/vpa 2/operator terminal/software/g72/g72 to ron/helvb12.bdf" As helvb12
-Include BDFfont "y:/customer files/vpa 2/operator terminal/software/g72/g72 to ron/helvb14.bdf" As helvb14
-Include BDFfont "y:/customer files/vpa 2/operator terminal/software/g72/g72 to ron/helvb18.bdf" As helvb18
-Include BDFfont "y:/customer files/vpa 2/operator terminal/software/g72/g72 to ron/helvb24.bdf" As helvb24
-Include BDFfont "y:/customer files/vpa 2/operator terminal/software/g72/g72 to ron/helvr12.bdf" As helvr12
-Include BDFfont "y:/customer files/vpa 2/operator terminal/software/g72/g72 to ron/helvr14.bdf" As helvr14
-Include BDFfont "y:/customer files/vpa 2/operator terminal/software/g72/g72 to ron/helvr18.bdf" As helvr18
-Include BDFfont "y:/customer files/vpa 2/operator terminal/software/g72/g72 to ron/helvr24.bdf" As helvr24
-Include BDFfont "y:/customer files/vpa 2/operator terminal/software/g72/g72 to ron/lutbs18.bdf" As lutbs18
-Include BDFfont "y:/customer files/vpa 2/operator terminal/software/g72/g72 to ron/5x7.bdf" As Small
-Include BDFfont "y:/customer files/vpa 2/operator terminal/software/g72/g72 to ron/veramono18.bdf" As veramono18
-Include BDFfont "y:/customer files/vpa 2/operator terminal/software/g72/g72 to ron/veramono32.bdf" As veramono32
-Include TTfont "y:/customer files/vpa 2/operator terminal/software/g72/vera.ttf" As default
-Include TTfont "y:/customer files/vpa 2/operator terminal/software/g72/verabd.ttf" As VeraBd
+Include Bitmap "resources/banner_rev5.bmp" As Banner_Rev5
+Include Bitmap "resources/qlarity.bmp" As default
+Include Bitmap "resources/g-72_openingscreen.bmp" As G_72_OpeningScreen
+Include BDFfont "resources/helvr08.bdf" As default
+Include BDFfont "resources/helvr14.bdf" As Helv14
+Include BDFfont "resources/helvb10.bdf" As helvb10
+Include BDFfont "resources/helvb12.bdf" As helvb12
+Include BDFfont "resources/helvb14.bdf" As helvb14
+Include BDFfont "resources/helvb18.bdf" As helvb18
+Include BDFfont "resources/helvb24.bdf" As helvb24
+Include BDFfont "resources/helvr12.bdf" As helvr12
+Include BDFfont "resources/helvr14.bdf" As helvr14
+Include BDFfont "resources/helvr18.bdf" As helvr18
+Include BDFfont "resources/helvr24.bdf" As helvr24
+Include BDFfont "resources/lutbs18.bdf" As lutbs18
+Include BDFfont "resources/5x7.bdf" As Small
+Include BDFfont "resources/veramono18.bdf" As veramono18
+Include BDFfont "resources/veramono32.bdf" As veramono32
+Include TTfont "resources/vera.ttf" As default
+Include TTfont "resources/verabd.ttf" As VeraBd
 Include _binary "galil_code/vpacds3310-vpa-12-single-binary.dmc" As VPACDS3310_VPA_12_Single_Binary
 #config colormap "Clr_Banner := 3;Clr_ButtonBackground := 219;Clr_ButtonBackgroundAlt := 223;Clr_ButtonForeground := 0;Clr_ButtonForegroundAlt := 2;Clr_FillColor := 15;Clr_LabelBackground := 223;Clr_LabelForeground := 2;Clr_MessageBackground := 254;Clr_ScreenBackground := 255;Clr_ScreenForeground := 2;Clr_SoftkeybarBackground := 183;Clr_SoftkeybarButtonBg := 255;Clr_SoftkeybarButtonFg := 2;"
 #hide #ifnot opt_colormap%

@@ -1,0 +1,344 @@
+#STPBuilderApp
+#hide #option _TOOL_TOUCHSCREEN
+#option _SS_Lines
+#option _SS_Marquee
+Declare Button_1 as ButtonV2
+Level 249994
+#Visible True
+#Lock False
+init value := "button_1"
+init parent := splashscreen
+init xpos := 44
+init ypos := 433
+init width := 98
+init height := 37
+
+func click()
+    dim IA as string
+    dim LocIA1 as integer
+    dim length1 as integer
+    dim LocIA2 as integer
+    dim length2 as integer
+    dim LocIA3 as integer
+    dim length3 as integer
+    dim length4 as integer
+
+
+    IA = label_1.value
+    'Add two to skip the comma and space and get to the first number of next segment
+    LocIA1 = find(IA,0,-1, ",")+2
+    LocIA2 = find(IA,LocIA1,-1, ",")+2
+    LocIA3 = find(IA,LocIA2,-1, ",")+2
+    '-2 to exclude comma and space
+    length1=LocIA1-2
+    '-2 to exclude comma and space
+    length2=LocIA2-LocIA1-2
+    '-2 to exclude comma and space
+    length3=LocIA3-LocIA2-2
+    length4=len(IA)-LocIA3+1
+
+'    EditBox_1.value=left(IA,length1)
+'    EditBox_2.value=mid(IA, LocIA1, length2)
+'    EditBox_3.Value=mid(IA, LocIA2, Length3)
+'    EditBox_4.Value=right(IA,length4)
+
+
+
+
+
+endfunc
+Enddec
+Declare ClockDisplay as ClockDisplayV2
+Level 249998
+#Visible True
+#Lock False
+init parent := statusbarscreen
+init xpos := 14
+init ypos := 2
+init width := 50
+init height := 17
+init fgcolor := Clr_ScreenForeground
+init bgcolor := 255
+init borderstyle := bdr_none
+init transparent := true
+Enddec
+Declare ClockImage as ImageV2
+Level 249999
+#Visible True
+#Lock False
+init parent := statusbarscreen
+init xpos := 2
+init ypos := 2
+init image := clockicon
+init transparentcolor := rgb_white
+init transparent := true
+Enddec
+Declare EditBox_1 as EditBoxV2
+Level 249990
+#Visible True
+#Lock False
+init parent := splashscreen
+init xpos := 29
+init ypos := 366
+init width := 93
+init height := 48
+init boxtype := eb_multilinescroll
+Enddec
+Declare EditBox_2 as EditBoxV2
+Level 249991
+#Visible True
+#Lock False
+init parent := splashscreen
+init xpos := 144
+init ypos := 363
+init width := 93
+init height := 48
+init boxtype := eb_multilinescroll
+Enddec
+Declare EditBox_3 as EditBoxV2
+Level 249992
+#Visible True
+#Lock False
+init parent := splashscreen
+init xpos := 246
+init ypos := 365
+init width := 93
+init height := 48
+init boxtype := eb_multilinescroll
+Enddec
+Declare EditBox_4 as EditBoxV2
+Level 249993
+#Visible True
+#Lock False
+init parent := splashscreen
+init xpos := 359
+init ypos := 370
+init width := 93
+init height := 48
+init boxtype := eb_multilinescroll
+Enddec
+Declare ExceptionDisplay as ExceptionDisplayV2
+Level 249981
+#Visible False
+#Lock False
+
+Enddec
+Declare HomeBtn as ButtonV2
+Level 249983
+#Visible True
+#Lock False
+init value := "Home"
+init parent := mainscreen
+init xpos := 720
+init ypos := 440
+init width := 70
+init height := 30
+
+func click()
+    _ShowScreen(splashscreen)
+endfunc
+Enddec
+Declare Label_1 as LabelV2
+Level 249989
+#Visible True
+#Lock False
+init value := "12, 18, 198, 160"
+init parent := splashscreen
+init xpos := 92
+init ypos := 197
+init width := 271
+init height := 75
+Enddec
+Declare LogoAnimation as LogoAnimationV2
+Level 249988
+#Visible True
+#Lock False
+init parent := splashscreen
+init xpos := 14
+init ypos := 51
+init edgepts := [25368, 25369, 25082, 25083, 25084, 25085, 25086, 24799, 24800, 24801, 24802, 24803, 24804, 24805, 24806, 24519, 24520, 24521, 24522, 24523, 24236, 24237, 24238, 24239, 24240, 24241, 24242, 23955, 23956, 23957, 23958, 23959, 23960, 23673, 23674, 23675, 23676, 23677, 23678, 23679, 23392, 23393, 23394, 23395, 23396, 23397, 23398, 23111, 23112, 23113, 23114, 23115, 23116, 23117, 22830, 22831, 22832, 22833, 22834, 22835, 22836, 22837, 22550, 22551, 22552, 22553, 22554, 22555, 22556, 22557, 22558, 22559, 22272, 22273, 22274, 22275, 22276, 22277, 22278, 22279, 21992, 21993, 21994, 21995, 21996, 21997, 21998, 21999, 22000, 22001, 22002, 21715, 21716, 21717, 21718, 21719, 21720, 21721, 21722, 21723, 21724, 21725, 21726, 21439, 21440, 21441, 21442, 21443, 21444, 21445, 21446, 21447, 21448, 21449, 21450, 21451, 21452, 21453, 21454, 21455, 21168, 21169, 21170, 21171, 21172, 21173, 21174, 21175, 21176, 21177, 21178, 21179, 21180, 21181, 21182, 21183, 21184, 21185, 21186, 21187, 21188, 21189, 21190, 21191, 21192, 21193, 21194, 21195, 21196, 21197, 21198, 21199, 21200, 21201, 21202, 21203, 21204, 21205, 21206, 21207, 21208, 21209, 21210, 21211, 21212, 21213, 21214, 21215, 21216, 21217, 21218, 21219, 21220, 21221, 21222, 21223, 21224, 21225, 21226, 21515, 21516, 21517, 21518, 21519, 21520, 21521, 21522, 21523, 21524, 21525, 21526, 21527, 21528, 21529, 21818, 21819, 21820, 21821, 21822, 21823, 21824, 21825, 21826, 22115, 22116, 22117, 22118, 22119, 22120, 22121, 22122, 22123, 22412, 22413, 22414, 22415, 22416, 22417, 22706, 22707, 22708, 22709, 22710, 22711, 23000, 23001, 23002, 23003, 23004, 23005, 23294, 23295, 23296, 23297, 23586, 23587, 23588, 23589, 23590, 23879, 23880, 23881, 24170, 24169, 24456, 24455, 24454, 24453, 24452, 24739, 24738, 24737, 24736, 25023, 25022, 25021, 25020, 25019, 25018, 25017, 25016, 25015, 24726, 24725, 24724, 24723, 24434, 24433, 24432, 24431, 24430, 24141, 24140, 24139, 24138, 24137, 23848, 23847, 23846, 23845, 23556, 23555, 23554, 23553, 23552, 23551, 23550, 23261, 23260, 23259, 23258, 23257, 23256, 22967, 22966, 22965, 22964, 22963, 22962, 22961, 22960, 22671, 22670, 22669, 22668, 22667, 22666, 22665, 22664, 22663, 22662, 22373, 22372, 22371, 22370, 22369, 22368, 22367, 22366, 22365, 22364, 22363, 22362, 22361, 22072, 22071, 22070, 22069, 22068, 22067, 22066, 22065, 22064, 22063, 22062, 22061, 22060, 22059, 22058, 22057, 22056, 22055, 22054, 22053, 22052, 22051, 22050, 22049, 22048, 22047, 22046, 22045, 22044, 22043, 22042, 22041, 22040, 22039, 22038, 22037, 22036, 22035, 22034, 22033, 22032, 22031, 22030, 22029, 22028, 22027, 22026, 22025, 22024, 22023, 22022, 22021, 22020, 22019, 22018, 22017, 22016, 22015, 22014, 22013, 22012, 22011, 22010, 22297, 22296, 22295, 22294, 22293, 22292, 22291, 22290, 22289, 22288, 22287, 22286, 22285, 22284, 22283, 22282, 22569, 22568, 22567, 22566, 22565, 22564, 22563, 22562, 22561, 22848, 22847, 22846, 22845, 22844, 22843, 22842, 22841, 22840, 22839, 22838, 14434, 14146, 13858, 13570, 13282, 12994, 12706, 12418, 12131, 11843, 11555, 11267, 10980, 10692, 10404, 10116, 9828, 9540, 9252, 8965, 8677, 8389, 8101, 7813, 7526, 7238, 6950, 6662, 6374, 6086, 5799, 5511, 5223, 4936, 4648, 4360, 4073, 3786, 3498, 3211, 2924, 2637, 2638, 2351, 2352, 2065, 2066, 1779, 1780, 1781, 1782, 1495, 1496, 1497, 1498, 1499, 1500, 1501, 1502, 1503, 1504, 1505, 1506, 1507, 1508, 1509, 1510, 1511, 1512, 1513, 1514, 1515, 1516, 1517, 1518, 1519, 1520, 1521, 1522, 1523, 1524, 1525, 1526, 1527, 1528, 1529, 1818, 1819, 1820, 1821, 2110, 2111, 2400, 2689, 2978, 3267, 3555, 3844, 4132, 4420, 4708, 4996, 5284, 5572, 5860, 6148, 6436, 6724, 7012, 7299, 7587, 7875, 8163, 8451, 8739, 9026, 9314, 9602, 9890, 10178, 10466, 10753, 11041, 11329, 11617, 11905, 12193, 12480, 12768, 13056, 13344, 13631, 13919, 14207, 14494, 14782, 15069, 15356, 15643, 15930, 16217, 16504, 16503, 16790, 16789, 16788, 17075, 17074, 17073, 17072, 17071, 17070, 17069, 17068, 17067, 17066, 17065, 17352, 17639, 17927, 18215, 18503, 18791, 19078, 19366, 19654, 19942, 19941, 19940, 19939, 19938, 19937, 19936, 19935, 19934, 19933, 19932, 19644, 19356, 19068, 18781, 18493, 18205, 17917, 17629, 17342, 17054, 16766, 16478, 16190, 15902, 15615, 15327, 15039, 14751, 14463, 14175, 14176, 14177, 14178, 14179, 14180, 14181, 14182, 14183, 14184, 14185, 14186, 14187, 14188, 14189, 14190, 14191, 13904, 13905, 13618, 13331, 13044, 12757, 12470, 12182, 11894, 11607, 11319, 11031, 10743, 10455, 10167, 9880, 9592, 9304, 9016, 8729, 8441, 8153, 7865, 7577, 7289, 7002, 6714, 6426, 6137, 5849, 5560, 5272, 4983, 4982, 4693, 4692, 4691, 4690, 4689, 4688, 4687, 4686, 4685, 4684, 4683, 4682, 4681, 4680, 4679, 4678, 4677, 4676, 4675, 4674, 4673, 4672, 4671, 4670, 4669, 4668, 4667, 4666, 4665, 4664, 4663, 4950, 5237, 5524, 5811, 6098, 6385, 6673, 6961, 7249, 7536, 7824, 8112, 8400, 8688, 8975, 9263, 9551, 9839, 10127, 10415, 10702, 10990, 11278, 11566, 11854, 12142, 12430, 12718, 13007, 13295, 13584, 13873, 13874, 14163, 14164, 14165, 14166, 14167, 14168, 14169, 14457, 14745, 15032, 15320, 15608, 15896, 16184, 16472, 16759, 17047, 17046, 17045, 17044, 17043, 17042, 17041, 17040, 17039, 17038, 17037, 17036, 17035, 17034, 16745, 16744, 16455, 16454, 16165, 15877, 15588, 15299, 15011, 14723, 15941, 15653, 15365, 15077, 14789, 14501, 14214, 13926, 13638, 13350, 13063, 12775, 12487, 12199, 11911, 11623, 11336, 11048, 10760, 10472, 10184, 9896, 9608, 9321, 9033, 8745, 8457, 8169, 7882, 7594, 7306, 7018, 6730, 6442, 6155, 5867, 5579, 5291, 5003, 4716, 4428, 4140, 3852, 3564, 3276, 2989, 2701, 2413, 2125, 1837, 1838, 1839, 1840, 1841, 1842, 1843, 1844, 1845, 1846, 1847, 2135, 2423, 2711, 2998, 3286, 3574, 3862, 4150, 4437, 4725, 5013, 5301, 5589, 5877, 6165, 6452, 6740, 7028, 7316, 7604, 7891, 8179, 8467, 8755, 9043, 9330, 9618, 9906, 10194, 10482, 10770, 11057, 11345, 11633, 11921, 12209, 12497, 12784, 13072, 13360, 13648, 13936, 14224, 14511, 14799, 15087, 15375, 15663, 15951, 15950, 15949, 15948, 15947, 15946, 15945, 15944, 15943, 15942, 14517, 14229, 13941, 13653, 13365, 13077, 12790, 12502, 12214, 11927, 11639, 11352, 11065, 10778, 10491, 10492, 10205, 10206, 10207, 9920, 9921, 9922, 9923, 9924, 9637, 9638, 9639, 9640, 9641, 9642, 9643, 9644, 9645, 9358, 9070, 8782, 8494, 8206, 7917, 7916, 7627, 7626, 7625, 7336, 7335, 7334, 7333, 7620, 7619, 7618, 7617, 7904, 7903, 7902, 8189, 8188, 8187, 7899, 7612, 7324, 7036, 6748, 6461, 6173, 5885, 5886, 5887, 5888, 5889, 5890, 5603, 5604, 5605, 5606, 5607, 5608, 5609, 5610, 5611, 5612, 5613, 5614, 5615, 5616, 5905, 5906, 5907, 6196, 6197, 6486, 6775, 7064, 7352, 7640, 7929, 8217, 8505, 8792, 9080, 9368, 9656, 9944, 10232, 10519, 10807, 11095, 11383, 11671, 11959, 12246, 12534, 12822, 13110, 13398, 13686, 13973, 14261, 14549, 14837, 15125, 15412, 15700, 15988, 15987, 15986, 15985, 15984, 15983, 15982, 15981, 15980, 15979, 15978, 15690, 15403, 15115, 14826, 15113, 15400, 15399, 15686, 15973, 15972, 15971, 16258, 16257, 16256, 16255, 16254, 16253, 16252, 16251, 15962, 15961, 15672, 15671, 15383, 15094, 14806, 13375, 13087, 12800, 12512, 12225, 11937, 11650, 11651, 11364, 11365, 11366, 11367, 11368, 11081, 11082, 11083, 11084, 11373, 11661, 11949, 12237, 12524, 12812, 13100, 13388, 13675, 13962, 13961, 14248, 14247, 14246, 14533, 14532, 14243, 14242, 14241, 13952, 13664, 15994, 15706, 15418, 15131, 14843, 14555, 14267, 13979, 13692, 13404, 13116, 12828, 12540, 12252, 11964, 11677, 11389, 11101, 10813, 10525, 10237, 9950, 9662, 9374, 9086, 8798, 8511, 8223, 7935, 7647, 7359, 7071, 6784, 6496, 6208, 5920, 5921, 5922, 5923, 5924, 5925, 5926, 5927, 5928, 5929, 5930, 6218, 6506, 6793, 7081, 7370, 7371, 7084, 6797, 6510, 6511, 6224, 6225, 5938, 5939, 5940, 5941, 5942, 5943, 6231, 6519, 6806, 7094, 7382, 7670, 7958, 8246, 8533, 8532, 8531, 8530, 8529, 8528, 8527, 8526, 8525, 8812, 8811, 8810, 9097, 9384, 9672, 9960, 10247, 10535, 10823, 11111, 11399, 11687, 11974, 12262, 12550, 12838, 13126, 13413, 13701, 13989, 14277, 14565, 14853, 15140, 15428, 15716, 16004, 16003, 16002, 16001, 16000, 15999, 15998, 15997, 15996, 15995, 16022, 15734, 15447, 15159, 14871, 14583, 14295, 14007, 13720, 13432, 13144, 12856, 12569, 12281, 11993, 11705, 11417, 11129, 10842, 10554, 10266, 9978, 9690, 9402, 9115, 8827, 8539, 8251, 7963, 7676, 7388, 7100, 6812, 6524, 6236, 5948, 5949, 5950, 5951, 5952, 5953, 5954, 5955, 5956, 5957, 5958, 5959, 6246, 6534, 6822, 7110, 7398, 7685, 7973, 8261, 8549, 8837, 9124, 9412, 9700, 9988, 10276, 10564, 10851, 11139, 11427, 11715, 12003, 12290, 12578, 12866, 13154, 13442, 13730, 14017, 14305, 14593, 14881, 15169, 15456, 15744, 16032, 16031, 16030, 16029, 16028, 16027, 16026, 16025, 16024, 16023, 3934, 3646, 3358, 3070, 2782, 2494, 2206, 1919, 1920, 1921, 1922, 1923, 1924, 1925, 1926, 1927, 1928, 1929, 2217, 2505, 2793, 3081, 3368, 3656, 3944, 3943, 3942, 3941, 3940, 3939, 3938, 3937, 3936, 3935, 7979, 7691, 7404, 7116, 6828, 6540, 6252, 5964, 5965, 5966, 5967, 5968, 5681, 5393, 5105, 4817, 4530, 4242, 3954, 3666, 3378, 3090, 3091, 3092, 3093, 3094, 3095, 3096, 3097, 3098, 3099, 3100, 3388, 3676, 3964, 4252, 4539, 4827, 5115, 5403, 5691, 5980, 5981, 5982, 5983, 5984, 5985, 5986, 5987, 5988, 5989, 5990, 5991, 5992, 5993, 5994, 5995, 5996, 5997, 5998, 5999, 6000, 6001, 6289, 6577, 6866, 7154, 7442, 7730, 8018, 8306, 8594, 8883, 9171, 9459, 9747, 10035, 10323, 10612, 10900, 11188, 11476, 11764, 12052, 12341, 12342, 12055, 11767, 11479, 11192, 10904, 10617, 10329, 10042, 9754, 9467, 9179, 8892, 8604, 8317, 8029, 7742, 7454, 7167, 6879, 6592, 6304, 6017, 6018, 6019, 6020, 6021, 6022, 6023, 6024, 6025, 6026, 6027, 6314, 6602, 6889, 7177, 7464, 7752, 8039, 8327, 8614, 8901, 9189, 9476, 9764, 10051, 10339, 10626, 10914, 11201, 11489, 11776, 12064, 12351, 12638, 12926, 13213, 13501, 13788, 14076, 14363, 14651, 14938, 15226, 15513, 15801, 16088, 16375, 16663, 16950, 17238, 17525, 17813, 18100, 18388, 18675, 18963, 19250, 19537, 19825, 19824, 19823, 19822, 19821, 19820, 19819, 19818, 19817, 19816, 19815, 19814, 19527, 19239, 18952, 18664, 18377, 18090, 17802, 17515, 17227, 16940, 16652, 16365, 16078, 15790, 15501, 15213, 14925, 14637, 14348, 14060, 13772, 13484, 13196, 12907, 12619, 12331, 12043, 11755, 11466, 11178, 10890, 10602, 10314, 10025, 9737, 9449, 9161, 8873, 8585, 8296, 8007, 8006, 8005, 8004, 8003, 8002, 8001, 8000, 7999, 7998, 7997, 7996, 7995, 7994, 8281, 8569, 8857, 9145, 9432, 9720, 10008, 10296, 10584, 10872, 11159, 11447, 11735, 12023, 12311, 12599, 12886, 13174, 13463, 13751, 14040, 14329, 14330, 14331, 14332, 14333, 14334, 14335, 14048, 14336, 14624, 14912, 15200, 15487, 15775, 16063, 16062, 16061, 16060, 16347, 16346, 16345, 16344, 16343, 16342, 16341, 16340, 16339, 16050, 16049, 16048, 15759, 15758, 15469, 15181, 14893, 14604, 14316, 14028, 13740, 13452, 13164, 12877, 12589, 12301, 12013, 11725, 11437, 11149, 10862, 10574, 10286, 9998, 9710, 9423, 9135, 8847, 8559, 8271, 7982, 7981, 7980, 3724, 3436, 3437, 3438, 3439, 3440, 3441, 3442, 3730, 3729, 4016, 4304, 4592, 4880, 5168, 5456, 5744, 5743, 5455, 5167, 4879, 4591, 4303, 4015, 3726, 3725, 5748, 5460, 5172, 4884, 4596, 4308, 4020, 3732, 3444, 3445, 3734, 4022, 4310, 4599, 4600, 4313, 4025, 3737, 3450, 3451, 3739, 4027, 4315, 4603, 4891, 5179, 5467, 5755, 5754, 5466, 5178, 4890, 4601, 4888, 5176, 5175, 4887, 4598, 4885, 5173, 5461, 5749]
+init rgnstartidx := [0, 423, 774, 892, 1051, 1089, 1207, 1298, 1332, 1645, 1671]
+init rgnlengths := [423, 351, 118, 159, 38, 118, 91, 34, 313, 26, 42]
+init recalcedgecrc := -1595794895
+init traceimage := qlaritygrayswooshedges
+init finalimage := qlaritygrayswoosh
+init transparentcolor := col_254
+init warmcolor := col_20
+init coldcolor := col_10
+init edgescanorder := _ed_righttoleft_bottomtotop
+init animationstyle := _ed_lasertrace
+init laserlineobj := qlaritylogoanimationline
+init coolingduration := 16
+init lasercolorstretch := 10
+Enddec
+Declare MainLbl as LabelV2
+Level 249982
+#Visible True
+#Lock False
+init value := "Main Screen"
+init parent := mainscreen
+init xpos := 10
+init ypos := 30
+init width := 130
+init height := 40
+init font := helv14_bdf
+Enddec
+Declare MainScreen as ScreenV2
+Level 249984
+#Visible True
+#Lock False
+init parent := default
+init xpos := 0
+init ypos := 0
+init width := 800
+init height := 480
+init enabled := false
+Enddec
+Declare MainScrnBtn as ButtonV2
+Level 249986
+#Visible True
+#Lock False
+init value := "Continue"
+init parent := splashscreen
+init xpos := 720
+init ypos := 440
+init width := 70
+init height := 30
+
+func click()
+    _ShowScreen(mainscreen)
+endfunc
+Enddec
+Declare QlarityLogoAnimationLine as LineV2
+Level 249987
+#Visible True
+#Lock False
+init parent := splashscreen
+init x1 := 36
+init y1 := 183
+init x2 := 39
+init y2 := 163
+init linewidth := 1
+init linecolor := 224
+init enabled := false
+Enddec
+Declare ReplayBtn as ButtonV2
+Level 249985
+#Visible True
+#Lock False
+init value := "Replay"
+init parent := splashscreen
+init xpos := 640
+init ypos := 440
+init width := 70
+init height := 30
+
+func click()
+    LogoAnimation.StartAnimation()
+endfunc
+Enddec
+Declare ScreenSaver as ScreenSaverV2
+Level 249980
+#Visible False
+#Lock False
+
+Enddec
+Declare SplashScreen as ScreenV2
+Level 249995
+#Visible True
+#Lock False
+init parent := default
+init xpos := 0
+init ypos := 0
+init width := 800
+init height := 480
+Enddec
+Declare StatusBarLine as LineV2
+Level 249997
+#Visible True
+#Lock False
+init parent := statusbarscreen
+init x1 := 0
+init y1 := 19
+init x2 := 800
+init y2 := 19
+init linewidth := 1
+Enddec
+Declare StatusBarScreen as ScreenV2
+Level 250000
+#Visible True
+#Lock False
+init parent := default
+init xpos := 0
+init ypos := 0
+init width := 800
+init height := 20
+init borderstyle := bdr_none
+init bgcolor := Clr_LabelBackground
+
+func SuppressSiblingHide(parm as integer) returns boolean
+    handles _MSG_SHOWSCREEN_DONT_HIDE_SIBLINGS_ON_SHOW
+    handles _MSG_SHOWSCREEN_DONT_HIDE_WHEN_SIBLING_IS_SHOWN
+    return true
+endfunc
+Enddec
+Declare TemperatureStatus as TemperatureStatusV2
+Level 249996
+#Visible True
+#Lock False
+init parent := statusbarscreen
+init height := 19
+init width := 66
+init xpos := 730
+init ypos := 0
+init borderstyle := bdr_none
+init transparent := false
+init icontransparentcolor := rgb_white
+Enddec
+#Hide Library Basic Source ButtonV2
+#Hide Library Extra Source ClockDisplayV2
+#Hide Library Basic Source editboxV2
+#Hide Library Basic Source ExceptionDisplayV2
+#Hide Library Basic Source imageV2
+#Hide Library Basic Source LabelV2
+#Hide Library Extra Source LineV2
+#Hide Library Extra Source LogoAnimationV2
+#Hide Library Basic Source ScreenSaverV2
+#Hide Library Basic Source ScreenV2
+#Hide Library DataProc Source TemperatureStatusV2
+#SetFile -1 "*l%global%"
+Includesys Library "basic.qlib"
+Includesys Library "dataproc.qlib"
+Includesys Library "extra.qlib"
+#hide Includesys reference to Library "Galil_mcV2.qlib"
+#hide Includesys reference to Library "ModbusV2.qlib"
+#hide Includesys reference to Library "multilingual.qlib"
+#hide Includesys reference to Library "NIObjsV2.qlib"
+#hide Includesys reference to Library "OrbComm.qlib"
+#hide Includesys reference to Library "core.qlib.qhide"
+#hide Includesys reference to Library "progobjs.lib"
+#hide Includesys reference to Library "common.lib"
+#hide library basic source necessary
+#SetFile -1 "*r%global%"
+Includesys Bitmap "clockicon.bmp" As clockicon
+Includesys Bitmap "qlarity.bmp" As default
+Includesys Bitmap "qlaritygrayswoosh.bmp" As qlaritygrayswoosh
+Includesys Bitmap "qlaritygrayswooshedges.bmp" As qlaritygrayswooshedges
+Includesys BDFfont "helvR08.bdf" As default
+Includesys BDFfont "helvR14.bdf" As Helv14
+Includesys BDFfont "5x7.bdf" As Small
+Includesys TTfont "vera.ttf" As default
+#config colormap "Clr_ButtonBackground := 219;Clr_ButtonBackgroundAlt := 223;Clr_ButtonForeground := 0;Clr_ButtonForegroundAlt := 2;Clr_FillColor := 15;Clr_LabelBackground := 223;Clr_LabelForeground := 2;Clr_ScreenBackground := 255;Clr_ScreenForeground := 2;Clr_SoftkeybarBackground := 183;Clr_SoftkeybarButtonBg := 255;Clr_SoftkeybarButtonFg := 2;"
+#hide #ifnot opt_colormap%
+#hide #option opt_colormap%
+#hide enum colormap% as Clr_ButtonBackground:=258, Clr_ButtonBackgroundAlt:=260, Clr_ButtonForeground:=259, Clr_ButtonForegroundAlt:=261, Clr_FillColor:=264, Clr_LabelBackground:=256, Clr_LabelForeground:=257, Clr_ScreenBackground:=262, Clr_ScreenForeground:=263, Clr_SoftkeybarBackground:=265, Clr_SoftkeybarButtonBg:=266, Clr_SoftkeybarButtonFg:=267
+#hide #hidden dim _colorMap[] as color
+#hide init _colorMap := [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177, 178, 179, 180, 181, 182, 183, 184, 185, 186, 187, 188, 189, 190, 191, 192, 193, 194, 195, 196, 197, 198, 199, 200, 201, 202, 203, 204, 205, 206, 207, 208, 209, 210, 211, 212, 213, 214, 215, 216, 217, 218, 219, 220, 221, 222, 223, 224, 225, 226, 227, 228, 229, 230, 231, 232, 233, 234, 235, 236, 237, 238, 239, 240, 241, 242, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 223, 2, 219, 0, 223, 2, 255, 2, 15, 183, 255, 2]
+#hide #endif
+#config stylemap "Bdr_BumpBorder := 33895724;Bdr_ButtonBorder := 33890340;Bdr_CheckBoxBorder := 654643206;Bdr_CompositeObject := 33890340;Bdr_CompositeSunken := 33890342;Bdr_InnerButton := 637865988;Bdr_InnerLabel := 1862602758;Bdr_LabelBorder := 33886214;Bdr_None := 0;Bdr_Scrollbar := 1325731844;Bdr_SignalBars := 335905;Bdr_Softkey := 33760548;Bdr_TabBorder := 34222116;"
+#hide #ifnot opt_stylemap%
+#hide #option opt_stylemap%
+#hide enum stylemap% as Bdr_BumpBorder:=4, Bdr_ButtonBorder:=0, Bdr_CheckBoxBorder:=6, Bdr_CompositeObject:=9, Bdr_CompositeSunken:=10, Bdr_InnerButton:=7, Bdr_InnerLabel:=8, Bdr_LabelBorder:=1, Bdr_None:=2, Bdr_Scrollbar:=3, Bdr_SignalBars:=12, Bdr_Softkey:=11, Bdr_TabBorder:=5
+#hide #hidden dim _styleMap[] as integer
+#hide init _styleMap := [33890340, 33886214, 0, 1325731844, 33895724, 34222116, 654643206, 637865988, 1862602758, 33890340, 33890342, 33760548, 335905]
+#hide #endif
