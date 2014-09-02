@@ -16962,7 +16962,7 @@ Declare Label_77 as LabelV2
 Level 249484
 #Visible True
 #Lock False
-init value := "Software Ver VPA S301-12 1-Sept.-2014 "
+init value := "Software Ver VPA S301-12 2-Sept.-2014 "
 init parent := sys_setup_screen
 init xpos := 20
 init ypos := 731
