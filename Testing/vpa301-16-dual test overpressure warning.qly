@@ -386,6 +386,7 @@ Func Start_P_Mode()
     valueChanged=false
     'enable alarms
 
+
     'send Pready=0
     GMCCommand.command = "Pready=0"
     GMCCommand.executeCommand = true
@@ -448,6 +449,7 @@ Endfunc
 func Start_Flow()
     dim strCommand as string
     'enable alarms
+    tmr_OverPresAck.enabled=false
     valueChanged=false
     FlowStopped=false
     Pumping=true
@@ -793,11 +795,11 @@ func Display_Error_Message_Detected(ErrorNum as Integer)
         Return
     endif
     If ErrorNum == 12 then
-        lbl_Error_Msg.value="Cylinder A reported pressure greater than P Max.  Use Pressure Mode to return pressure to normal operating range."
+        lbl_Error_Msg.value="Cylinder A reported pressure greater than the shutdown limit.  Use Pressure Mode to return pressure to normal operating range or increase the shutdown limit"
         Return
     endif
     If ErrorNum == 13 then
-        lbl_Error_Msg.value="Cylinder B reported pressure greater than P Max.  Use Pressure Mode to return pressure to normal operating range."
+        lbl_Error_Msg.value="Cylinder B reported pressure greater than the shutdown limit.  Use Pressure Mode to return pressure to normal operating range or increase the shutdown limit"
         Return
     endif
     If ErrorNum == 14 then
@@ -905,6 +907,8 @@ func Exit_Manual_Control_Screen()
     'gmcpoll_mltot.enabled=true
     GMCPoll_PcurA.enabled=false
     GMCPoll_PcurB.enabled=false
+    GMCPoll_FlowingA.enabled=false
+    GMCPoll_FlowingB.enabled=false
 
     'Reenable the Title Screen with buttons set appropriately
     Init_Title_Screen()
@@ -1203,6 +1207,10 @@ REM Rem Buttons can only be set in Set_Error_Buttons
         return
         'Don't display if warnings disabled.
     endif
+    if tmr_overPresAck.enabled and (errorID==12 or errorid==13) then
+        REM don't display if still within 30 seconds of being acknowledged
+        return
+    endif
     if ErrorDisplayDisabled and errorID >4 and errorID<8 then
         'do not update the error log or display message
     else
@@ -1321,12 +1329,22 @@ func Init_Error_Popup_Screen(errorID as Integer)
         'STOP ASKING ABOUT POWERUP AND _XQ0
         tmrPowerUp.enabled=false
     endif
-    if errorID>9 and errorID<15 then
+    if errorID>9 and errorID<12 then
         REM 10 Exceeded maximum flow rate set for pressure mode
-        REM 12 Cylinder A pressure greater than PMax
-        REM 13 Cylinder B pressure greater than PMax
+        REM (11) Position error reported by the controller.  Pump has stopped
         Set_Error_Buttons(2)
         Hold_This_Error=True
+    endif
+    if errorID>11 and errorID<14 then
+        REM 12 Cylinder A pressure greater than PMax
+        REM 13 Cylinder B pressure greater than PMax
+        Set_Error_Buttons(4)
+        Hold_This_Error=True
+    endif
+    if errorID==14 then
+        REM (14) Data acquisition loop stopped. Pump has stopped
+        Set_Error_Buttons(2)
+        Hold_This_Error=true
     endif
     if errorID>14 and errorID<19 then
         REM 15 Cylinder B was not ready for transition
@@ -1366,6 +1384,7 @@ func Init_Error_Popup_Screen(errorID as Integer)
         lbl_LineNum1.enabled=false
     endif
     warning_sound()
+    tmr_error_beep_repeat.enabled=true
     Error_Popup_Screen.enabled=true
     lbl_ErrNo.value=_FormatFloat(ErrorNoArray[0],3,0,_float_normal)
     lbl_ErrTime.value= ErrorTime0
@@ -1458,6 +1477,8 @@ func Init_Manual_Control_screen()
     but_Refill_A.enabled=true
     but_Refill_B.enabled=true
     but_Estop_1.enabled=false
+    GMCPoll_FlowingA.enabled=true
+    GMCPoll_FlowingB.enabled=true
 
 
     If FlowRA <> 0 and FloVolA <> 0 then
@@ -2389,6 +2410,7 @@ Func Set_Press_Buttons()
     valueChanged=false
 endfunc
 func Start_Profile()
+    tmr_OverPresAck.enabled=false
     Profile_Stopped=false
     Current_Segment=0
     Profile_Total_Time=SegTimeArray[1]+SegTimeArray[2]+SegTimeArray[3]+SegTimeArray[4]+SegTimeArray[5]+SegTimeArray[6]
@@ -6314,7 +6336,7 @@ Declare but_acknowledged as ButtonV2
 Level 249996
 #Visible True
 #Lock False
-init value := "ACKNOWLEDGED"
+init value := "ACKNOWLEDGED (30 SECONDS)"
 init parent := error_popup_screen
 init xpos := 15
 init ypos := 491
@@ -6326,7 +6348,7 @@ func click()
     tmr_error_beep_repeat.enabled=false
     Error_Popup_Screen.enabled=false
     tmr_OverPresAck.enabled=true
-    hold_this_error=true
+    hold_this_error=false
 
 endfunc
 Enddec
@@ -7256,6 +7278,9 @@ init font := helvb18_bdf
 func click()
     IF RefillingA or RefillingB then
         lbl_Manual_Control_Msg.value= "Wait for refilling to complete before exiting this screen."
+        warning_sound()
+    elseif FlowingA==1 or FlowingB==1 then
+        lbl_Manual_Control_Msg.value= "Stop flow on both cylinders before exiting!"
         warning_sound()
     else
         Exit_Manual_Control_Screen()
@@ -8709,6 +8734,7 @@ init font := helvb18_bdf
 
 func click()
     dim strCommand as string
+    tmr_OverPresAck.enabled=false
 
     If value=="START FLOW - A" then
         if but_AOut.Value=="CLOSED" and but_AIn.Value=="CLOSED" then
@@ -8721,7 +8747,7 @@ func click()
         but_AIn.enabled=false
         value="STOP FLOW - A"
         send_GMCcommand("FlowingA=1")
-        GMCPoll_FlowingA.enabled=true
+        'GMCPoll_FlowingA.enabled=true
         check error
             val(FloVolA,eb_tar_vol_a.Value)
         on error
@@ -8762,6 +8788,7 @@ init font := helvb18_bdf
 
 func click()
      dim strCommand as string
+     tmr_OverPresAck.enabled=false
 
     If value=="START FLOW - B" then
         if but_BOut.Value=="CLOSED" and but_BIn.Value=="CLOSED" then
@@ -8774,7 +8801,7 @@ func click()
         but_BIn.enabled=false
         value="STOP FLOW - B"
         send_GMCcommand("FlowingB=1")
-        GMCPoll_FlowingB.enabled=true
+        'GMCPoll_FlowingB.enabled=true
         check error
             val(FloVolB,eb_tar_vol_b.Value)
         on error
@@ -11034,19 +11061,18 @@ func valueChanged()
     dim New_Pmax as integer
 
     check error
-            val(New_Pmax, me.Value)
+            val(New_Pmax, eb_pmax_1.Value)
         on error
             _ClearException()
         enderr
 
 
     if new_pmax<pcur then
-        lbl_limits_msg.value="Cannot set the shutdown limit lower than current pressure!"
-        warning_sound()
-        if (1.1*pcur>pmax) then
-            me.Value=str(pmax)
+        if (1.1*pcur>PRange) then
+            me.Value=str(1.1*PRange)
         else
             me.Value=str(1.1*pcur)
+
         endif
     endif
 
@@ -11902,7 +11928,7 @@ endfunc
 Enddec
 Declare Error_Popup_Screen as PopupScreenV2
 Level 249997
-#Visible True
+#Visible False
 #Lock False
 init xpos := 70
 init ypos := 40
@@ -14624,7 +14650,7 @@ func ResponseReceived (response as reference to string)
     If FlowingA == 0 then
         but_Start_Flow_Man_A.Value="START FLOW - A"
         lbl_Manual_Control_Msg.value="Cylinder A flow volume completed"
-        GMCPoll_FlowingA.enabled=false
+        'GMCPoll_FlowingA.enabled=false
         ReadytoFlowA=False
         Set_Manual_Flow_Buttons()
     endif
@@ -14663,7 +14689,7 @@ func ResponseReceived (response as reference to string)
     If FlowingB == 0 then
         but_Start_Flow_Man_B.Value="START FLOW - B"
         lbl_Manual_Control_Msg.value="Cylinder B flow volume completed"
-        GMCPoll_FlowingB.enabled=false
+        'GMCPoll_FlowingB.enabled=false
         ReadytoFlowB=False
         Set_Manual_Flow_Buttons()
     endif
@@ -20501,7 +20527,7 @@ init enabled := false
 Enddec
 Declare Manual_Control_Screen as ScreenV2
 Level 249917
-#Visible False
+#Visible True
 #Lock False
 init width := 480
 init height := 800
@@ -20799,7 +20825,7 @@ init enabled := false
 Enddec
 Declare Pressure_mode_screen as ScreenV2
 Level 249531
-#Visible False
+#Visible True
 #Lock False
 init parent := default
 init xpos := 0
@@ -20998,7 +21024,7 @@ init marqueeptsize := 51
 Enddec
 Declare Sys_Setup_screen as ScreenV2
 Level 249470
-#Visible True
+#Visible False
 #Lock False
 init parent := default
 init xpos := -1
@@ -21035,7 +21061,7 @@ init height := 312
 Enddec
 Declare Title_Screen as ScreenV2
 Level 249817
-#Visible False
+#Visible True
 #Lock Me
 init parent := default
 init xpos := 0
@@ -21266,6 +21292,7 @@ func timeout()
     hold_this_error=false
 
 endfunc
+init timertype := _tt_oneshot
 Enddec
 Declare tmr_Profile_Times as TimerV2
 Level 249380
