@@ -7729,6 +7729,7 @@ func click()
     'send Wait4op=0
     Send_GMCcommand("Wait4op=0")
     GMCPoll_Wait4op.enabled=true
+    tmr_alert_op.enabled=false
 endfunc
 
 init xjustify := hjustify_centeralign
@@ -9825,7 +9826,7 @@ init value := "Delete the Error Log?"
 init parent := error_log_screen
 Enddec
 Declare DelimitedComm_1 as DelimitedCommV2
-Level 249352
+Level 249351
 #Visible False
 #Lock False
 
@@ -12273,7 +12274,7 @@ init enabled := false
 init bgcolor := clr_buttonbackgroundalt
 Enddec
 Declare G_55_PopupMenu_1 as G55PopupMenu
-Level 249353
+Level 249352
 #Visible True
 #Lock False
     init mainsubmenu := g_55_popupmenu_2
@@ -12290,7 +12291,7 @@ init xpos := 0
 init ypos := -80
 Enddec
 Declare G_55_PopupMenu_2 as G55PopupMenu
-Level 249355
+Level 249354
 #Visible True
 #Lock False
     init mainsubmenu := g_55_popupmenu_3
@@ -12307,7 +12308,7 @@ init xpos := 0
 init ypos := -80
 Enddec
 Declare G_55_PopupMenu_3 as G55PopupMenu
-Level 249356
+Level 249355
 #Visible True
 #Lock False
     init mainsubmenu := g_55_popupmenu_4
@@ -12324,7 +12325,7 @@ init xpos := 0
 init ypos := -80
 Enddec
 Declare G_55_PopupMenu_4 as G55PopupMenu
-Level 249357
+Level 249356
 #Visible True
 #Lock False
     init mainsubmenu := g_55_popupmenu_5
@@ -12341,7 +12342,7 @@ init xpos := 0
 init ypos := -80
 Enddec
 Declare G_55_PopupMenu_5 as G55PopupMenu
-Level 249354
+Level 249353
 #Visible True
 #Lock False
     init mainsubmenu := g_55_popupmenu_6
@@ -12358,7 +12359,7 @@ init xpos := 0
 init ypos := -80
 Enddec
 Declare G_55_PopupMenu_6 as G55PopupMenu
-Level 249358
+Level 249357
 #Visible True
 #Lock False
     init mainsubmenu := g_55_popupmenu_7
@@ -12375,7 +12376,7 @@ init xpos := 0
 init ypos := -80
 Enddec
 Declare G_55_PopupMenu_7 as G55PopupMenu
-Level 249359
+Level 249358
 #Visible True
 #Lock False
     init mainsubmenu := g_55_popupmenu_8
@@ -12392,7 +12393,7 @@ init xpos := 0
 init ypos := -80
 Enddec
 Declare G_55_PopupMenu_8 as G55PopupMenu
-Level 249360
+Level 249359
 #Visible True
 #Lock False
     init initialselected := 0
@@ -15606,12 +15607,15 @@ func ResponseReceived (response as reference to string)
         'more code here
         Wait_4_Operator_Popup_Screen.enabled=true
         lbl_Wait4op_Msg.value="Cylinder needs to cycle to start position. Close outlet valve and open inlet valve. Then press OK"
-
+        tmr_alert_op.enabled=true
+        warning_sound()
     endif
     If Wait4op == 2 then
         GMCPoll_Wait4op.enabled=false
         'more code here
         Wait_4_Operator_Popup_Screen.enabled=true
+        tmr_alert_op.enabled=true
+        warning_sound()
         If FlowStopped then
             lbl_Wait4op_Msg.value="Cylinder has cycled to start position. Close inlet valve to allow VPA to increase pressure. Then press OK"
         else
@@ -15621,7 +15625,16 @@ func ResponseReceived (response as reference to string)
     If Wait4op == 3 then
         GMCPoll_Wait4op.enabled=false
         Wait_4_Operator_Popup_Screen.enabled=true
+        tmr_alert_op.enabled=true
+        warning_sound()
         lbl_Wait4op_Msg.value="Cylinder has reached pressure. Open outlet valve to allow VPA to control system pressure. Then press OK"
+    endif
+    If Wait4op == 4 then
+        GMCPoll_Wait4op.enabled=false
+        Wait_4_Operator_Popup_Screen.enabled=true
+        tmr_alert_op.enabled=true
+        warning_sound()
+        lbl_Wait4op_Msg.value="The pump failed to match the pressure that was in the line before refill. Press ok to attempt to ramp to target pressure."
     endif
 endfunc
 
@@ -15711,7 +15724,7 @@ init image := Banner_Rev5
 init transparent := true
 Enddec
 Declare Image_16 as ImageV2
-Level 249350
+Level 249349
 #Visible True
 #Lock False
 init parent := welcome_screen
@@ -16962,7 +16975,7 @@ Declare Label_77 as LabelV2
 Level 249484
 #Visible True
 #Lock False
-init value := "Software Ver VPA S301-12 2-Sept.-2014 "
+init value := "Software Ver VPA S301-12 9-Sept.-2014 "
 init parent := sys_setup_screen
 init xpos := 20
 init ypos := 731
@@ -19972,7 +19985,7 @@ init parent := wait_4_operator_popup_screen
 init xpos := 10
 init ypos := 50
 init width := 280
-init height := 101
+init height := 126
 init font := helvb18_bdf
 init borderstyle := bdr_bumpborder
 init xjustify := hjustify_leftalign
@@ -20645,8 +20658,20 @@ func screenEnabled()
 
 endfunc
 Enddec
+Declare tmr_alert_op as TimerV2
+Level 249376
+#Visible True
+#Lock False
+init parent := default
+init enabled := false
+
+func timeout()
+    warning_sound()
+
+endfunc
+Enddec
 Declare tmr_Burn_New_Var as TimerV2
-Level 249366
+Level 249365
 #Visible True
 #Lock False
 init timertype := _tt_oneshot
@@ -20661,7 +20686,7 @@ func timeout()
 endfunc
 Enddec
 Declare tmr_Check_Connection as TimerV2
-Level 249372
+Level 249371
 #Visible True
 #Lock False
 init timertype := _tt_periodic
@@ -20683,7 +20708,7 @@ init timeperiod := 1
 init enabled := false
 Enddec
 Declare tmr_CheckML as TimerV2
-Level 249367
+Level 249366
 #Visible True
 #Lock False
 init timeunits := _tt_minutes
@@ -20701,7 +20726,7 @@ endfunc
 init enabled := false
 Enddec
 Declare tmr_delay_check_DAQ as TimerV2
-Level 249368
+Level 249367
 #Visible True
 #Lock False
 init timeperiod := 2
@@ -20712,7 +20737,7 @@ func timeout()
 endfunc
 Enddec
 Declare tmr_Delay_Get_Config as TimerV2
-Level 249369
+Level 249368
 #Visible True
 #Lock False
 func timeout()
@@ -20724,7 +20749,7 @@ init timertype := _tt_oneshot
 init enabled := false
 Enddec
 Declare tmr_Delay_Start as TimerV2
-Level 249362
+Level 249361
 #Visible True
 #Lock False
 init timertype := _tt_oneshot
@@ -20761,7 +20786,7 @@ func timeout()
 endfunc
 Enddec
 Declare tmr_Disabled as TimerV2
-Level 249371
+Level 249370
 #Visible True
 #Lock False
 func timeout()
@@ -20775,7 +20800,7 @@ init timertype := _tt_oneshot
 init enabled := false
 Enddec
 Declare tmr_Error_Banner as TimerV2
-Level 249375
+Level 249374
 #Visible True
 #Lock False
 init parent := default
@@ -20790,10 +20815,10 @@ init timertype := _tt_oneshot
 init enabled := false
 Enddec
 Declare tmr_error_beep_delay as TimerV2
-Level 249374
+Level 249373
 #Visible True
 #Lock False
-init timeperiod := 10
+init timeperiod := 5
 init timertype := _tt_oneshot
 init enabled := false
 
@@ -20804,7 +20829,7 @@ endfunc
 init parent := default
 Enddec
 Declare tmr_Fact_Set as TimerV2
-Level 249370
+Level 249369
 #Visible True
 #Lock False
 init enabled := false
@@ -20816,7 +20841,7 @@ func timeout()
 endfunc
 Enddec
 Declare tmr_FirstPowerUp as TimerV2
-Level 249373
+Level 249372
 #Visible True
 #Lock False
 init timeperiod := 5
@@ -20830,7 +20855,7 @@ func timeout()
 endfunc
 Enddec
 Declare tmr_Hide_Error_Display as TimerV2
-Level 249365
+Level 249364
 #Visible True
 #Lock False
 init enabled := false
@@ -20892,7 +20917,7 @@ func timeout()
 endfunc
 Enddec
 Declare tmr_Receive_Warning as TimerV2
-Level 249361
+Level 249360
 #Visible True
 #Lock False
 init parent := default
@@ -20905,7 +20930,7 @@ func timeout()
 endfunc
 Enddec
 Declare tmr_refill as TimerV2
-Level 249363
+Level 249362
 #Visible True
 #Lock False
 init enabled := false
@@ -20927,7 +20952,7 @@ func timeout()
 endfunc
 Enddec
 Declare tmr_reset_flow_pressed as TimerV2
-Level 249376
+Level 249375
 #Visible True
 #Lock False
 init parent := default
@@ -20960,7 +20985,7 @@ func timeout()
 endfunc
 Enddec
 Declare tmr_Wait_For_Refill as TimerV2
-Level 249364
+Level 249363
 #Visible True
 #Lock False
 init timeperiod := 1
@@ -21711,7 +21736,7 @@ init height := 800
 init enabled := False
 Enddec
 Declare Welcome_Screen as ScreenV2
-Level 249351
+Level 249350
 #Visible True
 #Lock Me
 init width := 480
