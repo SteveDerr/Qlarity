@@ -348,8 +348,6 @@ dim currentvalue as string
     Init psi_per_sec :=true
     Dim flow_limit_disabled as Boolean
     Init flow_limit_disabled :=true
-    Dim I_sent_Restart as Boolean
-    Init I_sent_Restart:=false
     Dim Exiting_Remote as Boolean
     Init Exiting_Remote:=false
     DIM p_start_pressed as boolean
@@ -1281,7 +1279,6 @@ func Init_Error_Popup_Screen(errorID as Integer)
     if Hold_This_Error then
         return
     endif
-    I_sent_Restart=false
     REM These commands are not executed before we check the code. They are queued up and performed as seperate messages.
     REM GMCcom_PowerUp_1 was deleted because we couldn't figure out why we were calling it and
     REM because it was turing the Ignore button on at the wrong time.
@@ -8310,7 +8307,6 @@ init height := 60
 init font := helvb18_bdf
 
 func click()
-    I_sent_Restart=true
     Close_All()
     tmr_Profile_Times.enabled=false
     tmr_Segment.enabled=false
@@ -11845,7 +11841,7 @@ endfunc
 Enddec
 Declare Error_Popup_Screen as PopupScreenV2
 Level 249997
-#Visible False
+#Visible True
 #Lock False
 init xpos := 70
 init ypos := 40
@@ -13008,7 +13004,6 @@ func ResponseReceived(response as string)
 '        skb_title.softKeyList=skl_Title_1
 
 '#fix commented out
-'        If not I_sent_Restart then
 '            lbl_msg_title.value="Operator Terminal Rebooted Unexpectedly"
 '            lbl_msg_title.enabled=true
 '        endif
@@ -20744,7 +20739,7 @@ init enabled := false
 Enddec
 Declare Pressure_mode_screen as ScreenV2
 Level 249533
-#Visible False
+#Visible True
 #Lock False
 init parent := default
 init xpos := 0
@@ -20943,7 +20938,7 @@ init marqueeptsize := 51
 Enddec
 Declare Sys_Setup_screen as ScreenV2
 Level 249472
-#Visible True
+#Visible False
 #Lock False
 init parent := default
 init xpos := -1
