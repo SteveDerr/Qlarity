@@ -441,7 +441,7 @@ func Update_Galil_Code(new_pxdcr as integer, new_motorred as integer)
     delayms(500)
     transmit(COM1, "DL\r", false)
     delayms(1000)
-    transmit(COM1, getbinaryresource(vpacds3310_vpa_12_single_binary),false)
+    transmit(COM1, getbinaryresource(vpacds3310_vpa_16_single_binary),false)
     delayms(2000)
     transmit(COM1, "\\\r", false)
     delayms(500)
@@ -21814,7 +21814,7 @@ Include BDFfont "resources/veramono18.bdf" As veramono18
 Include BDFfont "resources/veramono32.bdf" As veramono32
 Include TTfont "resources/vera.ttf" As default
 Include TTfont "resources/verabd.ttf" As VeraBd
-Include _binary "../galil_code/vpacds3310-vpa-12-single-binary.dmc" As VPACDS3310_VPA_12_Single_Binary
+Include _binary "../galil_code/vpacds3310-vpa-16-single-binary.dmc" As VPACDS3310_VPA_16_Single_Binary
 #config colormap "Clr_Banner := 3;Clr_ButtonBackground := 219;Clr_ButtonBackgroundAlt := 223;Clr_ButtonForeground := 0;Clr_ButtonForegroundAlt := 2;Clr_FillColor := 15;Clr_LabelBackground := 223;Clr_LabelForeground := 2;Clr_MessageBackground := 254;Clr_ScreenBackground := 255;Clr_ScreenForeground := 2;Clr_SoftkeybarBackground := 183;Clr_SoftkeybarButtonBg := 255;Clr_SoftkeybarButtonFg := 2;"
 #hide #ifnot opt_colormap%
 #hide #option opt_colormap%
