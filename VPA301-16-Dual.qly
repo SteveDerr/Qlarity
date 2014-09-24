@@ -145,15 +145,10 @@ dim currentvalue as string
     Dim LastScreen as string
     init LastScreen :="none"
 
-    dim StopTimeSecs as float
-    init StopTimeSecs:=0
-    dim StartTimeSecs as float
-    init StartTimeSecs:=0
     Dim Profile_Seconds as integer
     Init Profile_Seconds :=0
     Dim Segment_Seconds as Integer
     Init Segment_Seconds :=0
-
 
     dim HelpIndex as integer
     init HelpIndex := 0
@@ -415,14 +410,30 @@ Func Stop_P_Mode()
 '    elps_a_1.bgcolor=160
 '    elps_b_1.bgcolor=160
     StopTime=DateTimeFunctions_Maintenance.GetCurrentTime()
-    StopTimeSecs=StopTime
-    StartTimeSecs=StartTime
-    RunHours = (StopTimeSecs-StartTimeSecs)/3600
+    Update_Maint_Hours()
+
+endfunc
+
+Func Update_Maint_Hours()
+    REM Function converts start time and stop time to floats, converts total runtime to hours then updates the maintenance hours.
+    dim F_StartTime, F_StopTime as float
+
+    check error
+             Val(MaintHours, lbl_maint_hrs.value)
+    on error
+            _ClearException()
+    enderr
+
+    F_StartTime=StartTime
+    F_StopTime=StopTime
+    RunHours=((F_StopTime-F_StartTime)/3600)
     MaintHours=MaintHours+RunHours
     RunHours=0
-    lbl_Maint_hrs.value=_FormatFloat(MaintHours,6,2,_FLOAT_NORMAL)
-    pv_maintenance.Save()
+    lbl_maint_hrs.value=_FormatFloat(MaintHours, 6,2,_FLOAT_NORMAL)
+    PV_maintenance.Save()
 endfunc
+
+
 Func Stop_Polling()
     GMCPoll_Ramping.enabled=false
     GMCPoll_Pready.enabled=false
@@ -482,14 +493,7 @@ func Stop_Flow()
     'GMCPoll_CurFlow.enabled=false
     lbl_Current_Flow_Rate.value =""
     StopTime=DateTimeFunctions_Maintenance.GetCurrentTime()
-    StopTimeSecs=StopTime
-    StartTimeSecs=StartTime
-    RunHours = (StopTimeSecs-StartTimeSecs)/3600
-    MaintHours=MaintHours+RunHours
-    RunHours=0
-    lbl_Maint_hrs.value=_FormatFloat(MaintHours,6,2,_FLOAT_NORMAL)
-    pv_maintenance.Save()
-
+    Update_Maint_Hours()
 endfunc
 
 func PostStartup(stat as integer) returns boolean
