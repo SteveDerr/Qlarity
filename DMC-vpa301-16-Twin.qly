@@ -133,14 +133,12 @@ dim currentvalue as string
     Dim cyclecomplete, finding as boolean
     Init cyclecomplete := false
     dim PMax[2] as float
-    dim PMaxWarn as float
-    init PMaxWarn := 0
+    dim PMaxWarn[2] as float
     dim RevFlowRmax as float
     init RevFlowRmax :=0
-    dim FlowRLimWarn as Float
-    init FlowRLimWarn := 0
-    Dim LastScreen as string
-    init LastScreen :="none"
+    dim FlowRLimWarn[2] as Float
+    Dim LastScreen as screenv2
+
 
     Dim Profile_Seconds as integer
     Init Profile_Seconds :=0
@@ -250,8 +248,7 @@ dim currentvalue as string
     Init AlreadyWarned :=false
     dim AlreadyWarnedMaxFlow as Boolean
     Init AlreadyWarnedMaxFlow :=false
-    dim ErrorDisplayDisabled as boolean
-    Init ErrorDisplayDisabled := false
+    dim ErrorDisplayDisabled[2] as boolean
     Dim FloVolA as float
     Init FloVolA := 0
     Dim FlowRA as float
@@ -264,8 +261,7 @@ dim currentvalue as string
     Init FlowRB :=0
     Dim RefillRB as float
     Init RefillRB :=0
-    Dim FlowRLim as float
-    Init FlowRLim:=600
+    Dim FlowRLim[2] as float
     dim MsgNo as Integer
     Init MsgNo :=1
     dim Pumping as Boolean 'set true if controlling in flow or pressure mode
@@ -308,8 +304,6 @@ dim currentvalue as string
     Init Next_Segment :=0
     dim Profile_Definition_Complete as Boolean
     Init Profile_Definition_Complete:=false
-    dim Open_Valves_at_Over_Pressure as Boolean
-    Init Open_Valves_at_Over_Pressure:=true
     dim Profile_Stopped as Boolean
     Init Profile_Stopped := false
     dim FlowingA as float
@@ -328,8 +322,7 @@ dim currentvalue as string
     Init Sim_mode := false
     Dim psi_per_sec as Boolean
     Init psi_per_sec :=true
-    Dim flow_limit_disabled as Boolean
-    Init flow_limit_disabled :=true
+    Dim flow_limit_disabled[2] as Boolean
     Dim I_sent_Restart as Boolean
     Init I_sent_Restart:=false
     Dim Exiting_Remote as Boolean
@@ -350,7 +343,6 @@ dim currentvalue as string
     dim daqrunning, threadoneclear as boolean
     dim valveopen[4], cycling[2] as boolean
     dim avesp[2], version, vol[2] as float
-    dim disabled_button as buttonv2
     dim cylnum, cylcfg, dontopn[2], rev, reflfmn[2], reflpc[2] as float
 
 
@@ -518,11 +510,11 @@ func PostStartup(stat as integer) returns boolean
     return true
 endfunc
 func Cancel_PowerUp()
-    PowerUp = 0
+'    PowerUp = 0
 
-    'GMCCommand.command = "PowerUp=0"
-    'GMCCommand.executeCommand = true
-    tmrPowerUp.enabled=true
+    GMCCommand.command = "PowerUp=0"
+    GMCCommand.executeCommand = true
+    'tmrPowerUp.enabled=true
 endfunc
 'func Clear_Error()
 '        If ErrorNoArray[ErrorIndex]==11 then
@@ -891,18 +883,7 @@ endfunc
 
 func Exit_Limits_screen()
     Limits_screen.enabled=false
-    If LastScreen=="Pressure_mode_screen" then
-        Pressure_mode_screen.enabled = true
-    endif
-    If LastScreen=="Flow_mode_screen" then
-        Flow_mode_screen.enabled = true
-    endif
-    If LastScreen=="Sys_Setup_screen" then
-        Sys_Setup_screen.enabled=true
-    endif
-    If LastScreen=="Profile_screen" then
-        Profile_screen.enabled=true
-    endif
+    lastscreen.enabled=true
     AlreadyWarned=false
     AlreadyWarnedMaxFlow=false
 endfunc
@@ -1138,6 +1119,8 @@ func Get_Current_Config()
     gmccom_twin_update_config_4.executeCommand=true
     gmccom_twin_update_config_5.executeCommand=true
 
+
+
     'GMCcom_Rod.executeCommand=true
     'gmccom_prange.executeCommand=true
     'GMCcom_Stroke.executeCommand=true
@@ -1191,7 +1174,7 @@ REM Rem Buttons can only be set in Set_Error_Buttons
     '        return
     '    endif
     'endif
-    if ErrorDisplayDisabled and errorID==19 then
+    if ErrorDisplayDisabled[0] and errorID==19 then
         return
         'Don't display if warnings disabled.
     endif
@@ -1199,10 +1182,10 @@ REM Rem Buttons can only be set in Set_Error_Buttons
         REM don't display if still within 30 seconds of being acknowledged
         return
     endif
-    if ErrorDisplayDisabled and errorID >4 and errorID<8 then
+    if ErrorDisplayDisabled[0] and errorID >4 and errorID<8 then
         'do not update the error log or display message
     else
-        debugText="Error ID "+str(ErrorID)+"\nCurrent Values - PcurA: " +str(PcurA) +", PcurB: " +str(PcurB) +", AveSpA: " + str(avesp[0])+", AveSpB: " + str(avesp[1])+", Pressure warning limit: " +eb_Pmax_Warn.Value +", Pressure Shutdown limit " + eb_PMax_1.value +", Flow Warning " + eb_flowRlim_Warn.value +", Flow Shutdown " + eb_FlowRlim_1.Value
+        debugText="Error ID "+str(ErrorID)+"\nCurrent Values - PcurA: " +str(PcurA) +", PcurB: " +str(PcurB) +", AveSpA: " + str(avesp[0])+", AveSpB: " + str(avesp[1])+", Pressure warning limit: " +eb_pmax_warn_a.Value +", Pressure Shutdown limit " + eb_pmax_a.value +", Flow Warning " + eb_flowrlim_warn_a.value +", Flow Shutdown " + eb_flowrlim_a.Value
         Write_To_Debug(debugText, "Global Function Handle_Error")
 
         Date_and_Time(strTime)
@@ -1230,9 +1213,9 @@ func Init_Config_Screen()
     lbl_Sys_Config_Instructions.value=defaultConfigMsg
     but_OK.enabled= false
     if cylcfg==3 then
-        config_screen_twin.enabled=true
         get_current_config()
-        update_twin_config_screen()
+        'update_twin_config_screen()
+        tmr_update_config.enabled=true
 
 
     else
@@ -1241,32 +1224,32 @@ func Init_Config_Screen()
 ' fix - I don't think this needs to be populated at init - do we need to do something with Config_screen2?
 '    eb_volpcyl.Value=_FormatFloat(VolpCyl,6,2,_FLOAT_NORMAL)
 
-    tmr_Delay_Get_Config.enabled=true
+    'tmr_Delay_Get_Config.enabled=true
 endfunc
 
 func update_twin_config_screen()
-    lbl_p_range_t.value=_formatfloat(prange,6,0,_FLOAT_NORMAL)
+    lbl_p_range_t.value=_formatfloat(prange,6,1,_FLOAT_NORMAL)
     lbl_rod_dia_t.value=_formatfloat(roddia,6,2,_FLOAT_NORMAL)
-    eb_pmax_t_a.Value=_formatfloat(pmax[0],6,0,_FLOAT_NORMAL)
+    eb_pmax_t_a.Value=_formatfloat(pmax[0],6,1,_FLOAT_NORMAL)
     eb_pmax_t_a.max=1.1*prange
     eb_pmax_t_a.min=.01*prange
-    eb_pmax_t_b.Value=_formatfloat(pmax[1],6,0,_FLOAT_NORMAL)
+    eb_pmax_t_b.Value=_formatfloat(pmax[1],6,1,_FLOAT_NORMAL)
     eb_pmax_t_b.max=1.1*prange
     eb_pmax_t_b.min=.01*prange
 
-    eb_fillr_t_a.Value=_formatfloat(reflpc[0],6,0,_FLOAT_NORMAL)
+    eb_fillr_t_a.Value=_formatfloat(reflpc[0],6,1,_FLOAT_NORMAL)
     eb_fillr_t_a.max=frmax
     eb_fillr_t_b.min=1
 
-    eb_fillr_t_b.Value=_formatfloat(reflpc[1],6,0,_FLOAT_NORMAL)
+    eb_fillr_t_b.Value=_formatfloat(reflpc[1],6,1,_FLOAT_NORMAL)
     eb_fillr_t_b.max=frmax
     eb_fillr_t_b.min=1
 
-    eb_reflrate_t_a.Value=_formatfloat(reflfmn[0],6,0,_FLOAT_NORMAL)
+    eb_reflrate_t_a.Value=_formatfloat(reflfmn[0],6,1,_FLOAT_NORMAL)
     eb_reflrate_t_a.max=frmax
     eb_reflrate_t_a.min=1
 
-    eb_reflrate_t_b.Value=_formatfloat(reflfmn[1],6,0,_FLOAT_NORMAL)
+    eb_reflrate_t_b.Value=_formatfloat(reflfmn[1],6,1,_FLOAT_NORMAL)
     eb_reflrate_t_b.max=frmax
     eb_reflrate_t_b.min=1
 
@@ -1274,7 +1257,7 @@ func update_twin_config_screen()
     eb_volpcyl_t.max=vol[0]-.05
     eb_volpcyl_t.min=1
 
-    eb_initrate_t.Value=_formatfloat(initrate,6,0,_FLOAT_NORMAL)
+    eb_initrate_t.Value=_formatfloat(initrate,6,1,_FLOAT_NORMAL)
     eb_initrate_t.max=frmax
 
     eb_start_vol_pump_t_a.Value=_formatfloat(pmpstart[0],6,2,_FLOAT_NORMAL)
@@ -1342,7 +1325,7 @@ func Init_Const_P_Screen()
     eb_PressR.value= _formatfloat(0,6,2,_FLOAT_NORMAL)
     Prate=0
     lbl_Current_Flow_Rate_1.value="0.00"
-    eb_FlowRLim.Value=_formatfloat(FlowRLim,6,2,_FLOAT_NORMAL)
+    'eb_FlowRLim.Value[0]=_formatfloat(FlowRLim[0],6,2,_FLOAT_NORMAL)
     Set_Press_Buttons()
 
     If psi_per_sec then
@@ -1480,6 +1463,8 @@ endfunc
 
 func Init_Pump_Control_Screen()
     twin_monitor_screen.enabled=true
+    gauge_volumea_6.max=Vol[0]
+    gauge_volumeb_6.max=vol[1]
 
     update_control_buttons_visibility()
 endfunc
@@ -1508,39 +1493,97 @@ func Init_IP_Address_screen()
 endfunc
 
 func Init_Limits_screen()
+        REM @fix
 
-        Limits_screen.enabled=true
-        eb_Pmax_1.value=_FormatFloat(Pmax[0],6,2,_FLOAT_NORMAL)
-        eb_Pmax_Warn.value=_FormatFloat(PmaxWarn,6,2,_FLOAT_NORMAL)
-        eb_flowrlim_1.value=_FormatFloat(FlowRLim,6,2,_FLOAT_NORMAL)
-        eb_FlowRLim_warn.value=_FormatFloat(FlowRLimWarn,6,2,_FLOAT_NORMAL)
-        if ErrorDisplayDisabled then
-            but_Enable_warnings.value="DISABLED"
-            lbl_Warnings_Enabled.bgColor=196
-        else
-            but_Enable_warnings.value="ENABLED"
-            lbl_Warnings_Enabled.bgColor=clr_softkeybarbackground
-        endif
-        eb_Pmax_1.bgcolor=clr_buttonbackground
-        eb_Pmax_Warn.bgcolor=clr_buttonbackground
-        eb_flowrlim_1.bgcolor=clr_buttonbackground
-        eb_FlowRLim_warn.bgcolor=clr_buttonbackground
+        eb_flowRLim_warn_a.Value=_formatfloat(flowRLimWarn[0],6,2,_FLOAT_NORMAL)
+        eb_flowRLim_Warn_a.max=frmax
+        eb_flowRLim_Warn_a.min=1
+        eb_flowRLim_warn_b.Value=_formatfloat(flowRLimWarn[1],6,2,_FLOAT_NORMAL)
+        eb_flowRLim_Warn_b.max=frmax
+        eb_flowRLim_Warn_b.min=1
 
-        if Open_Valves_at_Over_Pressure then
-            lbl_Open_Valves_On_OP.bgColor=clr_softkeybarbackground
-            but_Enable_Open_Valves.value="ENABLED"
+        eb_flowRLim_a.Value=_formatfloat(flowRLim[0],6,2,_FLOAT_NORMAL)
+        eb_flowRLim_a.max=frmax
+        eb_flowRLim_a.min=1
+        eb_flowRLim_b.Value=_formatfloat(flowRLim[1],6,2,_FLOAT_NORMAL)
+        eb_flowRLim_b.max=frmax
+        eb_flowRLim_b.min=1
+
+        eb_pmax_warn_a.Value=_formatfloat(pmaxwarn[0],6,2,_FLOAT_NORMAL)
+        eb_pmax_warn_a.max=(1.1*prange)
+        eb_pmax_warn_a.min=(.01*prange)
+        eb_pmax_warn_a.Value=_formatfloat(pmaxwarn[1],6,2,_FLOAT_NORMAL)
+        eb_pmax_warn_a.max=(1.1*prange)
+        eb_pmax_warn_a.min=(.01*prange)
+
+        eb_pmax_a.Value=_formatfloat(pmax[0],6,2,_FLOAT_NORMAL)
+        eb_pmax_a.max=(1.1*prange)
+        eb_pmax_a.min=(.01*prange)
+        eb_pmax_b.Value=_formatfloat(pmax[1],6,2,_FLOAT_NORMAL)
+        eb_pmax_b.max=(1.1*prange)
+        eb_pmax_b.min=(.01*prange)
+
+        if errordisplaydisabled[0] then
+            but_enable_warnings_a.Value="ENABLED"
         else
-            lbl_Open_Valves_On_OP.bgColor=196
-            but_Enable_Open_Valves.value="DISABLED"
+            but_enable_warnings_a.Value="DISABLED"
+        endif
+        if errordisplaydisabled[1] then
+            but_enable_warnings_b.Value="ENABLED"
+        else
+            but_enable_warnings_b.Value="DISABLED"
         endif
 
-        if not flow_limit_disabled then
-            lbl_Flow_Shutdown.bgColor=clr_softkeybarbackground
-            but_Enable_Shutdown.value="ENABLED"
+        if DonTOpn[0]==1 then
+            but_enable_open_valves_a.Value="DISABLED"
         else
-            lbl_Flow_Shutdown.bgColor=196
-            but_Enable_Shutdown.value="DISABLED"
+            but_enable_open_valves_a.Value="ENABLED"
         endif
+        if DonTOpn[1]==1 then
+            but_enable_open_valves_b.Value="DISABLED"
+        else
+            but_enable_open_valves_b.Value="ENABLED"
+        endif
+
+        if flow_limit_disabled[0] then
+            but_enable_shutdown_a.value="DISABLED"
+        else
+            but_enable_shutdown_a.value="ENABLED"
+        endif
+        if flow_limit_disabled[1] then
+            but_enable_shutdown_b.value="DISABLED"
+        else
+            but_enable_shutdown_b.value="ENABLED"
+        endif
+        limits_screen.enabled=true
+
+
+
+        'Limits_screen.enabled=true
+        'eb_pmax_a.value=_FormatFloat(Pmax[0],6,2,_FLOAT_NORMAL)
+        'eb_pmax_warn_a.value=_FormatFloat(PmaxWarn,6,2,_FLOAT_NORMAL)
+        'eb_flowrlim_a.value=_FormatFloat(FlowRLim,6,2,_FLOAT_NORMAL)
+        'eb_flowrlim_warn_a.value=_FormatFloat(FlowRLimWarn,6,2,_FLOAT_NORMAL)
+        'if ErrorDisplayDisabled[0] then
+        '    but_enable_warnings_a.value="DISABLED"
+        '    lbl_Warnings_Enabled.bgColor=196
+        'else
+        '    but_enable_warnings_a.value="ENABLED"
+        '    lbl_Warnings_Enabled.bgColor=clr_softkeybarbackground
+        'endif
+        'eb_pmax_a.bgcolor=clr_buttonbackground
+        'eb_pmax_warn_a.bgcolor=clr_buttonbackground
+        'eb_flowrlim_a.bgcolor=clr_buttonbackground
+        'eb_flowrlim_warn_a.bgcolor=clr_buttonbackground
+
+
+        'if not flow_limit_disabled then
+        '    lbl_Flow_Shutdown.bgColor=clr_softkeybarbackground
+        '    but_enable_shutdown_a.value="ENABLED"
+        'else
+        '    lbl_Flow_Shutdown.bgColor=196
+        '    but_enable_shutdown_a.value="DISABLED"
+        'endif
 
 endfunc
 func Init_Manual_Control_screen()
@@ -1632,24 +1675,10 @@ func Init_P_Cal_screen()
 
 endfunc
 
-func Init_Press_Ramp(pres_targ as float, pres_rate as float, pump_idx as integer)
+func Init_Press_Ramp(pres_targ as float, pres_rate as float, pmp_str as string)
     dim strCommand as string
 
-
-    RampHold=false
-    rampcomplete = false
-
-    eb_target_press.fgcolor=244
-'   Send TarPres
-    strCommand = "TarPres=" + str(pres_targ)
-    GMCCommand.command = strCommand
-    GMCCommand.executeCommand = true
-'   Send RampRate
-    strCommand = "RampRate=" + str(pres_rate)
-    GMCCommand.command = strCommand
-    GMCCommand.executeCommand = true
-'   Send Ramping=1
-    GMCCommand.command = "Ramping=1"
+    GMCCommand.command = "TarPres"+pmp_str+"="+str(pres_targ)+";RampRat"+pmp_str+"="+str(pres_rate)+";Ramping+"+pmp_str+"=1"
     GMCCommand.executeCommand = true
 
 endfunc
@@ -1916,75 +1945,39 @@ REM tmr_delay_check_Daq and GmcCom_daq items deleted since they weren't used any
 'endfunc
 
 func Send_Config()
-    dim strCommand as string
-    'send PmpStart
-    strCommand = "PmpStart=" + eb_start_vol_pump.value
-    GMCCommand.command = strCommand
-    GMCCommand.executeCommand = true
-
-    'send RcvStart
-    strCommand = "RcvStart=" + eb_start_receive.value
-    GMCCommand.command = strCommand
-    GMCCommand.executeCommand = true
-
-    'send Amax
-    strCommand = "Amax=" + eb_Amax.value
-    Send_GMCcommand(StrCommand)
-
-    'send Amin
-    strCommand = "Amin=" + eb_Amin.value
-    Send_GMCcommand(StrCommand)
-
-    'send Bmax
-    strCommand = "Bmax=" + eb_Bmax.value
-    Send_GMCcommand(StrCommand)
-
-    'send Bmin
-    strCommand = "Bmin=" + eb_Bmin.value
-    Send_GMCcommand(StrCommand)
-
-    'send ReflPc
-    strCommand = "ReflPc=" + eb_FillR.value
-    GMCCommand.command = strCommand
-    GMCCommand.executeCommand = true
-
-    'send ReflFmn
-    strCommand = "ReflFmn=" + eb_ReflRate.value
-    GMCCommand.command = strCommand
-    GMCCommand.executeCommand = true
-
-    'send InitRate
-    strCommand = "InitRate=" + eb_InitRate.value
-    GMCCommand.command = strCommand
-    GMCCommand.executeCommand = true
-
-    'send VolpCyl
-    strCommand = "VolpCyl=" + eb_VolPCyl.value
-    GMCCommand.command = strCommand
-    GMCCommand.executeCommand = true
-
-    'send PMax
-    strCommand = "PMax=" + eb_Pmax.value
-    GMCCommand.command = strCommand
-    GMCCommand.executeCommand = true
-
-    'send PmpMode
-    If rb_PumpMode.isChecked==true then
-        strCommand = "PmpMode= 1"
+    dim tmp_PmpModeA, tmp_PmpModeB as string
+    if rb_pumpmode_t_a.isChecked==true then
+        tmp_PmpModeA="1"
     else
-        strCommand = "PmpMode= 0"
+        tmp_PmpModeA="0"
     endif
-    GMCCommand.command = strCommand
-    GMCCommand.executeCommand = true
+
+    if rb_pumpmode_t_b.isChecked==true then
+        tmp_PmpModeB="1"
+    else
+        tmp_PmpModeB="0"
+    endif
+
+    gmccommand.command="PMaxA="+eb_pmax_t_a.Value+";PMaxB="+eb_pmax_t_a.Value+";ReflPcA="+eb_fillr_t_A.Value+";ReflPcB="+eb_fillr_t_b.Value+";ReflFmnA="+eb_reflrate_t_a.Value+";ReflFmnB="+eb_reflrate_t_b.Value
+    gmccommand.executeCommand=true
+
+    gmccommand.command="VolpCyl="+eb_volpcyl_t.Value+";InitRate="+eb_initrate_t.Value
+    gmccommand.executeCommand=true
+
+    gmccommand.command="PmpStarA="+eb_start_vol_pump_t_a.Value+";PmpStarB="+eb_start_vol_pump_t_b.Value+";RcvStarA="+eb_start_receive_t_a.Value+";RcvStarB="+eb_start_receive_t_b.Value
+    gmccommand.executeCommand=true
+
+    gmccommand.command="Amax="+eb_amax_t.Value+";Amin="+eb_amin_t.Value+";Bmax="+eb_bmax_t.Value+";Bmin="+eb_bmin_t.value+";PmpModeA="+tmp_PmpModeA+";PmpModeB="+tmp_pmpmodeb
+    gmccommand.executeCommand=true
+
 
     'SET BURN FLAG
     GMCCommand.command = "Burn=1"
     GMCCommand.executeCommand = true
 
     'Calculate new MLStart positions and burn new values
-    strCommand = "XQ#STRTPOS,1"
-    GMCCommand.command = strCommand
-    GMCCommand.executeCommand = true
+    startthread("STRTPOS")
+
 
     'send Diaphragm range
 '    Pxdcr = ddl_DP_Range.selected
@@ -2011,24 +2004,30 @@ func Send_Config()
 
     tmr_Burn_New_Var.enabled=true
 
+    lbl_sys_config_instructions_t.value="New values written to controller."
 
 endfunc
 
 
 
-func Send_FlowR(Vol as float,FlowRate as Float)
-    dim strCommand as string
+func Send_FlowR(Vol as float,FlowRate as Float,pmp_side as string)
+    REM Pmp_side must be "A" or "B"
+    dim strcommand as string
+
+    If Vol>=2000000000 then
+
+    else
+        Vol=2000000000
+    endif
+
 
     'Send PmpRate = FlowRate - Invert value before sending (Galil Code requires Negative Value)
     FlowRate=-FlowRate
     strCommand = "PmpRate=" + str(FlowRate)
+    gmccommand.command="PmpRate"+pmp_side+"="+str(FlowRate)+";TarVol"+pmp_side+"="+str(vol)
     Send_GMCcommand(strCommand)
     'Send TarVol= Vol
-    If Vol<2000000000 then
-        strCommand = "TarVol=" + str(Vol)
-    else
-        strCommand = "TarVol=2000000000"
-    endif
+
     Send_GMCcommand(strCommand)
     Target_Volume=Vol
     If eb_flowr.DecimalPlaces==2 then
@@ -2175,7 +2174,7 @@ Func Set_Error_Buttons(CaseNo as Integer)
         But_Ignore_Error.enabled=false
         but_acknowledged.enabled=true
     endif
-    if ErrorDisplayDisabled==true then
+    if ErrorDisplayDisabled[0]==true then
         but_disable_warnings.Value= "ENABLE WARNINGS"
     else
         but_disable_warnings.Value= "DISABLE WARNINGS"
@@ -2507,14 +2506,14 @@ func Start_Segment(Segment as Integer)
     endif
     'Case 1, Stopped to Flow mode
     If CaseCurrent==1 then
-        Send_FlowR(mlmax,mlpermin)
+        Send_FlowR(mlmax,mlpermin,"A")
         Start_Flow()
         Start_tmr_Segment(Current_Segment)
     endif
     'Case 2 , Flow mode to Flow Mode
     'make sure we know (mlmax,mlpermin)
     If CaseCurrent==2 then
-        Send_FlowR(mlmax,mlpermin)
+        Send_FlowR(mlmax,mlpermin,"A")
         Send_GMCcommand("RateChng=1")
         Start_tmr_Segment(Current_Segment)
     endif
@@ -6780,7 +6779,7 @@ endfunc
 #endif
 Enddef
 Declare but__Exit_Sys_Setup as ButtonV2
-Level 249345
+Level 249334
 #Visible True
 #Lock False
 init value := "EXIT SYSTEM SETUP"
@@ -6798,7 +6797,7 @@ endfunc
 init xjustify := hjustify_leftalign
 Enddec
 Declare but__FactorySettings as ButtonV2
-Level 249344
+Level 249333
 #Visible True
 #Lock False
 init value := "FACTORY SETTINGS"
@@ -6816,7 +6815,7 @@ endfunc
 init xjustify := hjustify_leftalign
 Enddec
 Declare but__Maintenance as ButtonV2
-Level 249348
+Level 249337
 #Visible True
 #Lock False
 init value := "MAINTENANCE"
@@ -6834,7 +6833,7 @@ func click()
 endfunc
 Enddec
 Declare but__Valve_Control as ButtonV2
-Level 249347
+Level 249336
 #Visible True
 #Lock False
 init value := "VALVE CONTROL"
@@ -6852,7 +6851,7 @@ endfunc
 init xjustify := hjustify_leftalign
 Enddec
 Declare but_Accept_Current as ButtonV2
-Level 249725
+Level 249714
 #Visible True
 #Lock False
 init value := "ACCEPT CURRENT VALUES"
@@ -6881,7 +6880,7 @@ func click()
 endfunc
 Enddec
 Declare But_Accept_Pres_Calc as ButtonV2
-Level 249516
+Level 249505
 #Visible True
 #Lock False
 init value := "ACCEPT"
@@ -6916,7 +6915,7 @@ func click()
 endfunc
 Enddec
 Declare But_Accept_Vol_Calc as ButtonV2
-Level 249540
+Level 249529
 #Visible True
 #Lock False
 init value := "ACCEPT"
@@ -6980,7 +6979,7 @@ func click()
 endfunc
 Enddec
 Declare but_AIn as ButtonV2
-Level 249792
+Level 249781
 #Visible True
 #Lock False
 init value := "CLOSED"
@@ -7003,7 +7002,7 @@ func click()
 endfunc
 Enddec
 Declare but_AOut as ButtonV2
-Level 249791
+Level 249780
 #Visible True
 #Lock False
 init value := "CLOSED"
@@ -7026,7 +7025,7 @@ func click()
 endfunc
 Enddec
 Declare but_BIn as ButtonV2
-Level 249793
+Level 249782
 #Visible True
 #Lock False
 init value := "CLOSED"
@@ -7049,7 +7048,7 @@ func click()
 endfunc
 Enddec
 Declare but_BOut as ButtonV2
-Level 249794
+Level 249783
 #Visible True
 #Lock False
 init value := "CLOSED"
@@ -7072,7 +7071,7 @@ func click()
 endfunc
 Enddec
 Declare But_Calculate_Constant as ButtonV2
-Level 249515
+Level 249504
 #Visible True
 #Lock False
 init value := "CALCULATE NEW CONSTANT"
@@ -7123,7 +7122,7 @@ func click()
 endfunc
 Enddec
 Declare But_Calculate_Volume as ButtonV2
-Level 249539
+Level 249528
 #Visible True
 #Lock False
 init value := "CALCULATE NEW CONSTANT"
@@ -7180,7 +7179,7 @@ func click()
 endfunc
 Enddec
 Declare But_Calibrate_Press as ButtonV2
-Level 249521
+Level 249510
 #Visible True
 #Lock False
 init value := "CALIBRATE"
@@ -7210,7 +7209,7 @@ func click()
 endfunc
 Enddec
 Declare But_Cancel_FactSet as ButtonV2
-Level 249657
+Level 249646
 #Visible True
 #Lock False
 init value := "CANCEL"
@@ -7226,7 +7225,7 @@ func click()
 endfunc
 Enddec
 Declare But_Cancel_Init as ButtonV2
-Level 249456
+Level 249445
 #Visible True
 #Lock False
 init value := "CANCEL"
@@ -7283,12 +7282,12 @@ func click()
 endfunc
 Enddec
 Declare but_Cancel_Limits_Screen as ButtonV2
-Level 249929
+Level 249920
 #Visible True
-#Lock False
+#Lock Me
 init value := "CANCEL"
 init parent := limits_screen
-init xpos := 30
+init xpos := 17
 init ypos := 720
 init width := 169
 init height := 70
@@ -7300,7 +7299,7 @@ func click()
 endfunc
 Enddec
 Declare But_Cancel_Pres_Exit as ButtonV2
-Level 249514
+Level 249503
 #Visible True
 #Lock False
 init value := "EXIT"
@@ -7336,7 +7335,7 @@ endfunc
 init xjustify := hjustify_center
 Enddec
 Declare but_Close_Debug as ButtonV2
-Level 249648
+Level 249637
 #Visible True
 #Lock False
 init value := "CLOSE"
@@ -7352,7 +7351,7 @@ func click()
 endfunc
 Enddec
 Declare but_ClsAIn as ButtonV2
-Level 249671
+Level 249660
 #Visible True
 #Lock False
 init value := "CLOSE"
@@ -7369,7 +7368,7 @@ func click()
 endfunc
 Enddec
 Declare but_ClsAll as ButtonV2
-Level 249677
+Level 249666
 #Visible True
 #Lock False
 init value := "CLOSE ALL"
@@ -7386,7 +7385,7 @@ func click()
 endfunc
 Enddec
 Declare but_ClsAOut as ButtonV2
-Level 249668
+Level 249657
 #Visible True
 #Lock False
 init value := "CLOSE"
@@ -7405,7 +7404,7 @@ func click()
 endfunc
 Enddec
 Declare but_ClsBIn as ButtonV2
-Level 249675
+Level 249664
 #Visible True
 #Lock False
 init value := "CLOSE"
@@ -7422,7 +7421,7 @@ func click()
 endfunc
 Enddec
 Declare but_ClsBout as ButtonV2
-Level 249673
+Level 249662
 #Visible True
 #Lock False
 init value := "CLOSE"
@@ -7439,7 +7438,7 @@ func click()
 endfunc
 Enddec
 Declare but_Configure as ButtonV2
-Level 249341
+Level 249330
 #Visible True
 #Lock False
 init value := "CONFIGURE"
@@ -7452,6 +7451,8 @@ init font := helvb18_bdf
 
 func click()
     Sys_Setup_Screen.enabled=false
+    config_screen_twin.enabled=true
+
     Init_Config_Screen()
 endfunc
 
@@ -7496,7 +7497,7 @@ func click()
 endfunc
 Enddec
 Declare But_Confirm_Init as ButtonV2
-Level 249455
+Level 249444
 #Visible True
 #Lock False
 init value := "CONFIRM"
@@ -7519,7 +7520,7 @@ func click()
 endfunc
 Enddec
 Declare but_Control_Screen as ButtonV2
-Level 249695
+Level 249684
 #Visible True
 #Lock False
 init value := "PUMP CONTROL SCREEN"
@@ -7544,7 +7545,7 @@ endfunc
 init enabled := true
 Enddec
 Declare but_CycToStart as ButtonV2
-Level 249445
+Level 249434
 #Visible True
 #Lock False
 init value := "CYCLE TO START"
@@ -7561,7 +7562,7 @@ func click()
 endfunc
 Enddec
 Declare but_CycToStart_1 as ButtonV2
-Level 249404
+Level 249393
 #Visible True
 #Lock False
 init value := "CYCLE TO START"
@@ -7577,7 +7578,7 @@ func click()
 endfunc
 Enddec
 Declare but_CycToStart_2 as ButtonV2
-Level 249289
+Level 249278
 #Visible True
 #Lock False
 init value := "CYCLE TO START"
@@ -7593,7 +7594,7 @@ func click()
 endfunc
 Enddec
 Declare But_Cylinder_Select as ButtonV2
-Level 249543
+Level 249532
 #Visible True
 #Lock False
 init value := "CYL A"
@@ -7620,7 +7621,7 @@ endfunc
 init inactive := false
 Enddec
 Declare but_Debug as ButtonV2
-Level 249346
+Level 249335
 #Visible True
 #Lock False
 init value := "DEBUG"
@@ -7646,7 +7647,7 @@ endfunc
 init enabled := false
 Enddec
 Declare but_Debug_1 as ButtonV2
-Level 249406
+Level 249395
 #Visible False
 #Lock False
 init value := "DEBUG"
@@ -7678,88 +7679,143 @@ func click()
     tmr_error_beep_repeat.enabled=false
     If value=="DISABLE WARNINGS" then
         value ="ENABLE WARNINGS"
-        ErrorDisplayDisabled=true
+        ErrorDisplayDisabled[0]=true
     else
         value="DISABLE WARNINGS"
-        ErrorDisplayDisabled=false
+        ErrorDisplayDisabled[0]=false
     endif
 
 endfunc
 Enddec
-Declare but_Enable_Open_Valves as ButtonV2
-Level 249941
+Declare but_Enable_Open_Valves_a as ButtonV2
+Level 249932
 #Visible True
-#Lock False
+#Lock Me
 init value := "DISABLED"
 init parent := limits_screen
-init xpos := 300
-init ypos := 457
-init width := 127
+init xpos := 278
+init ypos := 468
+init width := 85
 init height := 40
-init font := helvb18_bdf
+init font := helvb14_bdf
 
 
 func click()
-    If value=="DISABLED" then
+    if value=="DISABLED" then
         value="ENABLED"
-        lbl_Open_Valves_On_OP.bgColor=clr_softkeybarbackground
-
-    Else
+    else
         value="DISABLED"
-        lbl_Open_Valves_On_OP.bgColor=196
-
     endif
 
 endfunc
 Enddec
-Declare but_Enable_Shutdown as ButtonV2
-Level 249943
+Declare but_Enable_Open_Valves_b as ButtonV2
+Level 249935
 #Visible True
-#Lock False
-init value := "ENABLED"
+#Lock Me
+init value := "DISABLED"
 init parent := limits_screen
-init xpos := 300
-init ypos := 530
-init width := 127
+init xpos := 372
+init ypos := 468
+init width := 85
 init height := 40
-init font := helvb18_bdf
+init font := helvb14_bdf
+
 
 func click()
-    if but_Enable_Shutdown.value=="DISABLED" then
-            but_Enable_Shutdown.value="ENABLED"
-            lbl_Flow_Shutdown.bgColor=clr_softkeybarbackground
-            flow_limit_disabled=false
-        else
-            but_Enable_Shutdown.value="DISABLED"
-            lbl_Flow_Shutdown.bgColor=196
-            flow_limit_disabled=true
-        endif
+   if value=="DISABLED" then
+        value="ENABLED"
+    else
+        value="DISABLED"
+    endif
+
 endfunc
 Enddec
-Declare but_Enable_Warnings as ButtonV2
-Level 249939
+Declare but_Enable_Shutdown_a as ButtonV2
+Level 249934
 #Visible True
-#Lock False
+#Lock Me
 init value := "ENABLED"
 init parent := limits_screen
-init xpos := 300
-init ypos := 385
-init width := 127
+init xpos := 278
+init ypos := 532
+init width := 85
 init height := 40
-init font := helvb18_bdf
+init font := helvb14_bdf
 
 func click()
-    if but_Enable_warnings.value=="DISABLED" then
-            but_Enable_warnings.value="ENABLED"
-            lbl_Warnings_Enabled.bgColor=clr_softkeybarbackground
-        else
-            but_Enable_warnings.value="DISABLED"
-            lbl_Warnings_Enabled.bgColor=196
-        endif
+    if value=="DISABLED" then
+        value="ENABLED"
+    else
+        value="DISABLED"
+    endif
+
+
+endfunc
+Enddec
+Declare but_Enable_Shutdown_b as ButtonV2
+Level 249943
+#Visible True
+#Lock Me
+init value := "ENABLED"
+init parent := limits_screen
+init xpos := 372
+init ypos := 532
+init width := 85
+init height := 40
+init font := helvb14_bdf
+
+func click()
+    if value=="DISABLED" then
+        value="ENABLED"
+    else
+        value="DISABLED"
+    endif
+
+endfunc
+Enddec
+Declare but_Enable_Warnings_a as ButtonV2
+Level 249930
+#Visible True
+#Lock Me
+init value := "ENABLED"
+init parent := limits_screen
+init xpos := 278
+init ypos := 404
+init width := 85
+init height := 40
+init font := helvb14_bdf
+
+func click()
+    if value=="DISABLED" then
+        value="ENABLED"
+    else
+        value="DISABLED"
+    endif
+endfunc
+Enddec
+Declare but_Enable_Warnings_b as ButtonV2
+Level 249942
+#Visible True
+#Lock Me
+init value := "ENABLED"
+init parent := limits_screen
+init xpos := 368
+init ypos := 404
+init width := 85
+init height := 40
+init font := helvb14_bdf
+
+func click()
+    if value=="DISABLED" then
+        value="ENABLED"
+    else
+        value="DISABLED"
+    endif
 endfunc
 Enddec
 Declare But_End_Profile_Def as ButtonV2
-Level 249295
+Level 249284
 #Visible True
 #Lock False
 init value := "END DEFINITION"
@@ -7786,7 +7842,7 @@ func click()
 endfunc
 Enddec
 Declare but_Error_Log as ButtonV2
-Level 249351
+Level 249340
 #Visible True
 #Lock False
 init value := "ERROR LOG"
@@ -7805,7 +7861,7 @@ endfunc
 init xjustify := hjustify_leftalign
 Enddec
 Declare but_Error_Port as ButtonV2
-Level 249649
+Level 249638
 #Visible True
 #Lock False
 init value := "Error Port On"
@@ -7860,7 +7916,7 @@ endfunc
 init xjustify := hjustify_centeralign
 Enddec
 Declare but_Estop_1 as ButtonV2
-Level 249809
+Level 249798
 #Visible True
 #Lock Me
 init value := "E-STOP"
@@ -7881,7 +7937,7 @@ endfunc
 init xjustify := hjustify_centeralign
 Enddec
 Declare but_Exit_Config as ButtonV2
-Level 249459
+Level 249448
 #Visible True
 #Lock Me
 init value := " EXIT"
@@ -7897,7 +7953,7 @@ func click()
 endfunc
 Enddec
 Declare but_Exit_Config_1 as ButtonV2
-Level 249841
+Level 249830
 #Visible True
 #Lock Me
 init value := " EXIT"
@@ -7932,7 +7988,7 @@ endfunc
 init xjustify := hjustify_center
 Enddec
 Declare but_Exit_Manual_Control as ButtonV2
-Level 249786
+Level 249775
 #Visible True
 #Lock False
 init value := "EXIT MANUAL CONTROL"
@@ -7956,7 +8012,7 @@ func click()
 endfunc
 Enddec
 Declare But_Exit_Vol_Cal as ButtonV2
-Level 249553
+Level 249542
 #Visible True
 #Lock False
 init value := "EXIT"
@@ -7977,7 +8033,7 @@ func click()
 endfunc
 Enddec
 Declare but_exit_warn_force_stop as ButtonV2
-Level 249915
+Level 249905
 #Visible True
 #Lock False
 init value := "E-STOP"
@@ -8001,7 +8057,7 @@ endfunc
 init xjustify := hjustify_centeralign
 Enddec
 Declare but_exit_warn_ok as ButtonV2
-Level 249914
+Level 249904
 #Visible True
 #Lock False
 init value := "OK"
@@ -8019,7 +8075,7 @@ endfunc
 init xjustify := hjustify_centeralign
 Enddec
 Declare But_Fill_to_Start as ButtonV2
-Level 249550
+Level 249539
 #Visible True
 #Lock False
 init value := "FILL TO START VOL"
@@ -8077,7 +8133,7 @@ func click()
 endfunc
 Enddec
 Declare but_FlowCalibration as ButtonV2
-Level 249342
+Level 249331
 #Visible True
 #Lock False
 init value := "VOLUME CALIBRATION"
@@ -8137,7 +8193,7 @@ func click()
 endfunc
 Enddec
 Declare but_Initialize as ButtonV2
-Level 249340
+Level 249329
 #Visible True
 #Lock False
 init value := "INITIALIZE"
@@ -8159,7 +8215,7 @@ endfunc
 init xjustify := hjustify_leftalign
 Enddec
 Declare but_Initialize_1 as ButtonV2
-Level 249730
+Level 249719
 #Visible True
 #Lock False
 init value := "INITIALIZE"
@@ -8179,7 +8235,7 @@ func click()
 endfunc
 Enddec
 Declare but_IP_Address as ButtonV2
-Level 249350
+Level 249339
 #Visible True
 #Lock False
 init value := "IP ADDRESS"
@@ -8197,7 +8253,7 @@ endfunc
 init xjustify := hjustify_leftalign
 Enddec
 Declare but_Limits as ButtonV2
-Level 249447
+Level 249436
 #Visible True
 #Lock False
 init value := "SET LIMITS"
@@ -8209,23 +8265,13 @@ init height := 49
 init font := helvb18_bdf
 
 func click()
-    If Pressure_Mode_screen.enabled then
-        LastScreen="Pressure_mode_screen"
-        Pressure_Mode_screen.enabled = false
-    endif
-    If Flow_mode_screen.enabled then
-        LastScreen="Flow_mode_screen"
-        Flow_mode_screen.enabled = false
-    endif
-    If Sys_Setup_screen.enabled then
-        LastScreen="Sys_Setup_screen"
-        Sys_Setup_screen.enabled=false
-    endif
+    LastScreen=flow_mode_screen
+    flow_mode_screen.enabled = false
     Init_Limits_screen()
 endfunc
 Enddec
 Declare but_Limits_1 as ButtonV2
-Level 249410
+Level 249399
 #Visible True
 #Lock False
 init value := "SET LIMITS"
@@ -8237,23 +8283,14 @@ init height := 50
 init font := helvb18_bdf
 
 func click()
-    If Pressure_Mode_screen.enabled then
-        LastScreen="Pressure_mode_screen"
-        Pressure_Mode_screen.enabled = false
-    endif
-    If Flow_mode_screen.enabled then
-        LastScreen="Flow_mode_screen"
-        Flow_mode_screen.enabled = false
-    endif
-    If Sys_Setup_screen.enabled then
-        LastScreen="Sys_Setup_screen"
-        Sys_Setup_screen.enabled=false
-    endif
+
+    LastScreen=pressure_mode_screen
+    Pressure_Mode_screen.enabled = false
     Init_Limits_screen()
 endfunc
 Enddec
 Declare but_Limits_2 as ButtonV2
-Level 249349
+Level 249338
 #Visible True
 #Lock False
 init value := "SET LIMITS"
@@ -8265,24 +8302,16 @@ init height := 50
 init font := helvb18_bdf
 
 func click()
-     If Pressure_Mode_screen.enabled then
-        LastScreen="Pressure_mode_screen"
-        Pressure_Mode_screen.enabled = false
-    endif
-    If Flow_mode_screen.enabled then
-        LastScreen="Flow_mode_screen"
-        Flow_mode_screen.enabled = false
-    endif
-    If Sys_Setup_screen.enabled then
-        LastScreen="Sys_Setup_screen"
-        Sys_Setup_screen.enabled=false
-    endif
+
+
+    LastScreen=sys_setup_screen
+    Sys_Setup_screen.enabled=false
     Init_Limits_screen()
 endfunc
 init xjustify := hjustify_leftalign
 Enddec
 Declare but_Limits_3 as ButtonV2
-Level 249293
+Level 249282
 #Visible True
 #Lock False
 init value := "SET LIMITS"
@@ -8294,28 +8323,14 @@ init height := 50
 init font := helvb18_bdf
 
 func click()
-    If Pressure_Mode_screen.enabled then
-        LastScreen="Pressure_mode_screen"
-        Pressure_Mode_screen.enabled = false
-    endif
-    If Flow_mode_screen.enabled then
-        LastScreen="Flow_mode_screen"
-        Flow_mode_screen.enabled = false
-    endif
-    If Sys_Setup_screen.enabled then
-        LastScreen="Sys_Setup_screen"
-        Sys_Setup_screen.enabled=false
-    endif
-    If Profile_screen.enabled then
-        LastScreen="Profile_screen"
-        Profile_screen.enabled=false
-    endif
 
+    LastScreen=profile_screen
+    Profile_screen.enabled=false
     Init_Limits_screen()
 endfunc
 Enddec
 Declare but_Limits_a as ButtonV2
-Level 249908
+Level 249898
 #Visible True
 #Lock False
 init value := "SET LIMITS"
@@ -8327,11 +8342,14 @@ init height := 49
 init font := helvb18_bdf
 
 func click()
+    twin_monitor_screen.enabled=false
+    lastscreen=twin_monitor_screen
+    init_limits_screen()
 
 endfunc
 Enddec
 Declare but_Man_Control as ButtonV2
-Level 249697
+Level 249686
 #Visible True
 #Lock False
 init value := "MANUAL CONTROL"
@@ -8352,7 +8370,7 @@ func click()
 endfunc
 Enddec
 Declare But_New_Const as ButtonV2
-Level 249520
+Level 249509
 #Visible True
 #Lock False
 init value := "NEW CONSTANT"
@@ -8382,7 +8400,7 @@ func click()
 endfunc
 Enddec
 Declare but_OK as ButtonV2
-Level 249461
+Level 249450
 #Visible True
 #Lock Me
 init value := "OK"
@@ -8420,7 +8438,7 @@ func click()
 endfunc
 Enddec
 Declare But_OK_FactSet as ButtonV2
-Level 249656
+Level 249645
 #Visible True
 #Lock False
 init value := "OK"
@@ -8440,7 +8458,7 @@ func click()
 endfunc
 Enddec
 Declare but_OK_t as ButtonV2
-Level 249842
+Level 249831
 #Visible True
 #Lock Me
 init value := "OK"
@@ -8457,7 +8475,7 @@ func click()
 endfunc
 Enddec
 Declare but_OpenValves as ButtonV2
-Level 249408
+Level 249397
 #Visible True
 #Lock False
 init value := "OPEN VALVES"
@@ -8475,7 +8493,7 @@ func click()
 endfunc
 Enddec
 Declare but_OpenValves_1 as ButtonV2
-Level 249292
+Level 249281
 #Visible True
 #Lock False
 init value := "OPEN VALVES"
@@ -8493,7 +8511,7 @@ func click()
 endfunc
 Enddec
 Declare but_OpenValves_2 as ButtonV2
-Level 249450
+Level 249439
 #Visible False
 #Lock False
 init value := "OPEN VALVES"
@@ -8511,7 +8529,7 @@ func click()
 endfunc
 Enddec
 Declare but_OpenValves_a as ButtonV2
-Level 249890
+Level 249880
 #Visible True
 #Lock False
 init value := "OPEN VALVES"
@@ -8530,7 +8548,7 @@ func click()
 endfunc
 Enddec
 Declare but_OpenValves_b as ButtonV2
-Level 249884
+Level 249874
 #Visible True
 #Lock False
 init value := "OPEN VALVES"
@@ -8546,7 +8564,7 @@ func click()
 endfunc
 Enddec
 Declare but_OpnAIn as ButtonV2
-Level 249670
+Level 249659
 #Visible True
 #Lock False
 init value := "OPEN"
@@ -8563,7 +8581,7 @@ func click()
 endfunc
 Enddec
 Declare but_OpnAll as ButtonV2
-Level 249676
+Level 249665
 #Visible True
 #Lock False
 init value := "OPEN ALL"
@@ -8580,7 +8598,7 @@ func click()
 endfunc
 Enddec
 Declare but_OpnAOut as ButtonV2
-Level 249667
+Level 249656
 #Visible True
 #Lock False
 init value := "OPEN"
@@ -8598,7 +8616,7 @@ func click()
 endfunc
 Enddec
 Declare but_OpnBIn as ButtonV2
-Level 249674
+Level 249663
 #Visible True
 #Lock False
 init value := "OPEN"
@@ -8615,7 +8633,7 @@ func click()
 endfunc
 Enddec
 Declare but_OpnBout as ButtonV2
-Level 249672
+Level 249661
 #Visible True
 #Lock False
 init value := "OPEN"
@@ -8632,7 +8650,7 @@ func click()
 endfunc
 Enddec
 Declare but_PCont as ButtonV2
-Level 249403
+Level 249392
 #Visible True
 #Lock False
 init value := "STOP P CONTROL"
@@ -8668,7 +8686,7 @@ func click()
 endfunc
 Enddec
 Declare but_PressureCalibration as ButtonV2
-Level 249343
+Level 249332
 #Visible True
 #Lock False
 init value := "PRESSURE CALIBRATION"
@@ -8687,7 +8705,7 @@ endfunc
 init xjustify := hjustify_leftalign
 Enddec
 Declare but_PressureMode as ButtonV2
-Level 249696
+Level 249685
 #Visible True
 #Lock False
 ' Enter Pressure Mode screen.
@@ -8749,7 +8767,7 @@ func click()
 endfunc
 Enddec
 Declare But_Profile as ButtonV2
-Level 249294
+Level 249283
 #Visible True
 #Lock False
 init value := "STOP PROFILE"
@@ -8780,7 +8798,7 @@ func click()
 endfunc
 Enddec
 Declare but_ProfileMode as ButtonV2
-Level 249698
+Level 249687
 #Visible True
 #Lock False
 init value := "PROFILE    MODE"
@@ -8800,7 +8818,7 @@ func click()
 endfunc
 Enddec
 Declare but_psi_per_sec_min as ButtonV2
-Level 249412
+Level 249401
 #Visible True
 #Lock False
 init value := "psi/sec"
@@ -8841,7 +8859,7 @@ func click()
 endfunc
 Enddec
 Declare but_pumpmode_a as ButtonV2
-Level 249892
+Level 249882
 #Visible True
 #Lock False
 init value := "PUMP MODE"
@@ -8866,7 +8884,7 @@ func click()
 endfunc
 Enddec
 Declare but_pumpmode_b as ButtonV2
-Level 249886
+Level 249876
 #Visible True
 #Lock False
 init value := "PUMP MODE"
@@ -8882,7 +8900,7 @@ func click()
 endfunc
 Enddec
 Declare but_Quit_Control as ButtonV2
-Level 249882
+Level 249872
 #Visible True
 #Lock False
 init value := "QUIT"
@@ -8905,7 +8923,7 @@ func click()
 endfunc
 Enddec
 Declare but_QuitFlow as ButtonV2
-Level 249442
+Level 249431
 #Visible True
 #Lock False
 init value := "   QUIT   FLOW MODE"
@@ -8927,7 +8945,7 @@ func click()
 endfunc
 Enddec
 Declare but_QuitPressure as ButtonV2
-Level 249405
+Level 249394
 #Visible True
 #Lock False
 init value := " QUIT  PRESSURE MODE"
@@ -8948,7 +8966,7 @@ func click()
 endfunc
 Enddec
 Declare but_QuitProfile as ButtonV2
-Level 249291
+Level 249280
 #Visible True
 #Lock False
 init value := " QUIT  PROFILE MODE"
@@ -8976,7 +8994,7 @@ func click()
 endfunc
 Enddec
 Declare but_QuitValveControl as ButtonV2
-Level 249666
+Level 249655
 #Visible True
 #Lock False
 init value := " QUIT  VALVE CONTROL"
@@ -8992,7 +9010,7 @@ func click()
 endfunc
 Enddec
 Declare but_QuitValveControl_1 as ButtonV2
-Level 249708
+Level 249697
 #Visible True
 #Lock False
 init value := " QUIT  SYSTEM MAINTENANCE"
@@ -9008,7 +9026,7 @@ func click()
 endfunc
 Enddec
 Declare But_Ramp as ButtonV2
-Level 249409
+Level 249398
 #Visible True
 #Lock False
 init value := "START RAMP"
@@ -9050,7 +9068,7 @@ func click()
 endfunc
 Enddec
 Declare But_reboot_in_dl as ButtonV2
-Level 249716
+Level 249705
 #Visible True
 #Lock False
 init value := "PUT TERMINAL IN DOWNLOAD MODE"
@@ -9067,7 +9085,7 @@ func click()
 endfunc
 Enddec
 Declare but_Refill_A as ButtonV2
-Level 249788
+Level 249777
 #Visible True
 #Lock False
 init value := "REFILL A"
@@ -9100,7 +9118,7 @@ func click()
 endfunc
 Enddec
 Declare but_Refill_B as ButtonV2
-Level 249787
+Level 249776
 #Visible True
 #Lock False
 init value := "REFILL B"
@@ -9133,7 +9151,7 @@ func click()
 endfunc
 Enddec
 Declare but_Reset_Maint as ButtonV2
-Level 249706
+Level 249695
 #Visible True
 #Lock False
 init value := "RESET"
@@ -9156,7 +9174,7 @@ func click()
 endfunc
 Enddec
 Declare but_reset_term_no as ButtonV2
-Level 249721
+Level 249710
 #Visible True
 #Lock False
 init value := "NO"
@@ -9176,7 +9194,7 @@ endfunc
 init xjustify := hjustify_centeralign
 Enddec
 Declare but_reset_term_yes as ButtonV2
-Level 249722
+Level 249711
 #Visible True
 #Lock False
 init value := "YES"
@@ -9201,7 +9219,7 @@ endfunc
 init xjustify := hjustify_centeralign
 Enddec
 Declare but_Restart as ButtonV2
-Level 249757
+Level 249746
 #Visible True
 #Lock False
 init value := "RESTART"
@@ -9279,7 +9297,7 @@ func click()
 endfunc
 Enddec
 Declare but_Save_Config as ButtonV2
-Level 249460
+Level 249449
 #Visible True
 #Lock Me
 init value := "SAVE NEW CONFIG"
@@ -9360,7 +9378,7 @@ func click()
 endfunc
 Enddec
 Declare but_Save_Config_1 as ButtonV2
-Level 249840
+Level 249829
 #Visible True
 #Lock Me
 init value := "SAVE NEW CONFIG"
@@ -9419,7 +9437,8 @@ func click()
         return
     endif
 
-    lbl_sys_config_instructions_t.value="Configuration values changed."
+    send_config()
+    tmr_delay_get_config.enabled=true
 
 
 
@@ -9428,67 +9447,106 @@ func click()
 endfunc
 Enddec
 Declare but_save_n_exit as ButtonV2
-Level 249928
+Level 249919
 #Visible True
-#Lock False
+#Lock Me
 init value := "SAVE & EXIT"
 init parent := limits_screen
-init xpos := 281
+init xpos := 298
 init ypos := 720
 init width := 169
 init height := 70
 init font := helvb18_bdf
 
 func click()
+    dim tmp_pmax[2], tmp_pmaxwarn[2], tmp_flowrlim[2], tmp_flowWarn[2] as float
+    dim  tmp_DontOpnA, tmp_DontOpnB as string
     'Read Values
     check error
-        val(PMax,eb_PMax_1.Value)
-        val(PMaxWarn,eb_PMax_warn.Value)
-        val(FlowRLim,eb_flowrlim_1.Value)
-        val(FlowRLimWarn,eb_FlowRLim_Warn.Value)
+        val(tmp_PMax[0],eb_pmax_a.Value)
+        val(tmp_PMax[1],eb_pmax_b.Value)
+        val(tmp_PMaxWarn[0],eb_pmax_warn_a.Value)
+        val(tmp_PMaxWarn[1],eb_pmax_warn_b.Value)
+        val(tmp_FlowRLim[0],eb_flowrlim_a.Value)
+        val(tmp_FlowRLim[1],eb_flowrlim_b.Value)
+        val(tmp_FlowWarn[0],eb_flowrlim_warn_a.Value)
+        val(tmp_FlowWarn[1],eb_flowrlim_warn_b.Value)
     on error
         _ClearException()
     enderr
-    eb_FlowRLim.Value=_formatfloat(FlowRLim,6,2,_FLOAT_NORMAL)
-    if PMaxWarn>Pmax[0] or FlowRLimWarn>FlowRLim then
-        lbl_Limits_Msg.value="Warning limits must be lower than shut-down limits."
-        return
-    endif
-    If FlowRLim==0 or FlowRLimWarn==0 then
-        lbl_Limits_Msg.value="Flow rate limits must be greater than 0.  The error is triggered when the abolute value of the reported speed exceeds the limit entered."
-        Warning_Sound()
-        return
-    endif
-    if but_Enable_warnings.value=="DISABLED" then
-       ErrorDisplayDisabled=true
-    else
-        ErrorDisplayDisabled=false
-    endif
-    If but_Enable_Open_Valves.value=="ENABLED" then
-        Open_Valves_at_Over_Pressure=true
-        'send DontOpn=0
-        GMCCommand.command = "DontOpn=0"
-        GMCCommand.executeCommand = true
-        GMCCommand.command = "BV"
-        GMCCommand.executeCommand = true
 
-    Else
-        Open_Valves_at_Over_Pressure=false
-        'send DontOpn=1
-        GMCCommand.command = "DontOpn=1"
-        GMCCommand.executeCommand = true
-        GMCCommand.command = "BV"
-        GMCCommand.executeCommand = true
+    if tmp_PMaxWarn[0]>tmp_Pmax[0] or tmp_PMaxWarn[0]>tmp_Pmax[0] then
+        lbl_limits_msg.value="Pressure warnings must be lower than pressure shut-down limits."
+        warning_sound()
+        return
     endif
-    'send PMax
-    GMCCommand.command = "PMax=" + str(PMax)+";BV"
+
+    if tmp_flowWarn[0]>tmp_flowrlim[0] or tmp_flowWarn[0]>tmp_flowrlim[0] then
+        lbl_limits_msg.value="Flow rate warnings must be lower than flow rate shut-down limits."
+        warning_sound()
+        return
+    endif
+
+    REM G-72 dependent variables
+    pmaxwarn[0]=tmp_pmaxwarn[0]
+    pmaxwarn[1]=tmp_pmaxwarn[1]
+    flowRLim[0]=tmp_flowRLim[0]
+    flowRLim[1]=tmp_flowRLim[1]
+    flowRLimWarn[0]=tmp_flowWarn[0]
+    flowRLimWarn[0]=tmp_flowWarn[0]
+    if but_enable_warnings_a.value=="DISABLED" then
+        ErrorDisplayDisabled[0]=true
+    else
+        ErrorDisplayDisabled[0]=false
+    endif
+
+    if but_enable_warnings_b.value=="DISABLED" then
+        ErrorDisplayDisabled[1]=true
+    else
+        ErrorDisplayDisabled[1]=false
+    endif
+
+    if but_enable_shutdown_a.value=="DISABLED" then
+
+        flow_limit_disabled[0]=false
+    else
+        but_enable_shutdown_a.value="DISABLED"
+        flow_limit_disabled[0]=true
+    endif
+
+    if but_enable_shutdown_b.value=="DISABLED" then
+        but_enable_shutdown_b.value="ENABLED"
+        flow_limit_disabled[1]=false
+    else
+        but_enable_shutdown_b.value="DISABLED"
+        flow_limit_disabled[1]=true
+    endif
+
+    REM Galil dependant variables.
+    If but_enable_open_valves_a.value=="ENABLED" then
+        tmp_dontopnA="0"
+    else
+        tmp_dontopnA="1"
+    endif
+
+    If but_enable_open_valves_b.value=="ENABLED" then
+        tmp_dontopnB="0"
+    else
+        tmp_dontopnB="1"
+    endif
+
+
+
+    GMCCommand.command = "PMaxA="+str(tmp_pmax[0])+";PMaxB="+str(tmp_pmax[1])+";DontOpnA="+tmp_dontopnA+";DontOpnB="+tmp_dontopnB+";BV"
     GMCCommand.executeCommand = true
+
+    tmr_delay_get_config.enabled=true
     pv_limits.Save()
     Exit_Limits_screen()
 endfunc
 Enddec
 Declare but_Save_Valve_Config as ButtonV2
-Level 249687
+Level 249676
 #Visible True
 #Lock False
 init value := "SAVE VALVE CONFIG"
@@ -9540,7 +9598,7 @@ func click()
 endfunc
 Enddec
 Declare but_Set_Mode as ButtonV2
-Level 249411
+Level 249400
 #Visible True
 #Lock False
 init value := "PUMP MODE"
@@ -9560,7 +9618,7 @@ func click()
 endfunc
 Enddec
 Declare but_Set_Mode_1 as ButtonV2
-Level 249448
+Level 249437
 #Visible True
 #Lock False
 init value := "PUMP MODE"
@@ -9580,7 +9638,7 @@ func click()
 endfunc
 Enddec
 Declare but_Setup as ButtonV2
-Level 249700
+Level 249689
 #Visible True
 #Lock False
 init value := "SYSTEM SETUP"
@@ -9602,7 +9660,7 @@ func click()
 endfunc
 Enddec
 Declare But_Start_A as ButtonV2
-Level 249894
+Level 249884
 #Visible True
 #Lock False
 init value := "START"
@@ -9617,8 +9675,7 @@ func click()
     valueschanged[0]=false
     IF value=="START" then
         me.inactive=true
-        disabled_button=me
-        tmr_reenable_button.enabled=true
+        tmr_reenable_button_a.enabled=true
         start_pump(0,ddl_mode_a,eb_target_a,eb_rate_a)
     else
         control_pressed[0]=stop
@@ -9637,7 +9694,7 @@ endfunc
 init bgcolor := Clr_ButtonBackground
 Enddec
 Declare But_Start_b as ButtonV2
-Level 249888
+Level 249878
 #Visible True
 #Lock False
 init value := "START"
@@ -9649,13 +9706,30 @@ init height := 47
 init font := helvb14_bdf
 
 func click()
+    valueschanged[1]=false
+    IF value=="START" then
+        me.inactive=true
+        tmr_reenable_button_b.enabled=true
+        start_pump(1,ddl_mode_b,eb_target_b,eb_rate_b)
+    else
+        control_pressed[1]=stop
+        if ddl_mode_B.selected==0 then
+            REM Stop flow
+            StartThread("STPB")
+        else
+            REM Stop pressure
+            gmccommand.command="ReStpPB=1"
+            gmccommand.executeCommand=true
+        endif
+
+    endif
 
 
 endfunc
 init bgcolor := Clr_ButtonBackground
 Enddec
 Declare But_Start_Flow_Cal as ButtonV2
-Level 249538
+Level 249527
 #Visible True
 #Lock False
 init value := "START FLOW"
@@ -9713,7 +9787,7 @@ func click()
 endfunc
 Enddec
 Declare but_Start_Flow_Man_A as ButtonV2
-Level 249790
+Level 249779
 #Visible True
 #Lock False
 init value := "START FLOW - A"
@@ -9767,7 +9841,7 @@ func click()
 endfunc
 Enddec
 Declare but_Start_Flow_Man_B as ButtonV2
-Level 249789
+Level 249778
 #Visible True
 #Lock False
 init value := "START FLOW - B"
@@ -9821,7 +9895,7 @@ func click()
 endfunc
 Enddec
 Declare But_StartFlow as ButtonV2
-Level 249443
+Level 249432
 #Visible True
 #Lock False
 init value := "START FLOW"
@@ -9848,7 +9922,7 @@ func click()
     else
         REM Flow_Pressed acts like a latch, set here and reset when FState is not 0.
         set_flow_pressed(start)
-        Send_FlowR(mlmax,mlpermin)
+        Send_FlowR(mlmax,mlpermin,"A")
         Start_Flow()
         'Tar_Vol_Reached=false
     endif
@@ -9858,7 +9932,7 @@ endfunc
 init bgcolor := Clr_ButtonBackground
 Enddec
 Declare But_Transducer_Select as ButtonV2
-Level 249513
+Level 249502
 #Visible True
 #Lock False
 init value := "A"
@@ -9882,7 +9956,7 @@ func click()
 endfunc
 Enddec
 Declare but_UpdateFlow as ButtonV2
-Level 249444
+Level 249433
 #Visible True
 #Lock False
 init value := "UPDATE TO CURRENT SETTINGS"
@@ -9894,14 +9968,14 @@ init height := 49
 
 
 func click()
-    Send_FlowR(mlmax,mlpermin)
+    Send_FlowR(mlmax,mlpermin,"A")
     Send_GMCcommand("RateChng=1")
     but_UpdateFlow.enabled=false
 endfunc
 init font := helvb18_bdf
 Enddec
 Declare but_UpdateFlow_a as ButtonV2
-Level 249893
+Level 249883
 #Visible True
 #Lock False
 init value := "UPDATE SETTINGS"
@@ -9931,13 +10005,10 @@ func click()
         valueschanged[0]=false
         if ddl_mode_a.selected==1 then
             REM Pressure Mode
-            Init_Press_Ramp(target_a, rate_a,0)
-            valueschanged[0]=false
+            Init_Press_Ramp(target_a, rate_a,"A")
         else
             REM Flow Mode
-
-            valueschanged[0]=false
-            Send_FlowR(target_a, rate_a)
+            Send_FlowR(target_a, rate_a,"A")
             Send_GMCcommand("RateChnA=1")
         endif
     endif
@@ -9957,7 +10028,7 @@ endfunc
 init font := helvb14_bdf
 Enddec
 Declare but_UpdateFlow_b as ButtonV2
-Level 249887
+Level 249877
 #Visible True
 #Lock False
 init value := "UPDATE SETTINGS"
@@ -9969,12 +10040,47 @@ init height := 47
 
 
 func click()
+    dim rate_b, target_b as float
+
+    valueschanged[1]=false
+    if Value=="CYCLE" then
+        startthread("STRTCYB")
+    endif
+    if value=="UPDATE SETTINGS" then
+        check error
+            val(rate_b, eb_rate_b.Value)
+            val(target_b, eb_target_b.Value)
+        on error
+            _clearexception()
+            warning_sound()
+            return
+        enderr
+        valueschanged[1]=false
+        if ddl_mode_b.selected==1 then
+            REM Pressure Mode
+            Init_Press_Ramp(target_b, rate_b,"B")
+        else
+            REM Flow Mode
+            Send_FlowR(target_b, rate_b,"B")
+            Send_GMCcommand("RateChnB=1")
+        endif
+    endif
+
+    if value=="RESUME RAMP" then
+        gmccommand.command="RampingB=1"
+        gmccommand.executeCommand=true
+    endif
+
+    if value=="PAUSE RAMP" then
+        gmccommand.command="RampingB=0"
+        gmccommand.executeCommand=true
+    endif
 
 endfunc
 init font := helvb14_bdf
 Enddec
 Declare But_Valve_Select as ButtonV2
-Level 249545
+Level 249534
 #Visible True
 #Lock False
 init value := "OUTLET"
@@ -9994,7 +10100,7 @@ func click()
 endfunc
 Enddec
 Declare But_Zero as ButtonV2
-Level 249525
+Level 249514
 #Visible True
 #Lock False
 init value := "SET ZERO"
@@ -10092,7 +10198,7 @@ endfunc
 init xjustify := hjustify_centeralign
 Enddec
 Declare but_ZeroVol as ButtonV2
-Level 249446
+Level 249435
 #Visible True
 #Lock False
 init value := "ZERO VOLUME"
@@ -10111,7 +10217,7 @@ func click()
 endfunc
 Enddec
 Declare but_ZeroVol_a as ButtonV2
-Level 249891
+Level 249881
 #Visible True
 #Lock False
 init value := "ZERO VOLUME"
@@ -10128,7 +10234,7 @@ func click()
 endfunc
 Enddec
 Declare but_ZeroVol_b as ButtonV2
-Level 249885
+Level 249875
 #Visible True
 #Lock False
 init value := "ZERO VOLUME"
@@ -10144,7 +10250,7 @@ func click()
 endfunc
 Enddec
 Declare but_ZeroXdcrs as ButtonV2
-Level 249407
+Level 249396
 #Visible True
 #Lock False
 init value := "ZERO P XDCRS"
@@ -10176,7 +10282,7 @@ func click()
 endfunc
 Enddec
 Declare but_ZeroXdcrs_1 as ButtonV2
-Level 249290
+Level 249279
 #Visible True
 #Lock False
 init value := "ZERO P XDCRS"
@@ -10207,7 +10313,7 @@ func click()
 endfunc
 Enddec
 Declare but_ZeroXdcrs_2 as ButtonV2
-Level 249449
+Level 249438
 #Visible True
 #Lock False
 init value := "ZERO P XDCRS"
@@ -10240,7 +10346,7 @@ func click()
 endfunc
 Enddec
 Declare but_ZeroXdcrs_a as ButtonV2
-Level 249889
+Level 249879
 #Visible True
 #Lock False
 init value := "ZERO P XDCR"
@@ -10258,7 +10364,7 @@ func click()
 endfunc
 Enddec
 Declare but_ZeroXdcrs_b as ButtonV2
-Level 249883
+Level 249873
 #Visible True
 #Lock False
 init value := "ZERO P XDCR"
@@ -10274,7 +10380,7 @@ func click()
 endfunc
 Enddec
 Declare cdpl_Current_date as ClockDisplayV2
-Level 249714
+Level 249703
 #Visible True
 #Lock False
 init parent := system_maintenance_screen
@@ -10289,7 +10395,7 @@ init height := 30
 init showtime := false
 Enddec
 Declare Config_screen_single_and_dual as ScreenV2
-Level 249496
+Level 249485
 #Visible False
 #Lock Me
 init parent := default
@@ -10301,8 +10407,8 @@ init borderstyle := bdr_compositeobject
 init enabled := false
 Enddec
 Declare Config_screen_twin as ScreenV2
-Level 249859
-#Visible True
+Level 249849
+#Visible False
 #Lock Me
 init parent := default
 init xpos := 0
@@ -10328,7 +10434,7 @@ init xjustify := hjustify_centeralign
 init enabled := false
 Enddec
 Declare DAQ_Objects as ScreenV2
-Level 249646
+Level 249635
 #Visible False
 #Lock Me
 init parent := default
@@ -10343,13 +10449,13 @@ func screenEnabled()
 endfunc
 Enddec
 Declare DateTimeFunctions_Maintenance as DateTimeFunctions
-Level 249713
+Level 249702
 #Visible True
 #Lock False
 init parent := system_maintenance_screen
 Enddec
 Declare ddl_mode_a as DropDownListV2
-Level 249900
+Level 249890
 #Visible True
 #Lock False
 init parent := twin_monitor_screen
@@ -10370,7 +10476,7 @@ endfunc
 init minrowheight := 15
 Enddec
 Declare ddl_mode_b as DropDownListV2
-Level 249903
+Level 249893
 #Visible True
 #Lock False
 init parent := twin_monitor_screen
@@ -10391,7 +10497,7 @@ endfunc
 init minrowheight := 15
 Enddec
 Declare ddl_Profile_1 as DropDownListV2
-Level 249296
+Level 249285
 #Visible True
 #Lock False
 init parent := profile_screen
@@ -10456,7 +10562,7 @@ func ValueChanged()
 endfunc
 Enddec
 Declare ddl_Profile_2 as DropDownListV2
-Level 249297
+Level 249286
 #Visible True
 #Lock False
 init parent := profile_screen
@@ -10544,7 +10650,7 @@ func ValueChanged()
 endfunc
 Enddec
 Declare ddl_Profile_3 as DropDownListV2
-Level 249298
+Level 249287
 #Visible True
 #Lock False
 init parent := profile_screen
@@ -10629,7 +10735,7 @@ func ValueChanged()
 endfunc
 Enddec
 Declare ddl_Profile_4 as DropDownListV2
-Level 249299
+Level 249288
 #Visible True
 #Lock False
 init parent := profile_screen
@@ -10714,7 +10820,7 @@ func ValueChanged()
 endfunc
 Enddec
 Declare ddl_Profile_5 as DropDownListV2
-Level 249300
+Level 249289
 #Visible True
 #Lock False
 init parent := profile_screen
@@ -10799,7 +10905,7 @@ func ValueChanged()
 endfunc
 Enddec
 Declare ddl_Profile_6 as DropDownListV2
-Level 249301
+Level 249290
 #Visible True
 #Lock False
 init parent := profile_screen
@@ -10884,7 +10990,7 @@ func ValueChanged()
 endfunc
 Enddec
 Declare ddl_state_a as DropDownListV2
-Level 249909
+Level 249899
 #Visible True
 #Lock False
 init parent := twin_monitor_screen
@@ -10903,7 +11009,7 @@ func ValueChanged()
 endfunc
 Enddec
 Declare ddl_state_b as DropDownListV2
-Level 249910
+Level 249900
 #Visible True
 #Lock False
 init parent := twin_monitor_screen
@@ -10923,7 +11029,7 @@ func ValueChanged()
 endfunc
 Enddec
 Declare ddl_update_com as DropDownListV2
-Level 249720
+Level 249709
 #Visible True
 #Lock False
 init parent := soft_reset_popup
@@ -10938,7 +11044,7 @@ init curseltext := "Ethernet"
 init font := helvb18_bdf
 Enddec
 Declare DebugEB as EditBoxV2
-Level 249647
+Level 249636
 #Visible True
 #Lock False
 init parent := debugscrn
@@ -10957,7 +11063,7 @@ init edittype := eb_readonly_scroll
 init scrollwidth := 40
 Enddec
 Declare DebugScrn as ScreenV2
-Level 249651
+Level 249640
 #Visible False
 #Lock Me
 init parent := default
@@ -10988,13 +11094,13 @@ init value := "Delete the Error Log?"
 init parent := error_log_screen
 Enddec
 Declare DelimitedComm_1 as DelimitedCommV2
-Level 249208
+Level 249197
 #Visible True
 #Lock False
 
 Enddec
 Declare eb_Amax as EditBoxV2
-Level 249486
+Level 249475
 #Visible True
 #Lock Me
 init parent := config_screen_single_and_dual
@@ -11021,7 +11127,7 @@ func focusOff()
 endfunc
 Enddec
 Declare eb_Amax_t as EditBoxV2
-Level 249837
+Level 249826
 #Visible True
 #Lock Me
 init parent := config_screen_twin
@@ -11048,7 +11154,7 @@ func focusOff()
 endfunc
 Enddec
 Declare eb_Amin as EditBoxV2
-Level 249487
+Level 249476
 #Visible True
 #Lock Me
 init parent := config_screen_single_and_dual
@@ -11075,7 +11181,7 @@ func focusOff()
 endfunc
 Enddec
 Declare eb_Amin_t as EditBoxV2
-Level 249838
+Level 249827
 #Visible True
 #Lock Me
 init parent := config_screen_twin
@@ -11102,7 +11208,7 @@ func focusOff()
 endfunc
 Enddec
 Declare eb_Bmax as EditBoxV2
-Level 249488
+Level 249477
 #Visible True
 #Lock Me
 init parent := config_screen_single_and_dual
@@ -11129,7 +11235,7 @@ func focusOff()
 endfunc
 Enddec
 Declare eb_Bmax_t as EditBoxV2
-Level 249836
+Level 249825
 #Visible True
 #Lock Me
 init parent := config_screen_twin
@@ -11156,7 +11262,7 @@ func focusOff()
 endfunc
 Enddec
 Declare eb_Bmin as EditBoxV2
-Level 249489
+Level 249478
 #Visible True
 #Lock Me
 init parent := config_screen_single_and_dual
@@ -11183,7 +11289,7 @@ func focusOff()
 endfunc
 Enddec
 Declare eb_Bmin_t as EditBoxV2
-Level 249835
+Level 249824
 #Visible True
 #Lock Me
 init parent := config_screen_twin
@@ -11210,7 +11316,7 @@ func focusOff()
 endfunc
 Enddec
 Declare eb_Cal_Start as EditBoxV2
-Level 249542
+Level 249531
 #Visible True
 #Lock False
 init parent := vol_cal_screen
@@ -11247,7 +11353,7 @@ func valueChanged()
 endfunc
 Enddec
 Declare eb_dummy as EditBoxV2
-Level 249652
+Level 249641
 #Visible False
 #Lock False
 init parent := default
@@ -11267,7 +11373,7 @@ func valueChanged()
 endfunc
 Enddec
 Declare eb_FillR as EditBoxV2
-Level 249484
+Level 249473
 #Visible True
 #Lock Me
 init parent := config_screen_single_and_dual
@@ -11298,7 +11404,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare eb_FillR_t_a as EditBoxV2
-Level 249848
+Level 249837
 #Visible True
 #Lock Me
 init parent := config_screen_twin
@@ -11329,7 +11435,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare eb_FillR_t_b as EditBoxV2
-Level 249839
+Level 249828
 #Visible True
 #Lock Me
 init parent := config_screen_twin
@@ -11360,7 +11466,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare eb_Flow_Vol as EditBoxV2
-Level 249537
+Level 249526
 #Visible True
 #Lock False
 init parent := vol_cal_screen
@@ -11401,7 +11507,7 @@ func valueChanged()
 endfunc
 Enddec
 Declare eb_FlowR as EditBoxV2
-Level 249441
+Level 249430
 #Visible True
 #Lock False
 init parent := flow_mode_screen
@@ -11437,7 +11543,7 @@ func valueChanged()
 endfunc
 Enddec
 Declare eb_FlowR_A as EditBoxV2
-Level 249797
+Level 249786
 #Visible True
 #Lock False
 init parent := manual_control_screen
@@ -11468,7 +11574,7 @@ init borderstyle := bdr_tabborder
 init cursorcolor := clr_buttonforeground
 Enddec
 Declare eb_FlowR_B as EditBoxV2
-Level 249799
+Level 249788
 #Visible True
 #Lock False
 init parent := manual_control_screen
@@ -11499,7 +11605,7 @@ init borderstyle := bdr_tabborder
 init cursorcolor := clr_buttonforeground
 Enddec
 Declare eb_FlowRLim as EditBoxV2
-Level 249402
+Level 249391
 #Visible True
 #Lock False
 init parent := pressure_mode_screen
@@ -11540,15 +11646,15 @@ func focusOn()
 endfunc
 init edittype := eb_readonly
 Enddec
-Declare eb_FlowRLim_1 as EditBoxV2
-Level 249931
+Declare eb_FlowRLim_a as EditBoxV2
+Level 249922
 #Visible True
-#Lock False
+#Lock Me
 init parent := limits_screen
-init xpos := 275
-init ypos := 150
-init width := 100
-init height := 48
+init xpos := 278
+init ypos := 187
+init width := 85
+init height := 40
 init fgcolor := 0
 init bgcolor := clr_buttonbackground
 init value := "100.00"
@@ -11564,22 +11670,26 @@ init boxtype := eb_numericstrict
 init decimalplaces := 2
 init tone_error := note_medium
 
-init font := helvb24_bdf
+init font := helvb18_bdf
 init xinset := 1
 init yinset := 0
 init ptsize := 20
 init borderstyle := bdr_tabborder
 init cursorcolor := clr_buttonforeground
+
+func valueChanged()
+
+endfunc
 Enddec
-Declare eb_FlowRLim_Warn as EditBoxV2
-Level 249930
+Declare eb_FlowRLim_b as EditBoxV2
+Level 249937
 #Visible True
-#Lock False
+#Lock Me
 init parent := limits_screen
-init xpos := 275
-init ypos := 90
-init width := 100
-init height := 48
+init xpos := 368
+init ypos := 187
+init width := 85
+init height := 40
 init fgcolor := 0
 init bgcolor := clr_buttonbackground
 init value := "100.00"
@@ -11595,15 +11705,89 @@ init boxtype := eb_numericstrict
 init decimalplaces := 2
 init tone_error := note_medium
 
-init font := helvb24_bdf
+init font := helvb18_bdf
 init xinset := 1
 init yinset := 0
 init ptsize := 20
 init borderstyle := bdr_tabborder
 init cursorcolor := clr_buttonforeground
+
+func valueChanged()
+
+endfunc
+Enddec
+Declare eb_FlowRLim_Warn_a as EditBoxV2
+Level 249921
+#Visible True
+#Lock Me
+init parent := limits_screen
+init xpos := 278
+init ypos := 127
+init width := 85
+init height := 40
+init fgcolor := 0
+init bgcolor := clr_buttonbackground
+init value := "100.00"
+
+init usesoftkeybar := false
+init maxlines := 1
+init min := 0
+init max := default
+init charlimit := 5
+init xjustify := hjustify_center
+init yjustify := vjustify_center
+init boxtype := eb_numericstrict
+init decimalplaces := 2
+init tone_error := note_medium
+
+init font := helvb18_bdf
+init xinset := 1
+init yinset := 0
+init ptsize := 20
+init borderstyle := bdr_tabborder
+init cursorcolor := clr_buttonforeground
+
+func valueChanged()
+
+endfunc
+Enddec
+Declare eb_FlowRLim_Warn_b as EditBoxV2
+Level 249936
+#Visible True
+#Lock Me
+init parent := limits_screen
+init xpos := 368
+init ypos := 127
+init width := 85
+init height := 40
+init fgcolor := 0
+init bgcolor := clr_buttonbackground
+init value := "100.00"
+
+init usesoftkeybar := false
+init maxlines := 1
+init min := 0
+init max := default
+init charlimit := 5
+init xjustify := hjustify_center
+init yjustify := vjustify_center
+init boxtype := eb_numericstrict
+init decimalplaces := 2
+init tone_error := note_medium
+
+init font := helvb18_bdf
+init xinset := 1
+init yinset := 0
+init ptsize := 20
+init borderstyle := bdr_tabborder
+init cursorcolor := clr_buttonforeground
+
+func valueChanged()
+
+endfunc
 Enddec
 Declare eb_FS_volts as EditBoxV2
-Level 249512
+Level 249501
 #Visible True
 #Lock False
 init parent := p_cal_screen
@@ -11630,7 +11814,7 @@ func focusOff()
 endfunc
 Enddec
 Declare eb_InitRate as EditBoxV2
-Level 249495
+Level 249484
 #Visible True
 #Lock Me
 init parent := config_screen_single_and_dual
@@ -11661,7 +11845,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare eb_InitRate_t as EditBoxV2
-Level 249851
+Level 249840
 #Visible True
 #Lock Me
 init parent := config_screen_twin
@@ -11818,7 +12002,7 @@ init borderstyle := bdr_tabborder
 init cursorcolor := clr_buttonforeground
 Enddec
 Declare eb_Limit_Profile_1 as EditBoxV2
-Level 249328
+Level 249317
 #Visible True
 #Lock False
 init parent := profile_screen
@@ -11887,7 +12071,7 @@ endfunc
 init edittype := eb_readwrite
 Enddec
 Declare eb_Limit_Profile_2 as EditBoxV2
-Level 249329
+Level 249318
 #Visible True
 #Lock False
 init parent := profile_screen
@@ -11960,7 +12144,7 @@ func valueChanged()
 endfunc
 Enddec
 Declare eb_Limit_Profile_3 as EditBoxV2
-Level 249330
+Level 249319
 #Visible True
 #Lock False
 init parent := profile_screen
@@ -12033,7 +12217,7 @@ func valueChanged()
 endfunc
 Enddec
 Declare eb_Limit_Profile_4 as EditBoxV2
-Level 249331
+Level 249320
 #Visible True
 #Lock False
 init parent := profile_screen
@@ -12105,7 +12289,7 @@ func valueChanged()
 endfunc
 Enddec
 Declare eb_Limit_Profile_5 as EditBoxV2
-Level 249332
+Level 249321
 #Visible True
 #Lock False
 init parent := profile_screen
@@ -12177,7 +12361,7 @@ func valueChanged()
 endfunc
 Enddec
 Declare eb_Limit_Profile_6 as EditBoxV2
-Level 249333
+Level 249322
 #Visible True
 #Lock False
 init parent := profile_screen
@@ -12248,7 +12432,7 @@ func valueChanged()
 endfunc
 Enddec
 Declare eb_Max_Error as EditBoxV2
-Level 249364
+Level 249353
 #Visible True
 #Lock False
 init parent := kprop_screen
@@ -12277,7 +12461,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare eb_ml_measured as EditBoxV2
-Level 249556
+Level 249545
 #Visible True
 #Lock Me
 init parent := vol_cal_screen
@@ -12317,7 +12501,7 @@ func valueChanged()
 endfunc
 Enddec
 Declare eb_New_Dgain as EditBoxV2
-Level 249372
+Level 249361
 #Visible True
 #Lock False
 init parent := kprop_screen
@@ -12346,7 +12530,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare eb_New_Igain as EditBoxV2
-Level 249371
+Level 249360
 #Visible True
 #Lock False
 init parent := kprop_screen
@@ -12375,7 +12559,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare eb_New_Kprop as EditBoxV2
-Level 249363
+Level 249352
 #Visible True
 #Lock False
 init parent := kprop_screen
@@ -12404,7 +12588,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare eb_New_Kx as EditBoxV2
-Level 249366
+Level 249355
 #Visible True
 #Lock False
 init parent := kprop_screen
@@ -12433,7 +12617,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare eb_Pmax as EditBoxV2
-Level 249482
+Level 249471
 #Visible True
 #Lock Me
 init parent := config_screen_single_and_dual
@@ -12463,15 +12647,15 @@ init xinset := 1
 init yinset := 0
 init ptsize := 20
 Enddec
-Declare eb_PMax_1 as EditBoxV2
-Level 249932
+Declare eb_PMax_a as EditBoxV2
+Level 249923
 #Visible True
-#Lock False
+#Lock Me
 init parent := limits_screen
-init xpos := 276
-init ypos := 303
-init width := 100
-init height := 48
+init xpos := 278
+init ypos := 330
+init width := 85
+init height := 40
 init fgcolor := 0
 init bgcolor := clr_buttonbackground
 init value := "10000.00"
@@ -12487,7 +12671,7 @@ init boxtype := eb_numericstrict
 init decimalplaces := 0
 init tone_error := note_medium
 
-init font := helvb24_bdf
+init font := helvb18_bdf
 init xinset := 1
 init yinset := 0
 init ptsize := 20
@@ -12498,7 +12682,7 @@ func valueChanged()
     dim New_Pmax as integer
 
     check error
-            val(New_Pmax, eb_pmax_1.Value)
+            val(New_Pmax, eb_pmax_a.Value)
         on error
             _ClearException()
         enderr
@@ -12516,8 +12700,61 @@ func valueChanged()
 
 endfunc
 Enddec
+Declare eb_PMax_b as EditBoxV2
+Level 249941
+#Visible True
+#Lock Me
+init parent := limits_screen
+init xpos := 368
+init ypos := 330
+init width := 85
+init height := 40
+init fgcolor := 0
+init bgcolor := clr_buttonbackground
+init value := "10000.00"
+
+init usesoftkeybar := false
+init maxlines := 1
+init min := 0
+init max := default
+init charlimit := 5
+init xjustify := hjustify_center
+init yjustify := vjustify_center
+init boxtype := eb_numericstrict
+init decimalplaces := 0
+init tone_error := note_medium
+
+init font := helvb18_bdf
+init xinset := 1
+init yinset := 0
+init ptsize := 20
+init borderstyle := bdr_tabborder
+init cursorcolor := clr_buttonforeground
+
+func valueChanged()
+    dim New_Pmax as integer
+
+    check error
+            val(New_Pmax, eb_pmax_b.Value)
+        on error
+            _ClearException()
+        enderr
+
+
+    if new_pmax<pcur[1] then
+        if (1.1*pcur[1]>PRange) then
+            me.Value=str(1.1*PRange)
+        else
+            me.Value=str(1.1*pcur[1])
+
+        endif
+    endif
+
+
+endfunc
+Enddec
 Declare eb_Pmax_T_a as EditBoxV2
-Level 249849
+Level 249838
 #Visible True
 #Lock Me
 init parent := config_screen_twin
@@ -12552,7 +12789,7 @@ func valueChanged()
 endfunc
 Enddec
 Declare eb_Pmax_t_b as EditBoxV2
-Level 249834
+Level 249823
 #Visible True
 #Lock Me
 init parent := config_screen_twin
@@ -12586,15 +12823,15 @@ func valueChanged()
 
 endfunc
 Enddec
-Declare eb_PMax_warn as EditBoxV2
-Level 249933
+Declare eb_PMax_warn_a as EditBoxV2
+Level 249924
 #Visible True
-#Lock False
+#Lock Me
 init parent := limits_screen
-init xpos := 276
-init ypos := 243
-init width := 100
-init height := 48
+init xpos := 278
+init ypos := 270
+init width := 85
+init height := 40
 init fgcolor := 0
 init bgcolor := clr_buttonbackground
 init value := "5000"
@@ -12610,15 +12847,54 @@ init boxtype := eb_numericstrict
 init decimalplaces := 0
 init tone_error := note_medium
 
-init font := helvb24_bdf
+init font := helvb18_bdf
 init xinset := 1
 init yinset := 0
 init ptsize := 20
 init borderstyle := bdr_tabborder
 init cursorcolor := clr_buttonforeground
+
+func valueChanged()
+
+endfunc
+Enddec
+Declare eb_PMax_warn_b as EditBoxV2
+Level 249940
+#Visible True
+#Lock Me
+init parent := limits_screen
+init xpos := 368
+init ypos := 270
+init width := 85
+init height := 40
+init fgcolor := 0
+init bgcolor := clr_buttonbackground
+init value := "5000"
+
+init usesoftkeybar := false
+init maxlines := 1
+init min := 0
+init max := default
+init charlimit := 5
+init xjustify := hjustify_center
+init yjustify := vjustify_center
+init boxtype := eb_numericstrict
+init decimalplaces := 0
+init tone_error := note_medium
+
+init font := helvb18_bdf
+init xinset := 1
+init yinset := 0
+init ptsize := 20
+init borderstyle := bdr_tabborder
+init cursorcolor := clr_buttonforeground
+
+func valueChanged()
+
+endfunc
 Enddec
 Declare eb_PressR as EditBoxV2
-Level 249401
+Level 249390
 #Visible True
 #Lock False
 init parent := pressure_mode_screen
@@ -12659,7 +12935,7 @@ func focusOn()
 endfunc
 Enddec
 Declare eb_psi_actual as EditBoxV2
-Level 249501
+Level 249490
 #Visible True
 #Lock False
 init parent := p_cal_screen
@@ -12686,7 +12962,7 @@ func focusOff()
 endfunc
 Enddec
 Declare eb_rate_a as EditBoxV2
-Level 249881
+Level 249871
 #Visible True
 #Lock False
 init parent := twin_monitor_screen
@@ -12723,7 +12999,7 @@ func valueChanged()
 endfunc
 Enddec
 Declare eb_rate_b as EditBoxV2
-Level 249905
+Level 249895
 #Visible True
 #Lock False
 init parent := twin_monitor_screen
@@ -12755,11 +13031,12 @@ init borderstyle := bdr_tabborder
 init cursorcolor := clr_buttonforeground
 
 func valueChanged()
+    valueschanged[1]=true
 
 endfunc
 Enddec
 Declare eb_Rate_Profile_1 as EditBoxV2
-Level 249302
+Level 249291
 #Visible True
 #Lock False
 init parent := profile_screen
@@ -12809,7 +13086,7 @@ func valueChanged()
 endfunc
 Enddec
 Declare eb_Rate_Profile_2 as EditBoxV2
-Level 249303
+Level 249292
 #Visible True
 #Lock False
 init parent := profile_screen
@@ -12858,7 +13135,7 @@ func valueChanged()
 endfunc
 Enddec
 Declare eb_Rate_Profile_3 as EditBoxV2
-Level 249304
+Level 249293
 #Visible True
 #Lock False
 init parent := profile_screen
@@ -12907,7 +13184,7 @@ func valueChanged()
 endfunc
 Enddec
 Declare eb_Rate_Profile_4 as EditBoxV2
-Level 249305
+Level 249294
 #Visible True
 #Lock False
 init parent := profile_screen
@@ -12956,7 +13233,7 @@ func valueChanged()
 endfunc
 Enddec
 Declare eb_Rate_Profile_5 as EditBoxV2
-Level 249306
+Level 249295
 #Visible True
 #Lock False
 init parent := profile_screen
@@ -13005,7 +13282,7 @@ func valueChanged()
 endfunc
 Enddec
 Declare eb_Rate_Profile_6 as EditBoxV2
-Level 249307
+Level 249296
 #Visible True
 #Lock False
 init parent := profile_screen
@@ -13054,7 +13331,7 @@ func valueChanged()
 endfunc
 Enddec
 Declare eb_RefillR_A as EditBoxV2
-Level 249805
+Level 249794
 #Visible True
 #Lock False
 init parent := manual_control_screen
@@ -13085,7 +13362,7 @@ init borderstyle := bdr_tabborder
 init cursorcolor := clr_buttonforeground
 Enddec
 Declare eb_RefillR_B as EditBoxV2
-Level 249806
+Level 249795
 #Visible True
 #Lock False
 init parent := manual_control_screen
@@ -13116,7 +13393,7 @@ init borderstyle := bdr_tabborder
 init cursorcolor := clr_buttonforeground
 Enddec
 Declare eb_ReflRate as EditBoxV2
-Level 249491
+Level 249480
 #Visible True
 #Lock Me
 init parent := config_screen_single_and_dual
@@ -13147,7 +13424,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare eb_ReflRate_t_a as EditBoxV2
-Level 249847
+Level 249836
 #Visible True
 #Lock Me
 init parent := config_screen_twin
@@ -13178,7 +13455,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare eb_ReflRate_t_b as EditBoxV2
-Level 249833
+Level 249822
 #Visible True
 #Lock Me
 init parent := config_screen_twin
@@ -13209,7 +13486,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare eb_Start_Receive as EditBoxV2
-Level 249490
+Level 249479
 #Visible True
 #Lock Me
 init parent := config_screen_single_and_dual
@@ -13236,7 +13513,7 @@ func focusOff()
 endfunc
 Enddec
 Declare eb_Start_Receive_t_a as EditBoxV2
-Level 249832
+Level 249821
 #Visible True
 #Lock False
 init parent := config_screen_twin
@@ -13263,7 +13540,7 @@ func focusOff()
 endfunc
 Enddec
 Declare eb_Start_Receive_t_b as EditBoxV2
-Level 249855
+Level 249844
 #Visible True
 #Lock False
 init parent := config_screen_twin
@@ -13290,7 +13567,7 @@ func focusOff()
 endfunc
 Enddec
 Declare eb_Start_Vol_Pump as EditBoxV2
-Level 249485
+Level 249474
 #Visible True
 #Lock Me
 init parent := config_screen_single_and_dual
@@ -13317,7 +13594,7 @@ func focusOff()
 endfunc
 Enddec
 Declare eb_start_vol_pump_t_a as EditBoxV2
-Level 249853
+Level 249842
 #Visible True
 #Lock False
 init parent := config_screen_twin
@@ -13344,7 +13621,7 @@ func focusOff()
 endfunc
 Enddec
 Declare eb_Start_Vol_Pump_t_b as EditBoxV2
-Level 249854
+Level 249843
 #Visible True
 #Lock False
 init parent := config_screen_twin
@@ -13371,7 +13648,7 @@ func focusOff()
 endfunc
 Enddec
 Declare eb_Tar_Vol as EditBoxV2
-Level 249440
+Level 249429
 #Visible True
 #Lock False
 init parent := flow_mode_screen
@@ -13407,7 +13684,7 @@ func valueChanged()
 endfunc
 Enddec
 Declare eb_tar_vol_a as EditBoxV2
-Level 249796
+Level 249785
 #Visible True
 #Lock False
 init parent := manual_control_screen
@@ -13439,7 +13716,7 @@ init borderstyle := bdr_tabborder
 init cursorcolor := clr_buttonforeground
 Enddec
 Declare eb_tar_vol_b as EditBoxV2
-Level 249798
+Level 249787
 #Visible True
 #Lock False
 init parent := manual_control_screen
@@ -13471,7 +13748,7 @@ init borderstyle := bdr_tabborder
 init cursorcolor := clr_buttonforeground
 Enddec
 Declare eb_Target_a as EditBoxV2
-Level 249880
+Level 249870
 #Visible True
 #Lock False
 init parent := twin_monitor_screen
@@ -13514,7 +13791,7 @@ func valueChanged()
 endfunc
 Enddec
 Declare eb_target_b as EditBoxV2
-Level 249907
+Level 249897
 #Visible True
 #Lock False
 init parent := twin_monitor_screen
@@ -13546,11 +13823,18 @@ init borderstyle := bdr_tabborder
 init cursorcolor := clr_buttonforeground
 
 func valueChanged()
+    valueschanged[1]=true
+    if ddl_mode_b.selected==0 then
+        REM flow mode, set to inf if 0
+        if value=="0" then
+            value="Inf"
+        endif
+    endif
 
 endfunc
 Enddec
 Declare eb_Target_Press as EditBoxV2
-Level 249400
+Level 249389
 #Visible True
 #Lock False
 init parent := pressure_mode_screen
@@ -13604,7 +13888,7 @@ func valueChanged()
 endfunc
 Enddec
 Declare eb_VolPCyl as EditBoxV2
-Level 249483
+Level 249472
 #Visible True
 #Lock Me
 init parent := config_screen_single_and_dual
@@ -13635,7 +13919,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare eb_VolPCyl_t as EditBoxV2
-Level 249850
+Level 249839
 #Visible True
 #Lock Me
 init parent := config_screen_twin
@@ -13666,7 +13950,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare elps_A as RectangleV2
-Level 249431
+Level 249420
 #Visible True
 #Lock False
 init parent := flow_mode_screen
@@ -13681,7 +13965,7 @@ func handlepress()
 endfunc
 Enddec
 Declare elps_A_1 as RectangleV2
-Level 249392
+Level 249381
 #Visible True
 #Lock False
 init parent := pressure_mode_screen
@@ -13692,7 +13976,7 @@ init height := 16
 init bgcolor := 161
 Enddec
 Declare elps_A_2 as RectangleV2
-Level 249270
+Level 249259
 #Visible True
 #Lock False
 init parent := profile_screen
@@ -13703,7 +13987,7 @@ init height := 16
 init bgcolor := 20
 Enddec
 Declare elps_A_3 as RectangleV2
-Level 249248
+Level 249237
 #Visible True
 #Lock False
 init parent := remote_display
@@ -13714,7 +13998,7 @@ init height := 16
 init bgcolor := 161
 Enddec
 Declare elps_A_4 as RectangleV2
-Level 249879
+Level 249869
 #Visible True
 #Lock False
 init parent := twin_monitor_screen
@@ -13725,7 +14009,7 @@ init height := 16
 init bgcolor := 161
 Enddec
 Declare elps_b as RectangleV2
-Level 249432
+Level 249421
 #Visible True
 #Lock False
 init parent := flow_mode_screen
@@ -13736,7 +14020,7 @@ init height := 16
 init bgcolor := 161
 Enddec
 Declare elps_B_1 as RectangleV2
-Level 249393
+Level 249382
 #Visible True
 #Lock False
 init parent := pressure_mode_screen
@@ -13747,7 +14031,7 @@ init height := 16
 init bgcolor := 161
 Enddec
 Declare elps_B_2 as RectangleV2
-Level 249271
+Level 249260
 #Visible True
 #Lock False
 init parent := profile_screen
@@ -13758,7 +14042,7 @@ init height := 16
 init bgcolor := 161
 Enddec
 Declare elps_b_3 as RectangleV2
-Level 249247
+Level 249236
 #Visible True
 #Lock False
 init parent := remote_display
@@ -13769,7 +14053,7 @@ init height := 16
 init bgcolor := 161
 Enddec
 Declare elps_b_4 as RectangleV2
-Level 249878
+Level 249868
 #Visible True
 #Lock False
 init parent := twin_monitor_screen
@@ -13841,7 +14125,7 @@ func OnExceptionCaught(errstr as string, errtype as unibyte, errlevel as unibyte
 endfunc
 Enddec
 Declare Fact_Set_Warning_screen as ScreenV2
-Level 249658
+Level 249647
 #Visible False
 #Lock False
 init parent := default
@@ -13853,7 +14137,7 @@ init enabled := False
 init bgcolor := clr_labelbackground
 Enddec
 Declare Flow_mode_screen as ScreenV2
-Level 249451
+Level 249440
 #Visible False
 #Lock Me
 init parent := default
@@ -13865,7 +14149,7 @@ init enabled := false
 init bgcolor := clr_buttonbackgroundalt
 Enddec
 Declare G_55_PopupMenu_1 as G55PopupMenu
-Level 249209
+Level 249198
 #Visible True
 #Lock False
     init mainsubmenu := g_55_popupmenu_2
@@ -13882,7 +14166,7 @@ init xpos := 0
 init ypos := -80
 Enddec
 Declare G_55_PopupMenu_2 as G55PopupMenu
-Level 249210
+Level 249199
 #Visible True
 #Lock False
     init mainsubmenu := g_55_popupmenu_3
@@ -13899,7 +14183,7 @@ init xpos := 0
 init ypos := -80
 Enddec
 Declare G_55_PopupMenu_3 as G55PopupMenu
-Level 249211
+Level 249200
 #Visible True
 #Lock False
     init mainsubmenu := g_55_popupmenu_4
@@ -13916,7 +14200,7 @@ init xpos := 0
 init ypos := -80
 Enddec
 Declare G_55_PopupMenu_4 as G55PopupMenu
-Level 249212
+Level 249201
 #Visible True
 #Lock False
     init mainsubmenu := g_55_popupmenu_5
@@ -13933,7 +14217,7 @@ init xpos := 0
 init ypos := -80
 Enddec
 Declare G_55_PopupMenu_5 as G55PopupMenu
-Level 249213
+Level 249202
 #Visible True
 #Lock False
     init mainsubmenu := g_55_popupmenu_6
@@ -13950,7 +14234,7 @@ init xpos := 0
 init ypos := -80
 Enddec
 Declare G_55_PopupMenu_6 as G55PopupMenu
-Level 249214
+Level 249203
 #Visible True
 #Lock False
     init mainsubmenu := g_55_popupmenu_7
@@ -13967,7 +14251,7 @@ init xpos := 0
 init ypos := -80
 Enddec
 Declare G_55_PopupMenu_7 as G55PopupMenu
-Level 249215
+Level 249204
 #Visible True
 #Lock False
     init mainsubmenu := g_55_popupmenu_8
@@ -13984,7 +14268,7 @@ init xpos := 0
 init ypos := -80
 Enddec
 Declare G_55_PopupMenu_8 as G55PopupMenu
-Level 249216
+Level 249205
 #Visible True
 #Lock False
     init initialselected := 0
@@ -14000,10 +14284,10 @@ init xpos := 0
 init ypos := -80
 Enddec
 Declare g_72_ver_lbl as LabelV2
-Level 249339
+Level 249328
 #Visible True
 #Lock False
-init value := "Terminal Version Mock Up Twin 4 "
+init value := "Terminal Version Twin 10/22/2014 "
 init parent := sys_setup_screen
 init xpos := 20
 init ypos := 744
@@ -14016,7 +14300,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare galil_ver_lbl as LabelV2
-Level 249338
+Level 249327
 #Visible True
 #Lock False
 init value := "Controller Version 3.2211"
@@ -14032,7 +14316,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare GalilComm as GalilCommV2
-Level 249659
+Level 249648
 #Visible True
 #Lock Me
 init connectiontype := gmc_useserial
@@ -14045,7 +14329,7 @@ init messageptsize := 12
 init connectatstartup := false
 Enddec
 Declare GalilStartCom as TimerV2
-Level 249702
+Level 249691
 #Visible False
 #Lock False
 init timertype := _tt_oneshot
@@ -14055,7 +14339,7 @@ func timeout()
 endfunc
 Enddec
 Declare Gauge_VolumeA as GaugeV2
-Level 249395
+Level 249384
 #Visible True
 #Lock False
 init parent := pressure_mode_screen
@@ -14070,7 +14354,7 @@ init font := helvr18_bdf
 init ptsize := 12
 Enddec
 Declare Gauge_VolumeA_1 as GaugeV2
-Level 249429
+Level 249418
 #Visible True
 #Lock False
 init parent := flow_mode_screen
@@ -14089,7 +14373,7 @@ func Value(newval as float)
 endfunc
 Enddec
 Declare Gauge_VolumeA_2 as GaugeV2
-Level 249731
+Level 249720
 #Visible True
 #Lock False
 init parent := power_up_screen
@@ -14104,7 +14388,7 @@ init font := helvr18_bdf
 init ptsize := 12
 Enddec
 Declare Gauge_VolumeA_3 as GaugeV2
-Level 249784
+Level 249773
 #Visible True
 #Lock False
 init parent := manual_control_screen
@@ -14119,7 +14403,7 @@ init font := helvr18_bdf
 init ptsize := 12
 Enddec
 Declare Gauge_VolumeA_4 as GaugeV2
-Level 249272
+Level 249261
 #Visible True
 #Lock False
 init parent := profile_screen
@@ -14134,7 +14418,7 @@ init font := helvr18_bdf
 init ptsize := 12
 Enddec
 Declare Gauge_VolumeA_5 as GaugeV2
-Level 249250
+Level 249239
 #Visible True
 #Lock False
 init parent := remote_display
@@ -14149,7 +14433,7 @@ init font := helvr18_bdf
 init ptsize := 12
 Enddec
 Declare Gauge_VolumeA_6 as GaugeV2
-Level 249876
+Level 249866
 #Visible True
 #Lock False
 init parent := twin_monitor_screen
@@ -14164,7 +14448,7 @@ init font := helvr18_bdf
 init ptsize := 12
 Enddec
 Declare Gauge_VolumeB as GaugeV2
-Level 249394
+Level 249383
 #Visible True
 #Lock False
 init parent := pressure_mode_screen
@@ -14179,7 +14463,7 @@ init font := helvr18_bdf
 init ptsize := 12
 Enddec
 Declare Gauge_VolumeB_1 as GaugeV2
-Level 249430
+Level 249419
 #Visible True
 #Lock False
 init parent := flow_mode_screen
@@ -14194,7 +14478,7 @@ init font := helvr18_bdf
 init ptsize := 12
 Enddec
 Declare Gauge_VolumeB_2 as GaugeV2
-Level 249732
+Level 249721
 #Visible True
 #Lock False
 init parent := power_up_screen
@@ -14209,7 +14493,7 @@ init font := helvr18_bdf
 init ptsize := 12
 Enddec
 Declare Gauge_VolumeB_3 as GaugeV2
-Level 249785
+Level 249774
 #Visible True
 #Lock False
 init parent := manual_control_screen
@@ -14224,7 +14508,7 @@ init font := helvr18_bdf
 init ptsize := 12
 Enddec
 Declare Gauge_VolumeB_4 as GaugeV2
-Level 249273
+Level 249262
 #Visible True
 #Lock False
 init parent := profile_screen
@@ -14239,7 +14523,7 @@ init font := helvr18_bdf
 init ptsize := 12
 Enddec
 Declare Gauge_VolumeB_5 as GaugeV2
-Level 249249
+Level 249238
 #Visible True
 #Lock False
 init parent := remote_display
@@ -14254,7 +14538,7 @@ init font := helvr18_bdf
 init ptsize := 12
 Enddec
 Declare Gauge_VolumeB_6 as GaugeV2
-Level 249877
+Level 249867
 #Visible True
 #Lock False
 init parent := twin_monitor_screen
@@ -14269,7 +14553,7 @@ init font := helvr18_bdf
 init ptsize := 12
 Enddec
 Declare GMCcom_Amax as GMCCommandExecV2
-Level 249593
+Level 249582
 #Visible True
 #Lock False
 init commobject := galilcomm
@@ -14293,7 +14577,7 @@ func FailureReceived(response as string, failReason as GMC_FailureReason)
 endfunc
 Enddec
 Declare GMCcom_Amin as GMCCommandExecV2
-Level 249592
+Level 249581
 #Visible True
 #Lock False
 init commobject := galilcomm
@@ -14317,7 +14601,7 @@ func FailureReceived(response as string, failReason as GMC_FailureReason)
 endfunc
 Enddec
 Declare GMCcom_Bmax as GMCCommandExecV2
-Level 249595
+Level 249584
 #Visible True
 #Lock False
 init commobject := galilcomm
@@ -14341,7 +14625,7 @@ func FailureReceived(response as string, failReason as GMC_FailureReason)
 endfunc
 Enddec
 Declare GMCcom_Bmin as GMCCommandExecV2
-Level 249594
+Level 249583
 #Visible True
 #Lock False
 init commobject := galilcomm
@@ -14365,7 +14649,7 @@ func FailureReceived(response as string, failReason as GMC_FailureReason)
 endfunc
 Enddec
 Declare GMCcom_CyclDone3 as GMCCommandExecV2
-Level 249614
+Level 249603
 #Visible True
 #Lock False
 init commobject := galilcomm
@@ -14408,7 +14692,7 @@ init parent := daq_objects
 init enabled := false
 Enddec
 Declare GMCCom_Debug as GMCCommandExecV2
-Level 249630
+Level 249619
 #Visible True
 #Lock False
 init parent := daq_objects
@@ -14436,7 +14720,7 @@ func ResponseReceived(response as string)
 endfunc
 Enddec
 Declare GMCcom_DH as GMCCommandExecV2
-Level 249619
+Level 249608
 #Visible True
 #Lock False
 init commobject := galilcomm
@@ -14473,7 +14757,7 @@ endfunc
 init parent := daq_objects
 Enddec
 Declare GMCCom_ErrCode as GMCCommandExecV2
-Level 249626
+Level 249615
 #Visible True
 #Lock False
 init commobject := galilcomm
@@ -14501,7 +14785,7 @@ func FailureReceived(response as string, failReason as GMC_FailureReason)
 endfunc
 Enddec
 Declare GMCcom_ErrMsg as GMCCommandExecV2
-Level 249610
+Level 249599
 #Visible True
 #Lock False
 init commobject := galilcomm
@@ -14531,7 +14815,7 @@ init parent := daq_objects
 init enabled := false
 Enddec
 Declare GMCcom_FillR as GMCCommandExecV2
-Level 249602
+Level 249591
 #Visible True
 #Lock False
 init commobject := galilcomm
@@ -14554,7 +14838,7 @@ endfunc
 init parent := daq_objects
 Enddec
 Declare GMCCom_Finding as GMCCommandExecV2
-Level 249640
+Level 249629
 #Visible True
 #Lock False
 init parent := daq_objects
@@ -14606,7 +14890,7 @@ endfunc
 init command := "MG FindingA, FindingB"
 Enddec
 Declare GMCCom_First_PowerUP as GMCCommandExecV2
-Level 249611
+Level 249600
 #Visible True
 #Lock False
 init commobject := galilcomm
@@ -14661,7 +14945,7 @@ func FailureReceived(response as string, failReason as GMC_FailureReason)
 endfunc
 Enddec
 Declare GMCcom_FRMax as GMCCommandExecV2
-Level 249607
+Level 249596
 #Visible True
 #Lock False
 init commobject := galilcomm
@@ -14680,16 +14964,16 @@ func ResponseReceived(response as string)
     eb_RefillR_A.max=FRMax
     eb_RefillR_B.max=FRMax
     eb_FlowRLim.max=FRMax*1.1
-    eb_flowrlim_1.max=FRMax*1.1
-    eb_FlowRLim_Warn.max=FRMax*1.1
+    eb_flowrlim_a.max=FRMax*1.1
+    eb_flowrlim_warn_a.max=FRMax*1.1
     eb_FillR.max=FRMax
     eb_ReflRate.max=FRMax
     eb_InitRate.max=FRMax
-    If FlowRLim==0 then
-        FlowRLim=FRMax
+    If FlowRLim[0]==0 then
+        FlowRLim[0]=FRMax
     endif
-    If FlowRLimWarn==0 then
-        FlowRLimWarn=FRMax
+    If FlowRLimWarn[0]==0 then
+        FlowRLimWarn[0]=FRMax
     endif
 endfunc
 
@@ -14702,7 +14986,7 @@ init parent := daq_objects
 init enabled := false
 Enddec
 Declare GMCcom_FState2 as GMCCommandExecV2
-Level 249613
+Level 249602
 #Visible True
 #Lock False
 init commobject := galilcomm
@@ -14791,7 +15075,7 @@ init parent := daq_objects
 init enabled := false
 Enddec
 Declare GMCcom_FState_Remote as GMCCommandExecV2
-Level 249597
+Level 249586
 #Visible True
 #Lock False
 init commobject := galilcomm
@@ -14865,7 +15149,7 @@ func FailureReceived(response as string, failReason as GMC_FailureReason)
 endfunc
 Enddec
 Declare GMCcom_FwdAlrmA as GMCCommandExecV2
-Level 249573
+Level 249562
 #Visible True
 #Lock False
 init commobject := galilcomm
@@ -14889,7 +15173,7 @@ func FailureReceived(response as string, failReason as GMC_FailureReason)
 endfunc
 Enddec
 Declare GMCcom_FwdAlrmB as GMCCommandExecV2
-Level 249571
+Level 249560
 #Visible True
 #Lock False
 init commobject := galilcomm
@@ -14913,7 +15197,7 @@ func FailureReceived(response as string, failReason as GMC_FailureReason)
 endfunc
 Enddec
 Declare GMCcom_IA as GMCCommandExecV2
-Level 249618
+Level 249607
 #Visible True
 #Lock False
 init commobject := galilcomm
@@ -14963,7 +15247,7 @@ endfunc
 init parent := daq_objects
 Enddec
 Declare GMCcom_InitDone4 as GMCCommandExecV2
-Level 249615
+Level 249604
 #Visible True
 #Lock False
 init commobject := galilcomm
@@ -15015,7 +15299,7 @@ init parent := daq_objects
 init enabled := false
 Enddec
 Declare GMCcom_InitRate as GMCCommandExecV2
-Level 249621
+Level 249610
 #Visible True
 #Lock False
 init commobject := galilcomm
@@ -15039,7 +15323,7 @@ endfunc
 init parent := daq_objects
 Enddec
 Declare GMCcom_InVopn as GMCCommandExecV2
-Level 249620
+Level 249609
 #Visible True
 #Lock False
 init commobject := galilcomm
@@ -15071,7 +15355,7 @@ endfunc
 init parent := daq_objects
 Enddec
 Declare GMCCom_LineNum as GMCCommandExecV2
-Level 249628
+Level 249617
 #Visible True
 #Lock False
 init commobject := galilcomm
@@ -15098,7 +15382,7 @@ func FailureReceived(response as string, failReason as GMC_FailureReason)
 endfunc
 Enddec
 Declare GMCCom_MLaccum as GMCCommandExecV2
-Level 249575
+Level 249564
 #Visible True
 #Lock False
 init commobject := galilcomm
@@ -15119,7 +15403,7 @@ func FailureReceived(response as string, failReason as GMC_FailureReason)
 endfunc
 Enddec
 Declare GMCcom_MLPmmA as GMCCommandExecV2
-Level 249567
+Level 249556
 #Visible True
 #Lock False
 init commobject := galilcomm
@@ -15137,7 +15421,7 @@ func ResponseReceived(response as string)
 endfunc
 Enddec
 Declare GMCcom_MLPmmB as GMCCommandExecV2
-Level 249566
+Level 249555
 #Visible True
 #Lock False
 init commobject := galilcomm
@@ -15156,7 +15440,7 @@ func ResponseReceived(response as string)
 endfunc
 Enddec
 Declare GMCcom_PfsVA as GMCCommandExecV2
-Level 249588
+Level 249577
 #Visible True
 #Lock False
 func ResponseReceived(response as string)
@@ -15180,7 +15464,7 @@ func FailureReceived(response as string, failReason as GMC_FailureReason)
 endfunc
 Enddec
 Declare GMCcom_PfsVB as GMCCommandExecV2
-Level 249587
+Level 249576
 #Visible True
 #Lock False
 func ResponseReceived(response as string)
@@ -15204,7 +15488,7 @@ func FailureReceived(response as string, failReason as GMC_FailureReason)
 endfunc
 Enddec
 Declare GMCcom_Pmax as GMCCommandExecV2
-Level 249601
+Level 249590
 #Visible True
 #Lock Me
 init commobject := galilcomm
@@ -15250,7 +15534,7 @@ endfunc
 init parent := daq_objects
 Enddec
 Declare GMCcom_PmpModeA as GMCCommandExecV2
-Level 249617
+Level 249606
 #Visible True
 #Lock False
 init commobject := galilcomm
@@ -15278,7 +15562,7 @@ endfunc
 init parent := daq_objects
 Enddec
 Declare GMCcom_PmpModeB as GMCCommandExecV2
-Level 249636
+Level 249625
 #Visible True
 #Lock False
 init commobject := galilcomm
@@ -15306,7 +15590,7 @@ endfunc
 init parent := daq_objects
 Enddec
 Declare GMCcom_PmpStart as GMCCommandExecV2
-Level 249577
+Level 249566
 #Visible True
 #Lock False
 init commobject := galilcomm
@@ -15329,7 +15613,7 @@ func FailureReceived(response as string, failReason as GMC_FailureReason)
 endfunc
 Enddec
 Declare GMCCom_PowerUP as GMCCommandExecV2
-Level 249574
+Level 249563
 #Visible True
 #Lock False
 init commobject := galilcomm
@@ -15392,7 +15676,7 @@ func FailureReceived(response as string, failReason as GMC_FailureReason)
 endfunc
 Enddec
 Declare GMCcom_PRange as GMCCommandExecV2
-Level 249581
+Level 249570
 #Visible True
 #Lock False
 init commobject := galilcomm
@@ -15409,11 +15693,11 @@ func ResponseReceived(response as string)
     lbl_press_range.value=_FormatFloat(PRange,5,0,_FLOAT_NORMAL)
     eb_PMax.max=PRange*1.1
     eb_PMax.min=PRange*.01
-    eb_PMax_1.max=PRange*1.1
-    eb_PMax_1.min=PRange*.01
+    eb_pmax_a.max=PRange*1.1
+    eb_pmax_a.min=PRange*.01
     eb_Target_Press.max=PRange
-    eb_PMax_Warn.max=PRange*1.1
-    eb_PMax_Warn.min=PRange*.01
+    eb_pmax_warn_a.max=PRange*1.1
+    eb_pmax_warn_a.min=PRange*.01
     If PRange > 15 and PRange < 25 then
         Pxdcr=0
     endif
@@ -15452,7 +15736,7 @@ func ExecuteCommand(newVal as boolean)
 endfunc
 Enddec
 Declare GMCcom_PState1 as GMCCommandExecV2
-Level 249612
+Level 249601
 #Visible True
 #Lock False
 init commobject := galilcomm
@@ -15498,7 +15782,7 @@ func ResponseReceived(response as string)
         gmcpoll_mlcurb.enabled=true
         GMCPoll_PState_Status.enabled=true
         GMCPoll_CurFlow.enabled=true
-        eb_FlowRLim.Value=_formatfloat(FlowRLim,6,2,_FLOAT_NORMAL)
+        eb_FlowRLim.Value=_formatfloat(FlowRLim[0],6,2,_FLOAT_NORMAL)
 '        lbl_Target_Press.fgColor=160
 '        lbl_Target_Press.value=_FormatFloat(Pcur,6,2,_FLOAT_NORMAL)
 '        skb_const_p_mode.softKeyList=skl_P_Mode_4
@@ -15537,7 +15821,7 @@ init parent := daq_objects
 init enabled := false
 Enddec
 Declare GMCcom_PState_Remote as GMCCommandExecV2
-Level 249596
+Level 249585
 #Visible True
 #Lock False
 init commobject := galilcomm
@@ -15620,7 +15904,7 @@ func FailureReceived(response as string, failReason as GMC_FailureReason)
 endfunc
 Enddec
 Declare GMCcom_RcvStart as GMCCommandExecV2
-Level 249576
+Level 249565
 #Visible True
 #Lock False
 init commobject := galilcomm
@@ -15643,7 +15927,7 @@ func FailureReceived(response as string, failReason as GMC_FailureReason)
 endfunc
 Enddec
 Declare GMCcom_ReflRate as GMCCommandExecV2
-Level 249616
+Level 249605
 #Visible True
 #Lock False
 init commobject := galilcomm
@@ -15667,7 +15951,7 @@ endfunc
 init parent := daq_objects
 Enddec
 Declare GMCcom_ReflRate_ManA as GMCCommandExecV2
-Level 249622
+Level 249611
 #Visible True
 #Lock False
 init commobject := galilcomm
@@ -15691,7 +15975,7 @@ endfunc
 init parent := daq_objects
 Enddec
 Declare GMCcom_ReflRate_ManB as GMCCommandExecV2
-Level 249623
+Level 249612
 #Visible True
 #Lock False
 init commobject := galilcomm
@@ -15715,7 +15999,7 @@ endfunc
 init parent := daq_objects
 Enddec
 Declare GMCCom_Rev as GMCCommandExecV2
-Level 249627
+Level 249616
 #Visible True
 #Lock False
 init commobject := galilcomm
@@ -15746,7 +16030,7 @@ func FailureReceived(response as string, failReason as GMC_FailureReason)
 endfunc
 Enddec
 Declare GMCcom_RevAlrmA as GMCCommandExecV2
-Level 249572
+Level 249561
 #Visible True
 #Lock False
 init commobject := galilcomm
@@ -15771,7 +16055,7 @@ func FailureReceived(response as string, failReason as GMC_FailureReason)
 endfunc
 Enddec
 Declare GMCcom_RevAlrmB as GMCCommandExecV2
-Level 249570
+Level 249559
 #Visible True
 #Lock False
 init commobject := galilcomm
@@ -15796,7 +16080,7 @@ func FailureReceived(response as string, failReason as GMC_FailureReason)
 endfunc
 Enddec
 Declare GMCcom_Rod as GMCCommandExecV2
-Level 249582
+Level 249571
 #Visible True
 #Lock False
 init commobject := galilcomm
@@ -15839,7 +16123,7 @@ func FailureReceived(response as string, failReason as GMC_FailureReason)
 endfunc
 Enddec
 Declare GMCcom_Stroke as GMCCommandExecV2
-Level 249580
+Level 249569
 #Visible True
 #Lock False
 init commobject := galilcomm
@@ -15862,7 +16146,7 @@ endfunc
 init parent := daq_objects
 Enddec
 Declare GMCCom_Twin_Update_1 as GMCCommandExecV2
-Level 249631
+Level 249620
 #Visible True
 #Lock False
 init parent := daq_objects
@@ -15912,7 +16196,7 @@ endfunc
 init command := "MG FStateA, FStateB, PStateA, PStateB, InitDonA, InitDonB, CyclDonA, CyclDonB"
 Enddec
 Declare GMCCom_Twin_Update_2 as GMCCommandExecV2
-Level 249633
+Level 249622
 #Visible True
 #Lock False
 init parent := daq_objects
@@ -15967,7 +16251,7 @@ endfunc
 init command := "MG PcurA, PcurB, MLcurA, MLcurB, MLtotAT, MLtotBT, PreadyA, PreadyB"
 Enddec
 Declare GMCCom_Twin_Update_3 as GMCCommandExecV2
-Level 249634
+Level 249623
 #Visible True
 #Lock False
 init parent := daq_objects
@@ -16045,25 +16329,25 @@ endfunc
 init command := "MG _XQ0, NewErrA, NewErrB, Remote, RampingA, RampingB, CycleA, CycleB"
 Enddec
 Declare GMCCom_Twin_Update_4 as GMCCommandExecV2
-Level 249635
+Level 249624
 #Visible True
 #Lock False
 init parent := daq_objects
 init commobject := galilcomm
 
 func ResponseReceived(response as string)
-    dim start_idx[7], length[7], curpos, loopI as integer
+    dim start_idx[8], length[8], curpos, loopI as integer
     dim strTime as string
     dim threadone, valvestates[4] as float
 
 
-    for loopi=0 to 6 step 1
+    for loopi=0 to 7 step 1
         if loopi==0 then
             start_idx[loopi]=0
             length[loopi]=find(response,0,-1, " ")
             curpos=length[loopi]+1
 
-        elseif loopi==6 then
+        elseif loopi==7 then
             start_idx[loopi]=(curpos)
             length[loopi]=(len(response)-curpos)
 
@@ -16082,7 +16366,8 @@ func ResponseReceived(response as string)
         val(valvestates[3],mid(response,start_idx[3],length[3]))
         val(avesp[0],mid(response,start_idx[4],length[4]))
         val(avesp[1],mid(response,start_idx[5],length[5]))
-        val(threadone,right(response,length[6]))
+        val(threadOne,mid(response,start_idx[6],length[6]))
+        val(PowerUp,right(response,length[7]))
     on error
         Date_and_Time(strTime)
         error_log_eb.Append("\n\n"+strtime+" "+str(me)+"  Error reading twin cylinder variables. Response read as "+response, true)
@@ -16110,10 +16395,10 @@ func ResponseReceived(response as string)
 
 endfunc
 
-init command := "MG @OUT[1], @OUT[2], @OUT[3], @OUT[4], AveSpA, AveSpB, _XQ1"
+init command := "MG @OUT[1], @OUT[2], @OUT[3], @OUT[4], AveSpA, AveSpB, _XQ1, PowerUp"
 Enddec
 Declare GMCCom_Twin_Update_Config_1 as GMCCommandExecV2
-Level 249641
+Level 249630
 #Visible True
 #Lock False
 init parent := daq_objects
@@ -16163,7 +16448,7 @@ endfunc
 init command := "MG Amax, Amin, Bmax, Bmin, CntsPMLA, CntsPMLB, CylCfg, CylNum"
 Enddec
 Declare GMCCom_Twin_Update_Config_2 as GMCCommandExecV2
-Level 249642
+Level 249631
 #Visible True
 #Lock False
 init parent := daq_objects
@@ -16223,7 +16508,7 @@ endfunc
 init command := "MG DontOpnA, DontOpnB, FRMax, InitRate, InVopnA, InVopnB, PMaxA, PMaxB"
 Enddec
 Declare GMCCom_Twin_Update_Config_3 as GMCCommandExecV2
-Level 249643
+Level 249632
 #Visible True
 #Lock False
 init parent := daq_objects
@@ -16272,7 +16557,7 @@ endfunc
 init command := "MG PmpModeA, PmpModeB, PmpStarA, PmpStarB, PRange[Pxdcr], RcvStarA, RcvStarB"
 Enddec
 Declare GMCCom_Twin_Update_Config_4 as GMCCommandExecV2
-Level 249644
+Level 249633
 #Visible True
 #Lock False
 init parent := daq_objects
@@ -16322,7 +16607,7 @@ endfunc
 init command := "MG ReflFmnB, ReflPcA, ReflPcB, Rev, RodDia[RodSize], Version, VolA, VolB"
 Enddec
 Declare GMCCom_Twin_Update_Config_5 as GMCCommandExecV2
-Level 249645
+Level 249634
 #Visible True
 #Lock False
 init parent := daq_objects
@@ -16353,7 +16638,7 @@ func ResponseReceived(response as string)
 
     check error
         val(volpcyl,left(response,length[0]))
-        val(reflfmn[1],right(response,length[1]))
+        val(reflfmn[0],right(response,length[1]))
 
     on error
         Date_and_Time(strTime)
@@ -16367,7 +16652,7 @@ endfunc
 init command := "MG VolpCyl, ReflFmnA"
 Enddec
 Declare GMCCom_Update_Current_Values as GMCCommandExecV2
-Level 249629
+Level 249618
 #Visible True
 #Lock False
 init parent := daq_objects
@@ -16398,7 +16683,7 @@ func ResponseReceived(response as string)
     REM Get timestamp and write current values to the error log.
     REM Note not all errors will cause a warning display to be shown, but we want a record of them
 
-    Error_Log_Text="\nCurrent Values - PcurA: " +str(temp_PcurA) +", PcurB: " +str(temp_PcurB) +", AveSp: " + str(temp_avesp)+", Pressure warning limit: " +eb_Pmax_Warn.Value +", Pressure Shutdown limit " + eb_PMax_1.value +", Flow Warning " + eb_flowRlim_Warn.value +", Flow Shutdown " + eb_FlowRlim_1.Value
+    Error_Log_Text="\nCurrent Values - PcurA: " +str(temp_PcurA) +", PcurB: " +str(temp_PcurB) +", AveSp: " + str(temp_avesp)+", Pressure warning limit: " +eb_pmax_warn_a.Value +", Pressure Shutdown limit " + eb_pmax_a.value +", Flow Warning " + eb_flowrlim_warn_a.value +", Flow Shutdown " + eb_flowrlim_a.Value
     error_log_eb.Append(Error_log_text, true)
     pv_errorlog.Save()
 
@@ -16409,7 +16694,7 @@ func ResponseReceived(response as string)
 endfunc
 Enddec
 Declare GMCcom_VolpCyl as GMCCommandExecV2
-Level 249589
+Level 249578
 #Visible True
 #Lock False
 init commobject := galilcomm
@@ -16433,7 +16718,7 @@ endfunc
 init parent := daq_objects
 Enddec
 Declare GMCcom_VolumeA as GMCCommandExecV2
-Level 249579
+Level 249568
 #Visible True
 #Lock False
 init commobject := galilcomm
@@ -16477,7 +16762,7 @@ endfunc
 init parent := daq_objects
 Enddec
 Declare GMCcom_VolumeB as GMCCommandExecV2
-Level 249578
+Level 249567
 #Visible True
 #Lock False
 init commobject := galilcomm
@@ -16511,7 +16796,7 @@ endfunc
 init parent := daq_objects
 Enddec
 Declare GMCcom_VppsiA as GMCCommandExecV2
-Level 249569
+Level 249558
 #Visible True
 #Lock False
 func ResponseReceived(response as string)
@@ -16536,7 +16821,7 @@ func FailureReceived(response as string, failReason as GMC_FailureReason)
 endfunc
 Enddec
 Declare GMCcom_VppsiB as GMCCommandExecV2
-Level 249568
+Level 249557
 #Visible True
 #Lock False
 func ResponseReceived(response as string)
@@ -16561,14 +16846,14 @@ func FailureReceived(response as string, failReason as GMC_FailureReason)
 endfunc
 Enddec
 Declare GMCCommand as GMCCommandExecV2
-Level 249583
+Level 249572
 #Visible True
 #Lock False
 init commobject := galilcomm
 init parent := daq_objects
 Enddec
 Declare GMCPoll_CurFlow as GMCPollV2
-Level 249604
+Level 249593
 #Visible True
 #Lock False
 init command := "MG AveSp"
@@ -16614,8 +16899,8 @@ func ResponseReceived (response as reference to string)
         endif
     endif
 
-    If not flow_limit_disabled then
-        If CurRate>FlowRLimWarn or -CurRate>FlowRLimWarn then
+    If not flow_limit_disabled[0] then
+        If CurRate>FlowRLimWarn[0] or -CurRate>FlowRLimWarn[0] then
             If WarnSpeedComCheck then
                 REM Make sure to read twice before hitting error
                 REM We have exceeded the flowrate warning limit and need to warn the operator
@@ -16640,7 +16925,7 @@ func ResponseReceived (response as reference to string)
         endif
 
 
-        If CurRate>FlowRLim or -CurRate>FlowRLim then
+        If CurRate>FlowRLim[0] or -CurRate>FlowRLim[0] then
             IF OverSpeedComCheck then
                 REM Make sure to check twice before stopping pump
                 'We have exceeded the flowrate max limit and need to stop the pump
@@ -16703,7 +16988,7 @@ init ypos := 0
 init ptsize := 12
 Enddec
 Declare GMCPoll_Cycle as GMCPollV2
-Level 249563
+Level 249552
 #Visible True
 #Lock False
 init parent := daq_objects
@@ -16775,7 +17060,7 @@ init ypos := 0
 init ptsize := 12
 Enddec
 Declare GMCPoll_Cycle_RS as GMCPollV2
-Level 249625
+Level 249614
 #Visible True
 #Lock False
 init parent := daq_objects
@@ -16816,7 +17101,7 @@ init ypos := 0
 init ptsize := 12
 Enddec
 Declare GMCPoll_DAQ as GMCPollV2
-Level 249584
+Level 249573
 #Visible True
 #Lock False
 init commobject := galilcomm
@@ -16876,7 +17161,7 @@ init ypos := 0
 init ptsize := 12
 Enddec
 Declare GMCPoll_Finding as GMCPollV2
-Level 249565
+Level 249554
 #Visible False
 #Lock False
 func ResponseReceived (response as reference to string)
@@ -16922,7 +17207,7 @@ init ypos := 0
 init ptsize := 12
 Enddec
 Declare GMCPoll_Finding_RS as GMCPollV2
-Level 249624
+Level 249613
 #Visible True
 #Lock False
 func ResponseReceived (response as reference to string)
@@ -16965,7 +17250,7 @@ init ypos := 0
 init ptsize := 12
 Enddec
 Declare GMCPoll_Flow_Rate as GMCPollV2
-Level 249600
+Level 249589
 #Visible True
 #Lock False
 init command := "MG PmpRate"
@@ -17010,7 +17295,7 @@ init ypos := 0
 init ptsize := 12
 Enddec
 Declare GMCPoll_FlowingA as GMCPollV2
-Level 249608
+Level 249597
 #Visible True
 #Lock False
 init parent := daq_objects
@@ -17050,7 +17335,7 @@ init ypos := 0
 init ptsize := 12
 Enddec
 Declare GMCPoll_FlowingB as GMCPollV2
-Level 249609
+Level 249598
 #Visible True
 #Lock False
 init parent := daq_objects
@@ -17088,7 +17373,7 @@ init ypos := 0
 init ptsize := 12
 Enddec
 Declare GMCPoll_FState as GMCPollV2
-Level 249564
+Level 249553
 #Visible True
 #Lock False
 init commobject := galilcomm
@@ -17274,7 +17559,7 @@ init ypos := 0
 init ptsize := 12
 Enddec
 Declare GMCPoll_FState_Cal as GMCPollV2
-Level 249590
+Level 249579
 #Visible True
 #Lock False
 init commobject := galilcomm
@@ -17318,7 +17603,7 @@ init yinset := 0
 init ptsize := 12
 Enddec
 Declare GMCPoll_MLcurA as GMCPollV2
-Level 249586
+Level 249575
 #Visible True
 #Lock False
 init commobject := galilcomm
@@ -17371,7 +17656,7 @@ init yinset := 0
 init ptsize := 12
 Enddec
 Declare GMCPoll_MLcurB as GMCPollV2
-Level 249585
+Level 249574
 #Visible True
 #Lock False
 init commobject := galilcomm
@@ -17423,7 +17708,7 @@ init yinset := 0
 init ptsize := 12
 Enddec
 Declare GMCPoll_PState_status as GMCPollV2
-Level 249591
+Level 249580
 #Visible True
 #Lock False
 init commobject := galilcomm
@@ -17565,7 +17850,7 @@ init yinset := 0
 init ptsize := 12
 Enddec
 Declare GMCPoll_Ramping as GMCPollV2
-Level 249603
+Level 249592
 #Visible True
 #Lock False
 init parent := daq_objects
@@ -17594,7 +17879,7 @@ func ResponseReceived (response as reference to string)
 endfunc
 Enddec
 Declare GMCPoll_RCycle as GMCPollV2
-Level 249562
+Level 249551
 #Visible True
 #Lock False
 init parent := daq_objects
@@ -17638,7 +17923,7 @@ init ypos := 0
 init ptsize := 12
 Enddec
 Declare GMCPoll_StReflA as GMCPollV2
-Level 249605
+Level 249594
 #Visible True
 #Lock False
 init parent := daq_objects
@@ -17696,7 +17981,7 @@ init ypos := 0
 init ptsize := 12
 Enddec
 Declare GMCPoll_StReflB as GMCPollV2
-Level 249606
+Level 249595
 #Visible True
 #Lock False
 init parent := daq_objects
@@ -17753,7 +18038,7 @@ init ypos := 0
 init ptsize := 12
 Enddec
 Declare GMCPoll_Target_Press as GMCPollV2
-Level 249598
+Level 249587
 #Visible True
 #Lock False
 init command := "MG PSetPt"
@@ -17792,7 +18077,7 @@ init ypos := 0
 init ptsize := 12
 Enddec
 Declare GMCPoll_TarVol as GMCPollV2
-Level 249599
+Level 249588
 #Visible True
 #Lock False
 init command := "MG TarVol"
@@ -17836,7 +18121,7 @@ init ypos := 0
 init ptsize := 12
 Enddec
 Declare Image_1 as ImageV2
-Level 249693
+Level 249682
 #Visible True
 #Lock False
 init parent := title_screen
@@ -17845,7 +18130,7 @@ init ypos := 0
 init image := G_72_OpeningScreen
 Enddec
 Declare Image_10 as ImageV2
-Level 249703
+Level 249692
 #Visible True
 #Lock False
 init parent := system_maintenance_screen
@@ -17856,7 +18141,7 @@ init image := Banner_Rev5
 init transparent := true
 Enddec
 Declare Image_11 as ImageV2
-Level 249728
+Level 249717
 #Visible True
 #Lock False
 init parent := power_up_screen
@@ -17867,7 +18152,7 @@ init image := Banner_Rev5
 init transparent := true
 Enddec
 Declare Image_12 as ImageV2
-Level 249775
+Level 249764
 #Visible True
 #Lock False
 init parent := manual_control_screen
@@ -17878,9 +18163,9 @@ init image := Banner_Rev5
 init transparent := true
 Enddec
 Declare Image_13 as ImageV2
-Level 249919
+Level 249910
 #Visible True
-#Lock False
+#Lock Me
 init parent := limits_screen
 init xpos := 1
 init ypos := 0
@@ -17900,7 +18185,7 @@ init image := Banner_Rev5
 init transparent := true
 Enddec
 Declare Image_15 as ImageV2
-Level 249274
+Level 249263
 #Visible True
 #Lock False
 init parent := profile_screen
@@ -17911,7 +18196,7 @@ init image := Banner_Rev5
 init transparent := true
 Enddec
 Declare Image_16 as ImageV2
-Level 249206
+Level 249195
 #Visible True
 #Lock Me
 init parent := welcome_screen
@@ -17920,7 +18205,7 @@ init ypos := 0
 init image := G_72_OpeningScreen
 Enddec
 Declare Image_17 as ImageV2
-Level 249238
+Level 249227
 #Visible True
 #Lock Me
 init parent := remote_display
@@ -17940,7 +18225,7 @@ init image := Banner_Rev5
 init transparent := true
 Enddec
 Declare Image_19 as ImageV2
-Level 249862
+Level 249852
 #Visible True
 #Lock False
 init parent := twin_monitor_screen
@@ -17949,7 +18234,7 @@ init ypos := 0
 init image := Banner_Rev5
 Enddec
 Declare Image_2 as ImageV2
-Level 249414
+Level 249403
 #Visible True
 #Lock False
 init parent := flow_mode_screen
@@ -17958,7 +18243,7 @@ init ypos := 0
 init image := Banner_Rev5
 Enddec
 Declare Image_3 as ImageV2
-Level 249353
+Level 249342
 #Visible True
 #Lock False
 init parent := pressure_mode_screen
@@ -17969,7 +18254,7 @@ init image := Banner_Rev5
 init transparent := true
 Enddec
 Declare Image_4 as ImageV2
-Level 249335
+Level 249324
 #Visible True
 #Lock False
 init parent := sys_setup_screen
@@ -17980,7 +18265,7 @@ init image := Banner_Rev5
 init transparent := true
 Enddec
 Declare Image_5 as ImageV2
-Level 249664
+Level 249653
 #Visible True
 #Lock False
 init parent := valve_screen
@@ -17991,7 +18276,7 @@ init image := Banner_Rev5
 init transparent := true
 Enddec
 Declare Image_6 as ImageV2
-Level 249497
+Level 249486
 #Visible True
 #Lock False
 init parent := p_cal_screen
@@ -18002,7 +18287,7 @@ init image := Banner_Rev5
 init transparent := true
 Enddec
 Declare Image_7 as ImageV2
-Level 249689
+Level 249678
 #Visible True
 #Lock False
 init parent := wait_for_cycle_screen
@@ -18013,7 +18298,7 @@ init image := Banner_Rev5
 init transparent := true
 Enddec
 Declare Image_8 as ImageV2
-Level 249452
+Level 249441
 #Visible True
 #Lock False
 init parent := initialize_screen
@@ -18024,7 +18309,7 @@ init image := Banner_Rev5
 init transparent := true
 Enddec
 Declare Image_9 as ImageV2
-Level 249527
+Level 249516
 #Visible True
 #Lock False
 init parent := vol_cal_screen
@@ -18050,8 +18335,8 @@ init xjustify := hjustify_centeralign
 init enabled := false
 Enddec
 Declare Initialize_screen as ScreenV2
-Level 249457
-#Visible False
+Level 249446
+#Visible True
 #Lock False
 init parent := default
 init xpos := 0
@@ -18069,21 +18354,21 @@ init height := 800
 init enabled := false
 Enddec
 Declare KeypadSettings as KeypadSettingsv2
-Level 249236
+Level 249225
 #Visible False
 #Lock False
 init barfont := default_ttf
 init barptsize := 12
 Enddec
 Declare KeyTranslator as KeyTranslationv2
-Level 249237
+Level 249226
 #Visible False
 #Lock False
 init translationtable := "0þ241þF1ÿ1þ242þF2ÿ2þ243þF3ÿ3þ244þF4ÿ8þ76þLÿ9þ85þUÿ10þ68þDÿ11þ82þRÿ16þ45þ-ÿ17þ49þ1ÿ18þ50þ2ÿ19þ51þ3ÿ24þ46þ.ÿ25þ52þ4ÿ26þ53þ5ÿ27þ54þ6ÿ32þ8þ\x08ÿ33þ55þ7ÿ34þ56þ8ÿ35þ57þ9ÿ41þ27þ\x1bÿ42þ48þ0ÿ43þ13þ\rÿ"
 init translationTableShifted := "0þ241þF1ÿ1þ242þF2ÿ2þ243þF3ÿ3þ244þF4ÿ8þ40þ(ÿ9þ41þ)ÿ10þ60þ<ÿ11þ62þ>ÿ16þ44þ,ÿ17þ476þ<home>ÿ18þ229þ<up>ÿ19þ493þ<pgup>ÿ24þ35þ#ÿ25þ219þ<left>ÿ26þ37þ%ÿ27þ228þ<right>ÿ33þ473þ<end>ÿ34þ226þ<down>ÿ35þ490þ<pgdn>ÿ41þ8þ\x08ÿ42þ94þ^ÿ43þ32þ ÿ"
 Enddec
 Declare KProp_screen as ScreenV2
-Level 249376
+Level 249365
 #Visible False
 #Lock False
 init parent := pressure_mode_screen
@@ -18095,7 +18380,7 @@ init borderstyle := bdr_compositeobject
 init enabled := false
 Enddec
 Declare Label_1 as LabelV2
-Level 249541
+Level 249530
 #Visible True
 #Lock False
 init value := "Cylinder to Calibrate"
@@ -18109,7 +18394,7 @@ init xjustify := hjustify_leftalign
 init borderstyle := bdr_none
 Enddec
 Declare Label_10 as LabelV2
-Level 249546
+Level 249535
 #Visible True
 #Lock False
 init value := "Calibration Constant (ml/mm)"
@@ -18129,7 +18414,7 @@ init ptsize := 20
 init xjustify := hjustify_leftalign
 Enddec
 Declare Label_101 as LabelV2
-Level 249536
+Level 249525
 #Visible True
 #Lock False
 init value := "Measured ml"
@@ -18148,7 +18433,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare Label_103 as LabelV2
-Level 249535
+Level 249524
 #Visible True
 #Lock False
 init value := "VOLUME CALIBRATION"
@@ -18167,7 +18452,7 @@ init ptsize := 26
 init transparent := true
 Enddec
 Declare Label_11 as LabelV2
-Level 249389
+Level 249378
 #Visible True
 #Lock False
 init value := "psi"
@@ -18185,7 +18470,7 @@ init ptsize := 12
 init transparent := true
 Enddec
 Declare Label_12 as LabelV2
-Level 249547
+Level 249536
 #Visible True
 #Lock False
 init value := "Nominal Rod Dia (mm)"
@@ -18205,7 +18490,7 @@ init ptsize := 20
 init xjustify := hjustify_leftalign
 Enddec
 Declare Label_13 as LabelV2
-Level 249510
+Level 249499
 #Visible True
 #Lock False
 init value := "Transducer to Calibrate"
@@ -18219,7 +18504,7 @@ init xjustify := hjustify_leftalign
 init borderstyle := bdr_none
 Enddec
 Declare Label_14 as LabelV2
-Level 249704
+Level 249693
 #Visible True
 #Lock False
 init value := "SYSTEM MAINTENANCE"
@@ -18238,7 +18523,7 @@ init ptsize := 26
 init transparent := true
 Enddec
 Declare Label_15 as LabelV2
-Level 249425
+Level 249414
 #Visible True
 #Lock False
 init value := "ml"
@@ -18256,7 +18541,7 @@ init ptsize := 12
 init transparent := true
 Enddec
 Declare Label_16 as LabelV2
-Level 249426
+Level 249415
 #Visible True
 #Lock False
 init value := "ml/min"
@@ -18274,7 +18559,7 @@ init ptsize := 12
 init transparent := true
 Enddec
 Declare Label_17 as LabelV2
-Level 249427
+Level 249416
 #Visible True
 #Lock False
 init value := "ml/min"
@@ -18292,7 +18577,7 @@ init ptsize := 12
 init transparent := true
 Enddec
 Declare Label_18 as LabelV2
-Level 249428
+Level 249417
 #Visible True
 #Lock False
 init value := "ml"
@@ -18310,7 +18595,7 @@ init ptsize := 12
 init transparent := true
 Enddec
 Declare Label_19 as LabelV2
-Level 249549
+Level 249538
 #Visible True
 #Lock False
 init value := "Volume to Flow (ml)"
@@ -18324,7 +18609,7 @@ init xjustify := hjustify_leftalign
 init borderstyle := bdr_none
 Enddec
 Declare Label_2 as LabelV2
-Level 249544
+Level 249533
 #Visible True
 #Lock False
 init value := "Valve to Flow Through"
@@ -18338,7 +18623,7 @@ init xjustify := hjustify_leftalign
 init borderstyle := bdr_none
 Enddec
 Declare Label_20 as LabelV2
-Level 249551
+Level 249540
 #Visible True
 #Lock False
 init value := "Current Pos (ml)"
@@ -18357,7 +18642,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare Label_21 as LabelV2
-Level 249462
+Level 249451
 #Visible True
 #Lock Me
 init value := "CYL A"
@@ -18369,7 +18654,7 @@ init height := 24
 init font := helvb18_bdf
 Enddec
 Declare Label_22 as LabelV2
-Level 249463
+Level 249452
 #Visible True
 #Lock Me
 init value := "CYL B"
@@ -18381,7 +18666,7 @@ init height := 24
 init font := helvb18_bdf
 Enddec
 Declare Label_23 as LabelV2
-Level 249508
+Level 249497
 #Visible True
 #Lock False
 init value := "Pressure Range (psi)"
@@ -18401,7 +18686,7 @@ init ptsize := 20
 init xjustify := hjustify_leftalign
 Enddec
 Declare Label_24 as LabelV2
-Level 249517
+Level 249506
 #Visible True
 #Lock False
 init value := "Volts/psi"
@@ -18421,7 +18706,7 @@ init ptsize := 20
 init xjustify := hjustify_leftalign
 Enddec
 Declare Label_25 as LabelV2
-Level 249518
+Level 249507
 #Visible True
 #Lock False
 init value := "Full Scale Volts"
@@ -18441,7 +18726,7 @@ init ptsize := 20
 init xjustify := hjustify_leftalign
 Enddec
 Declare Label_26 as LabelV2
-Level 249391
+Level 249380
 #Visible True
 #Lock False
 init value := "ml/min"
@@ -18459,7 +18744,7 @@ init ptsize := 12
 init transparent := true
 Enddec
 Declare Label_27 as LabelV2
-Level 249665
+Level 249654
 #Visible True
 #Lock False
 init value := "VALVE CONTROL"
@@ -18478,7 +18763,7 @@ init ptsize := 26
 init transparent := true
 Enddec
 Declare Label_28 as LabelV2
-Level 249729
+Level 249718
 #Visible True
 #Lock False
 init value := "SYSTEM RESTART"
@@ -18497,7 +18782,7 @@ init ptsize := 26
 init transparent := true
 Enddec
 Declare Label_29 as LabelV2
-Level 249739
+Level 249728
 #Visible True
 #Lock False
 init value := "ml"
@@ -18515,7 +18800,7 @@ init ptsize := 12
 init transparent := true
 Enddec
 Declare Label_3 as LabelV2
-Level 249358
+Level 249347
 #Visible True
 #Lock False
 init value := "PRESSURE MODE"
@@ -18534,7 +18819,7 @@ init ptsize := 26
 init transparent := true
 Enddec
 Declare Label_30 as LabelV2
-Level 249738
+Level 249727
 #Visible True
 #Lock False
 init value := "psi"
@@ -18552,7 +18837,7 @@ init ptsize := 12
 init transparent := true
 Enddec
 Declare Label_31 as LabelV2
-Level 249743
+Level 249732
 #Visible True
 #Lock False
 init value := "psi"
@@ -18570,7 +18855,7 @@ init ptsize := 12
 init transparent := true
 Enddec
 Declare Label_32 as LabelV2
-Level 249742
+Level 249731
 #Visible True
 #Lock False
 init value := "ml"
@@ -18588,7 +18873,7 @@ init ptsize := 12
 init transparent := true
 Enddec
 Declare Label_33 as LabelV2
-Level 249778
+Level 249767
 #Visible True
 #Lock False
 init value := "(psi)"
@@ -18606,7 +18891,7 @@ init ptsize := 12
 init transparent := true
 Enddec
 Declare Label_34 as LabelV2
-Level 249777
+Level 249766
 #Visible True
 #Lock False
 init value := "(ml)"
@@ -18624,7 +18909,7 @@ init ptsize := 12
 init transparent := true
 Enddec
 Declare Label_35 as LabelV2
-Level 249776
+Level 249765
 #Visible True
 #Lock False
 init value := "MANUAL CONTROL"
@@ -18643,7 +18928,7 @@ init ptsize := 26
 init transparent := true
 Enddec
 Declare Label_36 as LabelV2
-Level 249800
+Level 249789
 #Visible True
 #Lock False
 init value := "(ml)"
@@ -18661,7 +18946,7 @@ init ptsize := 12
 init transparent := true
 Enddec
 Declare Label_37 as LabelV2
-Level 249795
+Level 249784
 #Visible True
 #Lock False
 init value := "(ml/min)"
@@ -18679,7 +18964,7 @@ init ptsize := 12
 init transparent := true
 Enddec
 Declare Label_38 as LabelV2
-Level 249336
+Level 249325
 #Visible True
 #Lock False
 init value := "SYSTEM SETUP"
@@ -18698,7 +18983,7 @@ init ptsize := 26
 init transparent := true
 Enddec
 Declare Label_39 as LabelV2
-Level 249804
+Level 249793
 #Visible True
 #Lock False
 init value := "(psi)"
@@ -18716,7 +19001,7 @@ init ptsize := 12
 init transparent := true
 Enddec
 Declare Label_4 as LabelV2
-Level 249390
+Level 249379
 #Visible False
 #Lock False
 init value := "psi/sec"
@@ -18734,7 +19019,7 @@ init ptsize := 12
 init transparent := true
 Enddec
 Declare Label_40 as LabelV2
-Level 249803
+Level 249792
 #Visible True
 #Lock False
 init value := "(ml)"
@@ -18752,7 +19037,7 @@ init ptsize := 12
 init transparent := true
 Enddec
 Declare Label_41 as LabelV2
-Level 249802
+Level 249791
 #Visible True
 #Lock False
 init value := "(ml)"
@@ -18770,7 +19055,7 @@ init ptsize := 12
 init transparent := true
 Enddec
 Declare Label_42 as LabelV2
-Level 249801
+Level 249790
 #Visible True
 #Lock False
 init value := "(ml/min)"
@@ -18788,7 +19073,7 @@ init ptsize := 12
 init transparent := true
 Enddec
 Declare Label_43 as LabelV2
-Level 249749
+Level 249738
 #Visible True
 #Lock False
 init value := "ml"
@@ -18806,7 +19091,7 @@ init ptsize := 12
 init transparent := true
 Enddec
 Declare Label_44 as LabelV2
-Level 249752
+Level 249741
 #Visible True
 #Lock False
 init value := "ml"
@@ -18824,7 +19109,7 @@ init ptsize := 12
 init transparent := true
 Enddec
 Declare Label_45 as LabelV2
-Level 249424
+Level 249413
 #Visible True
 #Lock False
 init value := "psi"
@@ -18842,7 +19127,7 @@ init ptsize := 12
 init transparent := true
 Enddec
 Declare Label_46 as LabelV2
-Level 249756
+Level 249745
 #Visible True
 #Lock False
 init value := "ml"
@@ -18860,9 +19145,9 @@ init ptsize := 12
 init transparent := true
 Enddec
 Declare Label_47 as LabelV2
-Level 249927
+Level 249918
 #Visible True
-#Lock False
+#Lock Me
 init value := "PRESSURE & FLOW RATE LIMITS"
 init parent := limits_screen
 init xpos := 0
@@ -18879,7 +19164,7 @@ init ptsize := 26
 init transparent := true
 Enddec
 Declare Label_48 as LabelV2
-Level 249458
+Level 249447
 #Visible True
 #Lock Me
 init value := "SYSTEM CONFIGURATION"
@@ -18897,13 +19182,13 @@ init yinset := 0
 init ptsize := 26
 Enddec
 Declare Label_49 as LabelV2
-Level 249926
+Level 249917
 #Visible True
-#Lock False
+#Lock Me
 init value := "ml/min"
 init parent := limits_screen
-init xpos := 378
-init ypos := 157
+init xpos := 223
+init ypos := 194
 init width := 55
 init height := 19
 init borderstyle := bdr_none
@@ -18915,7 +19200,7 @@ init ptsize := 12
 init transparent := true
 Enddec
 Declare Label_5 as LabelV2
-Level 249548
+Level 249537
 #Visible True
 #Lock False
 init value := "Start Position (ml)"
@@ -18929,13 +19214,13 @@ init xjustify := hjustify_leftalign
 init borderstyle := bdr_none
 Enddec
 Declare Label_50 as LabelV2
-Level 249925
+Level 249916
 #Visible True
-#Lock False
+#Lock Me
 init value := "ml/min"
 init parent := limits_screen
-init xpos := 378
-init ypos := 107
+init xpos := 223
+init ypos := 144
 init width := 55
 init height := 19
 init borderstyle := bdr_none
@@ -18947,13 +19232,13 @@ init ptsize := 12
 init transparent := true
 Enddec
 Declare Label_51 as LabelV2
-Level 249937
+Level 249928
 #Visible True
-#Lock False
+#Lock Me
 init value := "psi"
 init parent := limits_screen
-init xpos := 379
-init ypos := 310
+init xpos := 223
+init ypos := 340
 init width := 55
 init height := 19
 init borderstyle := bdr_none
@@ -18965,13 +19250,13 @@ init ptsize := 12
 init transparent := true
 Enddec
 Declare Label_52 as LabelV2
-Level 249936
+Level 249927
 #Visible True
-#Lock False
+#Lock Me
 init value := "psi"
 init parent := limits_screen
-init xpos := 379
-init ypos := 260
+init xpos := 223
+init ypos := 287
 init width := 55
 init height := 19
 init borderstyle := bdr_none
@@ -18983,7 +19268,7 @@ init ptsize := 12
 init transparent := true
 Enddec
 Declare Label_53 as LabelV2
-Level 249807
+Level 249796
 #Visible True
 #Lock False
 init value := "(ml/min)"
@@ -19068,7 +19353,7 @@ init fgcolor := clr_buttonforeground
 init font := helvb24_bdf
 Enddec
 Declare Label_58 as LabelV2
-Level 249278
+Level 249267
 #Visible True
 #Lock False
 init value := "PROFILE MODE"
@@ -19087,7 +19372,7 @@ init ptsize := 26
 init transparent := true
 Enddec
 Declare Label_59 as LabelV2
-Level 249279
+Level 249268
 #Visible True
 #Lock False
 init value := "ml"
@@ -19105,7 +19390,7 @@ init ptsize := 12
 init transparent := true
 Enddec
 Declare Label_6 as LabelV2
-Level 249388
+Level 249377
 #Visible True
 #Lock False
 init value := "ml"
@@ -19123,7 +19408,7 @@ init ptsize := 12
 init transparent := true
 Enddec
 Declare Label_60 as LabelV2
-Level 249280
+Level 249269
 #Visible True
 #Lock False
 init value := "ml/min"
@@ -19141,7 +19426,7 @@ init ptsize := 12
 init transparent := true
 Enddec
 Declare Label_61 as LabelV2
-Level 249281
+Level 249270
 #Visible True
 #Lock False
 init value := "psi"
@@ -19159,7 +19444,7 @@ init ptsize := 12
 init transparent := true
 Enddec
 Declare Label_62 as LabelV2
-Level 249683
+Level 249672
 #Visible True
 #Lock False
 init value := "INLET"
@@ -19173,7 +19458,7 @@ init borderstyle := bdr_none
 init font := helvb14_bdf
 Enddec
 Declare Label_63 as LabelV2
-Level 249684
+Level 249673
 #Visible True
 #Lock False
 init value := "OUTLET"
@@ -19187,7 +19472,7 @@ init borderstyle := bdr_none
 init font := helvb14_bdf
 Enddec
 Declare Label_64 as LabelV2
-Level 249323
+Level 249312
 #Visible True
 #Lock False
 init value := "Tot"
@@ -19205,7 +19490,7 @@ init ptsize := 12
 init transparent := true
 Enddec
 Declare Label_65 as LabelV2
-Level 249324
+Level 249313
 #Visible True
 #Lock False
 init value := "Seg"
@@ -19223,7 +19508,7 @@ init ptsize := 12
 init transparent := true
 Enddec
 Declare Label_66 as LabelV2
-Level 249654
+Level 249643
 #Visible True
 #Lock Me
 init value := "FACTORY SETTINGS"
@@ -19241,7 +19526,7 @@ init yinset := 0
 init ptsize := 26
 Enddec
 Declare Label_67 as LabelV2
-Level 249685
+Level 249674
 #Visible True
 #Lock False
 init value := "OPEN"
@@ -19255,7 +19540,7 @@ init borderstyle := bdr_none
 init font := helvb14_bdf
 Enddec
 Declare Label_68 as LabelV2
-Level 249502
+Level 249491
 #Visible True
 #Lock False
 init value := "PRESSURE CALIBRATION"
@@ -19271,7 +19556,7 @@ init ptsize := 22
 init transparent := true
 Enddec
 Declare Label_69 as LabelV2
-Level 249686
+Level 249675
 #Visible True
 #Lock False
 init value := "CLOSED"
@@ -19285,7 +19570,7 @@ init borderstyle := bdr_none
 init font := helvb14_bdf
 Enddec
 Declare Label_7 as LabelV2
-Level 249387
+Level 249376
 #Visible True
 #Lock False
 init value := "ml/min"
@@ -19303,7 +19588,7 @@ init ptsize := 12
 init transparent := true
 Enddec
 Declare Label_70 as LabelV2
-Level 249555
+Level 249544
 #Visible True
 #Lock False
 init value := "Vol Flowed (ml)"
@@ -19322,7 +19607,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare Label_71 as LabelV2
-Level 249808
+Level 249797
 #Visible True
 #Lock False
 init value := "(ml/min)"
@@ -19340,7 +19625,7 @@ init ptsize := 12
 init transparent := true
 Enddec
 Declare Label_72 as LabelV2
-Level 249251
+Level 249240
 #Visible True
 #Lock False
 init value := "ml/min"
@@ -19358,7 +19643,7 @@ init ptsize := 12
 init transparent := true
 Enddec
 Declare Label_73 as LabelV2
-Level 249252
+Level 249241
 #Visible True
 #Lock False
 init value := "ml"
@@ -19376,7 +19661,7 @@ init ptsize := 12
 init transparent := true
 Enddec
 Declare Label_74 as LabelV2
-Level 249253
+Level 249242
 #Visible True
 #Lock False
 init value := "psi"
@@ -19413,7 +19698,7 @@ init ptsize := 26
 init transparent := true
 Enddec
 Declare Label_76 as LabelV2
-Level 249830
+Level 249819
 #Visible True
 #Lock Me
 init value := "CYL A"
@@ -19425,7 +19710,7 @@ init height := 44
 init font := helvb18_bdf
 Enddec
 Declare Label_77 as LabelV2
-Level 249829
+Level 249818
 #Visible True
 #Lock Me
 init value := "CYL B"
@@ -19437,7 +19722,7 @@ init height := 44
 init font := helvb18_bdf
 Enddec
 Declare Label_78 as LabelV2
-Level 249359
+Level 249348
 #Visible True
 #Lock False
 init value := "Kprop "
@@ -19454,7 +19739,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare Label_79 as LabelV2
-Level 249361
+Level 249350
 #Visible True
 #Lock False
 init value := "Max Error"
@@ -19471,7 +19756,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare Label_8 as LabelV2
-Level 249377
+Level 249366
 #Visible True
 #Lock False
 init value := "psi"
@@ -19489,7 +19774,7 @@ init ptsize := 12
 init transparent := true
 Enddec
 Declare Label_80 as LabelV2
-Level 249362
+Level 249351
 #Visible True
 #Lock False
 init value := "Kx"
@@ -19506,7 +19791,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare Label_81 as LabelV2
-Level 249367
+Level 249356
 #Visible True
 #Lock False
 init value := "Dgain"
@@ -19523,7 +19808,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare Label_82 as LabelV2
-Level 249368
+Level 249357
 #Visible True
 #Lock False
 init value := "Igain"
@@ -19540,7 +19825,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare Label_83 as LabelV2
-Level 249374
+Level 249363
 #Visible True
 #Lock False
 init value := "Isum"
@@ -19557,7 +19842,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare Label_84 as LabelV2
-Level 249828
+Level 249817
 #Visible True
 #Lock Me
 init value := "SYSTEM CONFIGURATION"
@@ -19574,8 +19859,38 @@ init xinset := 1
 init yinset := 0
 init ptsize := 26
 Enddec
+Declare Label_85 as LabelV2
+Level 249939
+#Visible True
+#Lock Me
+init value := "CYL B"
+init parent := limits_screen
+init xpos := 368
+init ypos := 64
+init width := 85
+init height := 40
+init font := helvb18_bdf
+
+init fgcolor := Clr_LabelForeground
+init bgcolor := clr_softkeybarbackground
+Enddec
+Declare Label_86 as LabelV2
+Level 249938
+#Visible True
+#Lock Me
+init value := "CYL A"
+init parent := limits_screen
+init xpos := 278
+init ypos := 64
+init width := 85
+init height := 40
+init font := helvb18_bdf
+
+init fgcolor := Clr_LabelForeground
+init bgcolor := clr_softkeybarbackground
+Enddec
 Declare Label_9 as LabelV2
-Level 249454
+Level 249443
 #Visible True
 #Lock False
 init value := "INITIALIZE VPA"
@@ -19595,7 +19910,7 @@ init ptsize := 26
 init transparent := true
 Enddec
 Declare Label_98 as LabelV2
-Level 249690
+Level 249679
 #Visible True
 #Lock False
 init value := "CYLINDER STROKING"
@@ -19611,7 +19926,7 @@ init ptsize := 22
 init transparent := true
 Enddec
 Declare lbl_Calibrate_1 as LabelV2
-Level 249500
+Level 249489
 #Visible True
 #Lock False
 init value := "INDICATED AND ACTUAL PRESSURES"
@@ -19630,7 +19945,7 @@ init ptsize := 20
 init yjustify := vjustify_topalign
 Enddec
 Declare lbl_Calibrate_2 as LabelV2
-Level 249507
+Level 249496
 #Visible True
 #Lock False
 init value := "Indicated Pressure (psi)"
@@ -19649,7 +19964,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_Calibrate_3 as LabelV2
-Level 249509
+Level 249498
 #Visible True
 #Lock False
 init value := "Actual Pressure (psi)"
@@ -19685,7 +20000,7 @@ init yjustify := vjustify_topalign
 init bgcolor := clr_messagebackground
 Enddec
 Declare lbl_Current_Flow_Rate as LabelV2
-Level 249437
+Level 249426
 #Visible True
 #Lock False
 init value := "0.00"
@@ -19704,7 +20019,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_Current_Flow_Rate_1 as LabelV2
-Level 249397
+Level 249386
 #Visible True
 #Lock False
 init value := "100.12"
@@ -19723,7 +20038,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_Current_Flow_Rate_2 as LabelV2
-Level 249282
+Level 249271
 #Visible True
 #Lock False
 init value := "4.85"
@@ -19742,7 +20057,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_Current_Flow_Rate_3 as LabelV2
-Level 249242
+Level 249231
 #Visible True
 #Lock False
 init value := "0.00"
@@ -19761,7 +20076,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_Current_Mode as LabelV2
-Level 249258
+Level 249247
 #Visible True
 #Lock False
 init value := "IDLE"
@@ -19782,7 +20097,7 @@ init bgcolor := clr_buttonforeground
 init fgcolor := clr_labelbackground
 Enddec
 Declare lbl_Current_Pos as LabelV2
-Level 249434
+Level 249423
 #Visible True
 #Lock False
 init value := "0.00"
@@ -19801,7 +20116,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_Current_Pos_1 as LabelV2
-Level 249245
+Level 249234
 #Visible True
 #Lock False
 init value := "0.00"
@@ -19820,7 +20135,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_Current_pos_bk as LabelV2
-Level 249416
+Level 249405
 #Visible True
 #Lock False
 init value := ""
@@ -19838,7 +20153,7 @@ init ptsize := 20
 init bgcolor := clr_softkeybarbackground
 Enddec
 Declare lbl_Current_pos_bk_1 as LabelV2
-Level 249660
+Level 249649
 #Visible True
 #Lock False
 init value := ""
@@ -19856,7 +20171,7 @@ init ptsize := 20
 init bgcolor := clr_softkeybarbackground
 Enddec
 Declare lbl_Current_pos_bk_10 as LabelV2
-Level 249753
+Level 249742
 #Visible True
 #Lock False
 init value := "Time - Date Stamp"
@@ -19875,7 +20190,7 @@ init bgcolor := clr_softkeybarbackground
 init yjustify := vjustify_centeralign
 Enddec
 Declare lbl_Current_pos_bk_11 as LabelV2
-Level 249735
+Level 249724
 #Visible True
 #Lock False
 init value := "Total volume pumped"
@@ -19894,14 +20209,14 @@ init bgcolor := clr_softkeybarbackground
 init yjustify := vjustify_centeralign
 Enddec
 Declare lbl_Current_pos_bk_12 as LabelV2
-Level 249920
+Level 249911
 #Visible True
-#Lock False
+#Lock Me
 init value := "Pressure Control Mode"
 init parent := limits_screen
-init xpos := 30
-init ypos := 70
-init width := 420
+init xpos := 17
+init ypos := 107
+init width := 450
 init height := 140
 
 init xjustify := hjustify_leftalign
@@ -19913,14 +20228,14 @@ init bgcolor := clr_softkeybarbackground
 init yjustify := vjustify_topalign
 Enddec
 Declare lbl_Current_pos_bk_13 as LabelV2
-Level 249921
+Level 249912
 #Visible True
-#Lock False
+#Lock Me
 init value := "Flow Control Mode"
 init parent := limits_screen
-init xpos := 31
-init ypos := 223
-init width := 420
+init xpos := 17
+init ypos := 250
+init width := 450
 init height := 140
 
 init xjustify := hjustify_leftalign
@@ -19970,7 +20285,7 @@ init bgcolor := clr_softkeybarbackground
 init yjustify := vjustify_topalign
 Enddec
 Declare lbl_Current_pos_bk_16 as LabelV2
-Level 249263
+Level 249252
 #Visible True
 #Lock False
 init value := ""
@@ -19988,7 +20303,7 @@ init ptsize := 20
 init bgcolor := clr_softkeybarbackground
 Enddec
 Declare lbl_Current_pos_bk_17 as LabelV2
-Level 249239
+Level 249228
 #Visible True
 #Lock False
 init value := ""
@@ -20006,7 +20321,7 @@ init ptsize := 20
 init bgcolor := clr_softkeybarbackground
 Enddec
 Declare lbl_Current_pos_bk_18 as LabelV2
-Level 249715
+Level 249704
 #Visible True
 #Lock False
 init value := "System Software Update"
@@ -20026,7 +20341,7 @@ init bgcolor := clr_softkeybarbackground
 init yjustify := vjustify_top
 Enddec
 Declare lbl_Current_pos_bk_19 as LabelV2
-Level 249861
+Level 249851
 #Visible True
 #Lock False
 init value := ""
@@ -20044,7 +20359,7 @@ init ptsize := 20
 init bgcolor := clr_softkeybarbackground
 Enddec
 Declare lbl_Current_pos_bk_2 as LabelV2
-Level 249415
+Level 249404
 #Visible True
 #Lock False
 init value := ""
@@ -20062,7 +20377,7 @@ init ptsize := 20
 init bgcolor := Clr_SoftkeybarBackground
 Enddec
 Declare lbl_Current_pos_bk_20 as LabelV2
-Level 249863
+Level 249853
 #Visible True
 #Lock False
 init value := ""
@@ -20080,7 +20395,7 @@ init ptsize := 20
 init bgcolor := Clr_SoftkeybarBackground
 Enddec
 Declare lbl_Current_pos_bk_21 as LabelV2
-Level 249860
+Level 249850
 #Visible True
 #Lock False
 init value := ""
@@ -20098,7 +20413,7 @@ init ptsize := 20
 init bgcolor := Clr_SoftkeybarBackground
 Enddec
 Declare lbl_Current_pos_bk_3 as LabelV2
-Level 249354
+Level 249343
 #Visible True
 #Lock False
 init value := ""
@@ -20116,7 +20431,7 @@ init ptsize := 20
 init bgcolor := clr_softkeybarbackground
 Enddec
 Declare lbl_Current_pos_bk_4 as LabelV2
-Level 249382
+Level 249371
 #Visible True
 #Lock False
 init value := ""
@@ -20134,7 +20449,7 @@ init ptsize := 20
 init bgcolor := clr_softkeybarbackground
 Enddec
 Declare lbl_Current_pos_bk_5 as LabelV2
-Level 249705
+Level 249694
 #Visible True
 #Lock False
 init value := ""
@@ -20152,7 +20467,7 @@ init ptsize := 20
 init bgcolor := clr_softkeybarbackground
 Enddec
 Declare lbl_Current_pos_bk_6 as LabelV2
-Level 249727
+Level 249716
 #Visible True
 #Lock False
 init value := "Cylinder A"
@@ -20171,7 +20486,7 @@ init bgcolor := clr_softkeybarbackground
 init yjustify := vjustify_topalign
 Enddec
 Declare lbl_Current_pos_bk_7 as LabelV2
-Level 249740
+Level 249729
 #Visible True
 #Lock False
 init value := "Cylinder B"
@@ -20190,7 +20505,7 @@ init bgcolor := clr_softkeybarbackground
 init yjustify := vjustify_topalign
 Enddec
 Declare lbl_Current_pos_bk_8 as LabelV2
-Level 249759
+Level 249748
 #Visible True
 #Lock False
 init value := ""
@@ -20208,7 +20523,7 @@ init ptsize := 20
 init bgcolor := clr_softkeybarbackground
 Enddec
 Declare lbl_Current_pos_bk_9 as LabelV2
-Level 249760
+Level 249749
 #Visible True
 #Lock False
 init value := ""
@@ -20243,7 +20558,7 @@ init yjustify := vjustify_topalign
 init bgcolor := clr_messagebackground
 Enddec
 Declare lbl_Cycle_Msg_3 as LabelV2
-Level 249655
+Level 249644
 #Visible True
 #Lock False
 init value := "Setting Factory Settings will reset system configuration settings and calibration settings to factory defaults.  Press OK to confirm."
@@ -20264,7 +20579,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_cyla_a_msg as LabelV2
-Level 249911
+Level 249901
 #Visible True
 #Lock False
 init value := "Cycle required to start."
@@ -20277,7 +20592,7 @@ init font := helvb14_bdf
 init bgcolor := clr_messagebackground
 Enddec
 Declare lbl_cyla_b_msg as LabelV2
-Level 249912
+Level 249902
 #Visible True
 #Lock False
 init value := "Cycle required to start."
@@ -20291,7 +20606,7 @@ init font := helvb14_bdf
 init bgcolor := clr_messagebackground
 Enddec
 Declare lbl_date_of_Maint as LabelV2
-Level 249711
+Level 249700
 #Visible True
 #Lock False
 init value := "01 Jan 2012"
@@ -20310,7 +20625,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_Dgain_Cur as LabelV2
-Level 249370
+Level 249359
 #Visible True
 #Lock False
 init value := "1000"
@@ -20329,7 +20644,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_DP_Range_Bgnd as LabelV2
-Level 249468
+Level 249457
 #Visible True
 #Lock Me
 init value := "Press range (psi)"
@@ -20347,7 +20662,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_DP_Range_Bgnd_1 as LabelV2
-Level 249498
+Level 249487
 #Visible True
 #Lock False
 init value := "CALIBRATION SETUP"
@@ -20366,7 +20681,7 @@ init ptsize := 20
 init yjustify := vjustify_topalign
 Enddec
 Declare lbl_DP_Range_Bgnd_10 as LabelV2
-Level 249528
+Level 249517
 #Visible True
 #Lock False
 init value := "INDICATED AND MEASURED VOLUMES"
@@ -20385,7 +20700,7 @@ init ptsize := 20
 init yjustify := vjustify_topalign
 Enddec
 Declare lbl_DP_Range_Bgnd_2 as LabelV2
-Level 249825
+Level 249814
 #Visible True
 #Lock Me
 init value := "Press range (psi)"
@@ -20403,7 +20718,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_DP_Range_Bgnd_3 as LabelV2
-Level 249499
+Level 249488
 #Visible True
 #Lock False
 init value := "CURRENT CALIBRATION VALUES"
@@ -20422,7 +20737,7 @@ init ptsize := 20
 init yjustify := vjustify_topalign
 Enddec
 Declare lbl_DP_Range_Bgnd_8 as LabelV2
-Level 249530
+Level 249519
 #Visible True
 #Lock False
 init value := "CALIBRATION SETUP"
@@ -20441,7 +20756,7 @@ init ptsize := 20
 init yjustify := vjustify_topalign
 Enddec
 Declare lbl_DP_Range_Bgnd_9 as LabelV2
-Level 249529
+Level 249518
 #Visible True
 #Lock False
 init value := "CURRENT CALIBRATION VALUES"
@@ -20460,7 +20775,7 @@ init ptsize := 20
 init yjustify := vjustify_topalign
 Enddec
 Declare lbl_dummy as LabelV2
-Level 249465
+Level 249454
 #Visible True
 #Lock Me
 init value := "label_39"
@@ -20478,7 +20793,7 @@ init fgcolor := clr_buttonforeground
 init bgcolor := clr_buttonbackground
 Enddec
 Declare lbl_dummy_1 as LabelV2
-Level 249464
+Level 249453
 #Visible True
 #Lock Me
 init value := "label_39"
@@ -20489,7 +20804,7 @@ init width := 1
 init height := 1
 Enddec
 Declare lbl_dummy_2 as LabelV2
-Level 249826
+Level 249815
 #Visible True
 #Lock Me
 init value := "label_39"
@@ -20500,7 +20815,7 @@ init width := 1
 init height := 1
 Enddec
 Declare lbl_dummy_3 as LabelV2
-Level 249824
+Level 249813
 #Visible True
 #Lock Me
 init value := "label_39"
@@ -20603,7 +20918,7 @@ init font := helvb18_bdf
 init blinkperiod := 0
 Enddec
 Declare lbl_FillR_Bgnd as LabelV2
-Level 249471
+Level 249460
 #Visible True
 #Lock Me
 init value := "Fill Rate - Pressure Control (ml/min)"
@@ -20621,7 +20936,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_FillR_Bgnd_1 as LabelV2
-Level 249827
+Level 249816
 #Visible True
 #Lock Me
 init value := "Fill Rate - Pressure Control(ml/min)"
@@ -20639,7 +20954,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_Flow_Instructions as LabelV2
-Level 249435
+Level 249424
 #Visible True
 #Lock False
 init value := "You must cycle cylinders to start before flow can be started"
@@ -20671,7 +20986,7 @@ init font := helvb18_bdf
 init xjustify := hjustify_leftalign
 Enddec
 Declare lbl_Flow_Mode as LabelV2
-Level 249433
+Level 249422
 #Visible True
 #Lock False
 init value := "FLOW MODE"
@@ -20690,7 +21005,7 @@ init ptsize := 26
 init transparent := true
 Enddec
 Declare lbl_Flow_Mode_1 as LabelV2
-Level 249873
+Level 249863
 #Visible True
 #Lock False
 init value := "PUMP CONTROL"
@@ -20709,7 +21024,7 @@ init ptsize := 26
 init transparent := true
 Enddec
 Declare lbl_flow_rate_twn_a as LabelV2
-Level 249895
+Level 249885
 #Visible True
 #Lock False
 init value := "0.00"
@@ -20728,7 +21043,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_flow_rate_twn_b as LabelV2
-Level 249872
+Level 249862
 #Visible True
 #Lock False
 init value := "0.00"
@@ -20747,18 +21062,18 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_Flow_Shutdown as LabelV2
-Level 249942
+Level 249933
 #Visible True
-#Lock False
+#Lock Me
 init value := "Flow Rate (Shut Down)"
 init parent := limits_screen
-init xpos := 31
-init ypos := 520
-init width := 420
+init xpos := 17
+init ypos := 522
+init width := 450
 init height := 60
 
 init xjustify := hjustify_leftalign
-init font := helvb18_bdf
+init font := helvr18_bdf
 init xinset := 1
 init yinset := 0
 init ptsize := 20
@@ -20766,7 +21081,7 @@ init bgcolor := clr_softkeybarbackground
 init yjustify := vjustify_centeralign
 Enddec
 Declare lbl_FS_volts as LabelV2
-Level 249519
+Level 249508
 #Visible True
 #Lock False
 init value := "00.00"
@@ -20782,7 +21097,7 @@ init ptsize := 12
 init font := helvb18_bdf
 Enddec
 Declare lbl_FS_volts_new as LabelV2
-Level 249523
+Level 249512
 #Visible True
 #Lock False
 init value := "00.00"
@@ -20801,7 +21116,7 @@ init blinkperiod := 1000
 init enabled := false
 Enddec
 Declare lbl_Fwd_Amax_Bgnd as LabelV2
-Level 249472
+Level 249461
 #Visible True
 #Lock Me
 init value := "Forward Max (ml)"
@@ -20816,7 +21131,7 @@ init xjustify := hjustify_leftalign
 init ptsize := 12
 Enddec
 Declare lbl_Fwd_Amax_Bgnd_1 as LabelV2
-Level 249822
+Level 249811
 #Visible True
 #Lock Me
 init value := "Forward Max (ml)"
@@ -20831,7 +21146,7 @@ init xjustify := hjustify_leftalign
 init ptsize := 12
 Enddec
 Declare lbl_Igain_Cur as LabelV2
-Level 249369
+Level 249358
 #Visible True
 #Lock False
 init value := "1000"
@@ -20890,7 +21205,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_Isum as LabelV2
-Level 249375
+Level 249364
 #Visible True
 #Lock False
 init value := "1000"
@@ -20909,7 +21224,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_KProp_Cur as LabelV2
-Level 249360
+Level 249349
 #Visible True
 #Lock False
 init value := "1000"
@@ -20928,7 +21243,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_Kx_Cur as LabelV2
-Level 249365
+Level 249354
 #Visible True
 #Lock False
 init value := "1000"
@@ -20947,7 +21262,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_Lapsed_Time_Profile as LabelV2
-Level 249321
+Level 249310
 #Visible True
 #Lock False
 init value := "00:00:00"
@@ -20966,7 +21281,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_Lapsed_Time_Segment as LabelV2
-Level 249322
+Level 249311
 #Visible True
 #Lock False
 init value := "00:00:00"
@@ -20985,7 +21300,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_Lim_Seg_1 as LabelV2
-Level 249314
+Level 249303
 #Visible True
 #Lock False
 init value := "min"
@@ -21003,7 +21318,7 @@ init ptsize := 12
 init transparent := true
 Enddec
 Declare lbl_Lim_Seg_2 as LabelV2
-Level 249315
+Level 249304
 #Visible True
 #Lock False
 init value := "ml"
@@ -21021,7 +21336,7 @@ init ptsize := 12
 init transparent := true
 Enddec
 Declare lbl_Lim_Seg_3 as LabelV2
-Level 249316
+Level 249305
 #Visible True
 #Lock False
 init value := "psi"
@@ -21039,7 +21354,7 @@ init ptsize := 12
 init transparent := true
 Enddec
 Declare lbl_Lim_Seg_4 as LabelV2
-Level 249317
+Level 249306
 #Visible True
 #Lock False
 init value := "min"
@@ -21057,7 +21372,7 @@ init ptsize := 12
 init transparent := true
 Enddec
 Declare lbl_Lim_Seg_5 as LabelV2
-Level 249318
+Level 249307
 #Visible True
 #Lock False
 init value := ""
@@ -21075,7 +21390,7 @@ init ptsize := 12
 init transparent := true
 Enddec
 Declare lbl_Lim_Seg_6 as LabelV2
-Level 249319
+Level 249308
 #Visible True
 #Lock False
 init value := ""
@@ -21093,14 +21408,14 @@ init ptsize := 12
 init transparent := true
 Enddec
 Declare lbl_Limits_Msg as LabelV2
-Level 249924
+Level 249915
 #Visible True
-#Lock False
+#Lock Me
 init value := "Set limits for warning and for shut down. For maximum pressure in flow control mode and for maximum flow rate in pressure control mode"
 init parent := limits_screen
-init xpos := 30
+init xpos := 17
 init ypos := 600
-init width := 420
+init width := 450
 init height := 100
 
 init borderstyle := bdr_bumpborder
@@ -21151,7 +21466,7 @@ init ptsize := 12
 init transparent := true
 Enddec
 Declare lbl_Maint_hrs as LabelV2
-Level 249712
+Level 249701
 #Visible True
 #Lock False
 init value := "1000.00"
@@ -21170,7 +21485,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_Manual_Control_Msg as LabelV2
-Level 249779
+Level 249768
 #Visible True
 #Lock False
 init value := ""
@@ -21193,7 +21508,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_Maxerror_Cur as LabelV2
-Level 249373
+Level 249362
 #Visible True
 #Lock False
 init value := "1000"
@@ -21212,7 +21527,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_ml_cur_cal as LabelV2
-Level 249534
+Level 249523
 #Visible True
 #Lock False
 init value := "00.00"
@@ -21231,7 +21546,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_ml_flowed as LabelV2
-Level 249554
+Level 249543
 #Visible True
 #Lock False
 init value := "00.00"
@@ -21250,7 +21565,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_ml_per_mm as LabelV2
-Level 249533
+Level 249522
 #Visible True
 #Lock False
 init value := "0.0742"
@@ -21269,7 +21584,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_ml_per_mm_CALC as LabelV2
-Level 249552
+Level 249541
 #Visible True
 #Lock False
 init value := "0.0742"
@@ -21288,7 +21603,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_MLtot as LabelV2
-Level 249755
+Level 249744
 #Visible True
 #Lock False
 init value := "1000.00"
@@ -21307,7 +21622,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_msg_Title as LabelV2
-Level 249694
+Level 249683
 #Visible True
 #Lock False
 init value := "Controller Communication Error"
@@ -21327,7 +21642,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_New_Constant_1 as LabelV2
-Level 249511
+Level 249500
 #Visible True
 #Lock False
 init value := "ENTER NEW CONSTANT"
@@ -21346,7 +21661,7 @@ init ptsize := 20
 init yjustify := vjustify_topalign
 Enddec
 Declare lbl_New_Constant_2 as LabelV2
-Level 249524
+Level 249513
 #Visible True
 #Lock False
 init value := "Full Scale Volts"
@@ -21365,18 +21680,18 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_Open_Valves_On_OP as LabelV2
-Level 249940
+Level 249931
 #Visible True
-#Lock False
+#Lock Me
 init value := "Open Valves at 110% P range"
 init parent := limits_screen
-init xpos := 31
-init ypos := 447
-init width := 420
+init xpos := 17
+init ypos := 458
+init width := 450
 init height := 60
 
 init xjustify := hjustify_leftalign
-init font := helvb18_bdf
+init font := helvr18_bdf
 init xinset := 1
 init yinset := 0
 init ptsize := 20
@@ -21384,7 +21699,7 @@ init bgcolor := clr_softkeybarbackground
 init yjustify := vjustify_centeralign
 Enddec
 Declare lbl_P_Act as LabelV2
-Level 249355
+Level 249344
 #Visible True
 #Lock False
 init value := "10000"
@@ -21403,7 +21718,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_P_Act_1 as LabelV2
-Level 249283
+Level 249272
 #Visible True
 #Lock False
 init value := "2500"
@@ -21422,7 +21737,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_P_Act_2 as LabelV2
-Level 249436
+Level 249425
 #Visible True
 #Lock False
 init value := "10000"
@@ -21444,7 +21759,7 @@ init ptsize := 20
 init xjustify := hjustify_centeralign
 Enddec
 Declare lbl_P_Act_3 as LabelV2
-Level 249243
+Level 249232
 #Visible True
 #Lock False
 init value := "10000"
@@ -21466,7 +21781,7 @@ init ptsize := 20
 init xjustify := hjustify_centeralign
 Enddec
 Declare lbl_P_Act_A as LabelV2
-Level 249398
+Level 249387
 #Visible True
 #Lock False
 init value := ""
@@ -21481,7 +21796,7 @@ init fgcolor := 255
 init font := helvb12_bdf
 Enddec
 Declare lbl_P_Act_A_1 as LabelV2
-Level 249438
+Level 249427
 #Visible True
 #Lock False
 init value := ""
@@ -21496,7 +21811,7 @@ init fgcolor := 255
 init font := helvb12_bdf
 Enddec
 Declare lbl_P_Act_A_2 as LabelV2
-Level 249284
+Level 249273
 #Visible True
 #Lock False
 init value := "2501"
@@ -21511,7 +21826,7 @@ init fgcolor := 255
 init font := helvb12_bdf
 Enddec
 Declare lbl_P_Act_A_3 as LabelV2
-Level 249241
+Level 249230
 #Visible True
 #Lock False
 init value := ""
@@ -21526,7 +21841,7 @@ init fgcolor := 255
 init font := helvb12_bdf
 Enddec
 Declare lbl_P_Act_B as LabelV2
-Level 249399
+Level 249388
 #Visible True
 #Lock False
 init value := ""
@@ -21541,7 +21856,7 @@ init fgcolor := 255
 init font := helvb12_bdf
 Enddec
 Declare lbl_P_Act_B_1 as LabelV2
-Level 249439
+Level 249428
 #Visible True
 #Lock False
 init value := ""
@@ -21556,7 +21871,7 @@ init fgcolor := 255
 init font := helvb12_bdf
 Enddec
 Declare lbl_P_Act_B_2 as LabelV2
-Level 249285
+Level 249274
 #Visible True
 #Lock False
 init value := "2500"
@@ -21571,7 +21886,7 @@ init fgcolor := 255
 init font := helvb12_bdf
 Enddec
 Declare lbl_P_Act_B_3 as LabelV2
-Level 249240
+Level 249229
 #Visible True
 #Lock False
 init value := ""
@@ -21586,7 +21901,7 @@ init fgcolor := 255
 init font := helvb12_bdf
 Enddec
 Declare lbl_P_Cal_msg as LabelV2
-Level 249503
+Level 249492
 #Visible True
 #Lock False
 init value := "Open transducer valve to atmosphere and press SET ZERO.  Close valve and increase pressure.  Enter actual pressure value.  CALCULATE, then ACCEPT."
@@ -21606,7 +21921,7 @@ init ptsize := 12
 init fgcolor := clr_buttonforeground
 Enddec
 Declare lbl_P_Cur_A as LabelV2
-Level 249737
+Level 249726
 #Visible True
 #Lock False
 init value := "10000"
@@ -21625,7 +21940,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_P_Cur_A_1 as LabelV2
-Level 249781
+Level 249770
 #Visible True
 #Lock False
 init value := "10000"
@@ -21644,7 +21959,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_P_Cur_B as LabelV2
-Level 249744
+Level 249733
 #Visible True
 #Lock False
 init value := "10000"
@@ -21663,7 +21978,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_P_Cur_B_1 as LabelV2
-Level 249780
+Level 249769
 #Visible True
 #Lock False
 init value := "10000"
@@ -21682,7 +21997,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_P_Range as LabelV2
-Level 249478
+Level 249467
 #Visible True
 #Lock Me
 init value := "10,000"
@@ -21701,7 +22016,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_P_Range_t as LabelV2
-Level 249846
+Level 249835
 #Visible True
 #Lock Me
 init value := "10,000"
@@ -21720,7 +22035,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_Pmax_Bgnd as LabelV2
-Level 249470
+Level 249459
 #Visible True
 #Lock Me
 init value := "Pressure Limit (psi)"
@@ -21738,7 +22053,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_Pmax_Bgnd_1 as LabelV2
-Level 249821
+Level 249810
 #Visible True
 #Lock Me
 init value := "Pressure Limit (psi)"
@@ -21756,7 +22071,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_Pres_twn_a as LabelV2
-Level 249897
+Level 249887
 #Visible True
 #Lock False
 init value := "10000"
@@ -21778,7 +22093,7 @@ init ptsize := 20
 init xjustify := hjustify_centeralign
 Enddec
 Declare lbl_Pres_twn_b as LabelV2
-Level 249870
+Level 249860
 #Visible True
 #Lock False
 init value := "10000"
@@ -21800,7 +22115,7 @@ init ptsize := 20
 init xjustify := hjustify_centeralign
 Enddec
 Declare lbl_Press_Range as LabelV2
-Level 249504
+Level 249493
 #Visible True
 #Lock False
 init value := "10000"
@@ -21816,7 +22131,7 @@ init ptsize := 12
 init font := helvb18_bdf
 Enddec
 Declare lbl_Pressure_Msg as LabelV2
-Level 249356
+Level 249345
 #Visible True
 #Lock False
 init value := "Enter Target Pressure and Ramp Rate to start pressure control"
@@ -21835,7 +22150,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_Pressure_Warning as LabelV2
-Level 249653
+Level 249642
 #Visible False
 #Lock False
 init value := "PRESSURE RANGE EXCEEDED"
@@ -21855,7 +22170,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_Profile_Msg as LabelV2
-Level 249288
+Level 249277
 #Visible True
 #Lock False
 init value := "Currently executing segment 4"
@@ -21874,7 +22189,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_Profile_Segment_1 as LabelV2
-Level 249264
+Level 249253
 #Visible True
 #Lock False
 init value := "1"
@@ -21892,7 +22207,7 @@ init ptsize := 20
 init bgcolor := clr_softkeybarbackground
 Enddec
 Declare lbl_Profile_Segment_2 as LabelV2
-Level 249265
+Level 249254
 #Visible True
 #Lock False
 init value := "2"
@@ -21910,7 +22225,7 @@ init ptsize := 20
 init bgcolor := clr_softkeybarbackground
 Enddec
 Declare lbl_Profile_Segment_3 as LabelV2
-Level 249266
+Level 249255
 #Visible True
 #Lock False
 init value := "3"
@@ -21928,7 +22243,7 @@ init ptsize := 20
 init bgcolor := clr_softkeybarbackground
 Enddec
 Declare lbl_Profile_Segment_4 as LabelV2
-Level 249267
+Level 249256
 #Visible True
 #Lock False
 init value := "4"
@@ -21948,7 +22263,7 @@ init bgcolor := clr_buttonbackgroundalt
 init fgcolor := clr_buttonforegroundalt
 Enddec
 Declare lbl_Profile_Segment_5 as LabelV2
-Level 249268
+Level 249257
 #Visible True
 #Lock False
 init value := "5"
@@ -21966,7 +22281,7 @@ init ptsize := 20
 init bgcolor := clr_softkeybarbackground
 Enddec
 Declare lbl_Profile_Segment_6 as LabelV2
-Level 249269
+Level 249258
 #Visible True
 #Lock False
 init value := "6"
@@ -21984,7 +22299,7 @@ init ptsize := 20
 init bgcolor := clr_softkeybarbackground
 Enddec
 Declare lbl_psi_indicated as LabelV2
-Level 249505
+Level 249494
 #Visible True
 #Lock False
 init value := "9999"
@@ -22000,7 +22315,7 @@ init ptsize := 12
 init font := helvb18_bdf
 Enddec
 Declare lbl_PUTime as LabelV2
-Level 249754
+Level 249743
 #Visible True
 #Lock False
 init value := "12:32 01-10-13"
@@ -22019,7 +22334,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_quit_warning_txt as LabelV2
-Level 249913
+Level 249903
 #Visible True
 #Lock False
 init value := "Both cylinders must be stopped to quit Pump Control."
@@ -22036,7 +22351,7 @@ init yjustify := vjustify_topalign
 init bgcolor := clr_messagebackground
 Enddec
 Declare lbl_RampStatus as TranslucentLabelV2
-Level 249396
+Level 249385
 #Visible True
 #Lock False
 init parent := pressure_mode_screen
@@ -22051,7 +22366,7 @@ init value := "Waiting for Operator to Enter Ramp Param"
 init fgcolor := 192
 Enddec
 Declare lbl_rate_a as TranslucentLabelV2
-Level 249866
+Level 249856
 #Visible True
 #Lock False
 init parent := twin_monitor_screen
@@ -22064,7 +22379,7 @@ init font := helvb14_bdf
 init value := "Rate"
 Enddec
 Declare lbl_rate_a_units as LabelV2
-Level 249875
+Level 249865
 #Visible True
 #Lock False
 init value := "ml/min"
@@ -22082,7 +22397,7 @@ init ptsize := 12
 init transparent := true
 Enddec
 Declare lbl_rate_b as TranslucentLabelV2
-Level 249901
+Level 249891
 #Visible True
 #Lock False
 init parent := twin_monitor_screen
@@ -22095,7 +22410,7 @@ init font := helvb14_bdf
 init value := "Rate"
 Enddec
 Declare lbl_rate_b_units as LabelV2
-Level 249906
+Level 249896
 #Visible True
 #Lock False
 init value := "ml/min"
@@ -22113,7 +22428,7 @@ init ptsize := 12
 init transparent := true
 Enddec
 Declare lbl_Rate_Seg_1 as LabelV2
-Level 249308
+Level 249297
 #Visible True
 #Lock False
 init value := "ml/min"
@@ -22131,7 +22446,7 @@ init ptsize := 12
 init transparent := true
 Enddec
 Declare lbl_Rate_Seg_2 as LabelV2
-Level 249309
+Level 249298
 #Visible True
 #Lock False
 init value := "ml/min"
@@ -22149,7 +22464,7 @@ init ptsize := 12
 init transparent := true
 Enddec
 Declare lbl_Rate_Seg_3 as LabelV2
-Level 249310
+Level 249299
 #Visible True
 #Lock False
 init value := "psi/sec"
@@ -22167,7 +22482,7 @@ init ptsize := 12
 init transparent := true
 Enddec
 Declare lbl_Rate_Seg_4 as LabelV2
-Level 249311
+Level 249300
 #Visible True
 #Lock False
 init value := "psi"
@@ -22185,7 +22500,7 @@ init ptsize := 12
 init transparent := true
 Enddec
 Declare lbl_Rate_Seg_5 as LabelV2
-Level 249312
+Level 249301
 #Visible True
 #Lock False
 init value := ""
@@ -22203,7 +22518,7 @@ init ptsize := 12
 init transparent := true
 Enddec
 Declare lbl_Rate_Seg_6 as LabelV2
-Level 249313
+Level 249302
 #Visible True
 #Lock False
 init value := ""
@@ -22221,7 +22536,7 @@ init ptsize := 12
 init transparent := true
 Enddec
 Declare lbl_Receive_Mode_Warning as LabelV2
-Level 249699
+Level 249688
 #Visible True
 #Lock False
 init value := "You can not enter Constant Flow Rate Mode while in Receive Mode"
@@ -22241,7 +22556,7 @@ init ptsize := 20
 init enabled := false
 Enddec
 Declare lbl_ReflRate_Bgnd as LabelV2
-Level 249481
+Level 249470
 #Visible True
 #Lock Me
 init value := "Min Fill Rate - Flow Control (ml/min)"
@@ -22259,7 +22574,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_ReflRate_Bgnd_1 as LabelV2
-Level 249823
+Level 249812
 #Visible True
 #Lock Me
 init value := "Min Fill Rate - Flow Control(ml/min)"
@@ -22277,7 +22592,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_Remote_Display as LabelV2
-Level 249246
+Level 249235
 #Visible True
 #Lock False
 init value := "REMOTE DISPLAY"
@@ -22296,7 +22611,7 @@ init ptsize := 26
 init transparent := true
 Enddec
 Declare lbl_Remote_Instructions as LabelV2
-Level 249244
+Level 249233
 #Visible True
 #Lock False
 init value := "Pump is being controlled remotely"
@@ -22315,7 +22630,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_Reset_term_popup as LabelV2
-Level 249719
+Level 249708
 #Visible True
 #Lock False
 init value := "This will reset the terminal and boot into download mode. Are you sure you wish to continue?"
@@ -22332,7 +22647,7 @@ init yjustify := vjustify_topalign
 init bgcolor := clr_messagebackground
 Enddec
 Declare lbl_Reset_term_popup_1 as LabelV2
-Level 249718
+Level 249707
 #Visible True
 #Lock False
 init value := "Choose the method you will be downloading new software through."
@@ -22384,7 +22699,7 @@ init ptsize := 12
 init transparent := true
 Enddec
 Declare lbl_Rev_Amin_Bgnd as LabelV2
-Level 249473
+Level 249462
 #Visible True
 #Lock Me
 init value := "Reverse Min (ml)"
@@ -22400,7 +22715,7 @@ init ptsize := 12
 init bgcolor := clr_labelbackground
 Enddec
 Declare lbl_Rev_Amin_Bgnd_1 as LabelV2
-Level 249818
+Level 249807
 #Visible True
 #Lock Me
 init value := "Reverse Min (ml)"
@@ -22416,7 +22731,7 @@ init ptsize := 12
 init bgcolor := clr_labelbackground
 Enddec
 Declare lbl_Rod_Dia as LabelV2
-Level 249477
+Level 249466
 #Visible True
 #Lock Me
 init value := "12.70"
@@ -22435,7 +22750,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_Rod_Dia_B as LabelV2
-Level 249532
+Level 249521
 #Visible True
 #Lock False
 init value := "00.00"
@@ -22454,7 +22769,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_Rod_Dia_Bgnd as LabelV2
-Level 249466
+Level 249455
 #Visible True
 #Lock Me
 init value := "Rod dia (mm)"
@@ -22472,7 +22787,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_Rod_Dia_Bgnd_1 as LabelV2
-Level 249820
+Level 249809
 #Visible True
 #Lock Me
 init value := "Rod dia (mm)"
@@ -22490,7 +22805,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_Rod_Dia_t as LabelV2
-Level 249845
+Level 249834
 #Visible True
 #Lock Me
 init value := "12.70"
@@ -22509,7 +22824,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_Setup_Msg as LabelV2
-Level 249453
+Level 249442
 #Visible True
 #Lock False
 init value := ""
@@ -22529,7 +22844,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_Start_VolA_Bgnd as LabelV2
-Level 249474
+Level 249463
 #Visible True
 #Lock Me
 init value := "Start Vol Pump Mode (ml)"
@@ -22544,7 +22859,7 @@ init xjustify := hjustify_leftalign
 init ptsize := 12
 Enddec
 Declare lbl_Start_VolA_Bgnd_1 as LabelV2
-Level 249475
+Level 249464
 #Visible True
 #Lock Me
 init value := "Start Vol Receive Mode (ml)"
@@ -22559,7 +22874,7 @@ init xjustify := hjustify_leftalign
 init ptsize := 12
 Enddec
 Declare lbl_Start_VolA_Bgnd_2 as LabelV2
-Level 249816
+Level 249805
 #Visible True
 #Lock Me
 init value := "Start Vol Receive Mode (ml)"
@@ -22574,7 +22889,7 @@ init xjustify := hjustify_leftalign
 init ptsize := 12
 Enddec
 Declare lbl_Start_VolA_Bgnd_3 as LabelV2
-Level 249814
+Level 249803
 #Visible True
 #Lock False
 init value := "Start Vol Pump Mode (ml)"
@@ -22589,7 +22904,7 @@ init xjustify := hjustify_leftalign
 init ptsize := 12
 Enddec
 Declare lbl_Sys_Config_Instructions as LabelV2
-Level 249476
+Level 249465
 #Visible True
 #Lock Me
 init value := "Positions are indicated in terms of volume (ml) in the cylinder. Forward is towards full direction. Reverse is towards empty direction."
@@ -22608,7 +22923,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_Sys_Config_Instructions_t as LabelV2
-Level 249819
+Level 249808
 #Visible True
 #Lock Me
 init value := "Positions are indicated in terms of volume (ml) in the cylinder. Forward is towards full direction. Reverse is towards empty direction."
@@ -22627,7 +22942,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_Sys_Maintenance_Msg as LabelV2
-Level 249709
+Level 249698
 #Visible True
 #Lock False
 init value := "Press RESET when preventive maintenance is performed.  Boxes above indicate the date RESET was last pressed and the number of hours the pump has run since the last RESET"
@@ -22650,7 +22965,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_Sys_reboot as LabelV2
-Level 249717
+Level 249706
 #Visible True
 #Lock False
 init value := "Press button to download new software to terminal."
@@ -22673,7 +22988,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_Sys_Restart_Msg as LabelV2
-Level 249726
+Level 249715
 #Visible True
 #Lock False
 init value := "If power was lost accidentally, this screen shows the last position recorded, and the change from the previously recorded position.  If values appear reasonable, and the changes from the previous values are small, then operator may choose to ACCEPT CURRENT VALUES, and continue without re-initializing the pump. Values are saved at 5 min intervals. If the change from previous exceeds .25 ml, it is recommended that the VPA be re-intialized.  INTIALIZE starts a standard intialization sequence. RESTART will initialize, keeping inlet valves open,  then Cycle to Start position."
@@ -22696,7 +23011,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_Sys_Setup_Msg as LabelV2
-Level 249337
+Level 249326
 #Visible True
 #Lock False
 init value := "Calibration factors and Alarm Limits have been reset to factory settings.  VPA should be initialized again for settings to be correct."
@@ -22719,7 +23034,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_target_a as TranslucentLabelV2
-Level 249864
+Level 249854
 #Visible True
 #Lock False
 init parent := twin_monitor_screen
@@ -22732,7 +23047,7 @@ init font := helvb14_bdf
 init value := "Volume to Pump"
 Enddec
 Declare lbl_target_a_units as LabelV2
-Level 249874
+Level 249864
 #Visible True
 #Lock False
 init value := "ml"
@@ -22750,7 +23065,7 @@ init ptsize := 12
 init transparent := true
 Enddec
 Declare lbl_target_b as TranslucentLabelV2
-Level 249902
+Level 249892
 #Visible True
 #Lock False
 init parent := twin_monitor_screen
@@ -22763,7 +23078,7 @@ init font := helvb14_bdf
 init value := "Volume to Pump"
 Enddec
 Declare lbl_target_b_units as LabelV2
-Level 249904
+Level 249894
 #Visible True
 #Lock False
 init value := "ml"
@@ -22781,7 +23096,7 @@ init ptsize := 12
 init transparent := true
 Enddec
 Declare lbl_Tot_Vol_A as LabelV2
-Level 249479
+Level 249468
 #Visible True
 #Lock Me
 init value := ""
@@ -22800,7 +23115,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_Tot_Vol_B as LabelV2
-Level 249480
+Level 249469
 #Visible True
 #Lock Me
 init value := ""
@@ -22819,7 +23134,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_Tot_Vol_t_a as LabelV2
-Level 249844
+Level 249833
 #Visible True
 #Lock Me
 init value := ""
@@ -22838,7 +23153,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_Tot_Vol_t_b as LabelV2
-Level 249843
+Level 249832
 #Visible True
 #Lock Me
 init value := ""
@@ -22857,7 +23172,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_Tot_VolA_Bgnd as LabelV2
-Level 249469
+Level 249458
 #Visible True
 #Lock Me
 init value := "Cylinder Volume (ml)"
@@ -22875,7 +23190,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_Tot_VolA_Bgnd_1 as LabelV2
-Level 249817
+Level 249806
 #Visible True
 #Lock Me
 init value := "Cylinder Volume (ml)"
@@ -22893,7 +23208,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_Valve_Options_bk as LabelV2
-Level 249678
+Level 249667
 #Visible True
 #Lock False
 init value := "VPA VALVE CONFIG DURING INIT & CYCLE"
@@ -22913,7 +23228,7 @@ init bgcolor := clr_softkeybarbackground
 init yjustify := vjustify_topalign
 Enddec
 Declare lbl_Vol_Cal_msg_B as LabelV2
-Level 249531
+Level 249520
 #Visible True
 #Lock False
 init value := "Enter calibration setup parameters. Press FILL TO START VOL to move cylinder to start position. Press START FLOW to flow the volume indicated.  Measure and enter the volume produced."
@@ -22934,7 +23249,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_Vol_Cur_A as LabelV2
-Level 249736
+Level 249725
 #Visible True
 #Lock False
 init value := "1000.00"
@@ -22953,7 +23268,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_Vol_Cur_A_1 as LabelV2
-Level 249782
+Level 249771
 #Visible True
 #Lock False
 init value := "1000.00"
@@ -22972,7 +23287,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_Vol_Cur_B as LabelV2
-Level 249745
+Level 249734
 #Visible True
 #Lock False
 init value := "1000.00"
@@ -22991,7 +23306,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_Vol_Cur_B_1 as LabelV2
-Level 249783
+Level 249772
 #Visible True
 #Lock False
 init value := "1000.00"
@@ -23010,7 +23325,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_Vol_Cur_Change_A as LabelV2
-Level 249748
+Level 249737
 #Visible True
 #Lock False
 init value := "1000.00"
@@ -23029,7 +23344,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_Vol_Cur_Change_B as LabelV2
-Level 249751
+Level 249740
 #Visible True
 #Lock False
 init value := "1000.00"
@@ -23048,7 +23363,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_vol_pumped_twn_a as LabelV2
-Level 249896
+Level 249886
 #Visible True
 #Lock False
 init value := "0.00"
@@ -23067,7 +23382,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_vol_pumped_twn_b as LabelV2
-Level 249871
+Level 249861
 #Visible True
 #Lock False
 init value := "0.00"
@@ -23086,7 +23401,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_Vol_Tot as LabelV2
-Level 249357
+Level 249346
 #Visible True
 #Lock False
 init value := "1000.00"
@@ -23105,7 +23420,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_Vol_Tot_1 as LabelV2
-Level 249286
+Level 249275
 #Visible True
 #Lock False
 init value := "1437.24"
@@ -23124,7 +23439,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_VolPCyl_Bgnd as LabelV2
-Level 249467
+Level 249456
 #Visible True
 #Lock Me
 init value := "Max Vol/Stroke - Flow Mode (ml)"
@@ -23142,7 +23457,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_VolPCyl_Bgnd_1 as LabelV2
-Level 249494
+Level 249483
 #Visible True
 #Lock Me
 init value := "Initialize / Cycle Rate (ml/min)"
@@ -23160,7 +23475,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_VolPCyl_Bgnd_2 as LabelV2
-Level 249815
+Level 249804
 #Visible True
 #Lock Me
 init value := "Max Vol/Stroke - Flow Mode (ml)"
@@ -23178,7 +23493,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_VolPCyl_Bgnd_3 as LabelV2
-Level 249813
+Level 249802
 #Visible True
 #Lock Me
 init value := "Initialize / Cycle Rate (ml/min)"
@@ -23196,7 +23511,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_volts_per_psi as LabelV2
-Level 249506
+Level 249495
 #Visible True
 #Lock False
 init value := "00.00"
@@ -23212,7 +23527,7 @@ init ptsize := 12
 init font := helvb18_bdf
 Enddec
 Declare lbl_volts_per_psi_new as LabelV2
-Level 249522
+Level 249511
 #Visible True
 #Lock False
 init value := "00.00"
@@ -23231,18 +23546,18 @@ init blinkperiod := 1000
 init enabled := false
 Enddec
 Declare lbl_Warnings_Enabled as LabelV2
-Level 249938
+Level 249929
 #Visible True
-#Lock False
+#Lock Me
 init value := "Warning Limits"
 init parent := limits_screen
-init xpos := 31
-init ypos := 375
-init width := 420
+init xpos := 17
+init ypos := 394
+init width := 450
 init height := 60
 
 init xjustify := hjustify_leftalign
-init font := helvb18_bdf
+init font := helvr18_bdf
 init xinset := 1
 init yinset := 0
 init ptsize := 20
@@ -23276,7 +23591,7 @@ init parent := default
 init enabled := false
 Enddec
 Declare Manual_Control_Screen as ScreenV2
-Level 249810
+Level 249799
 #Visible False
 #Lock False
 init width := 480
@@ -23288,7 +23603,7 @@ init xpos := -1
 init ypos := 0
 Enddec
 Declare P_Cal_screen as ScreenV2
-Level 249526
+Level 249515
 #Visible False
 #Lock False
 init parent := default
@@ -23299,7 +23614,7 @@ init height := 800
 init enabled := False
 Enddec
 Declare popup_quit_warning as PopupScreenV2
-Level 249916
+Level 249906
 #Visible False
 #Lock False
 init xpos := 80
@@ -23316,7 +23631,7 @@ init enabled := false
 init parent := twin_monitor_screen
 Enddec
 Declare PopupKP as NumberKeypadV2
-Level 249692
+Level 249681
 #Visible False
 #Lock False
 init parent := default
@@ -23582,7 +23897,7 @@ func ValueChanged()
 endfunc
 Enddec
 Declare Power_Up_Screen as ScreenV2
-Level 249758
+Level 249747
 #Visible False
 #Lock Me
 init width := 480
@@ -23591,7 +23906,7 @@ init parent := default
 init enabled := false
 Enddec
 Declare Pressure_mode_screen as ScreenV2
-Level 249413
+Level 249402
 #Visible False
 #Lock False
 init parent := default
@@ -23603,7 +23918,7 @@ init enabled := False
 init bgcolor := 255
 Enddec
 Declare Profile_Screen as ScreenV2
-Level 249334
+Level 249323
 #Visible False
 #Lock False
 init width := 480
@@ -23611,17 +23926,17 @@ init height := 800
 init enabled := false
 Enddec
 Declare pv_errorlog as PersistentVariablesV2
-Level 249234
+Level 249223
 #Visible True
 #Lock False
 init savelist := "error_log_eb.value;"
 init filename := "errorlog.dat"
 Enddec
 Declare pv_Limits as PersistentVariablesV2
-Level 249233
+Level 249222
 #Visible True
 #Lock False
-init savelist := "default.FlowRLim;default.FlowRLimWarn;default.PMaxWarn;default.PMax;default.ErrorDisplayDisabled;default.Open_Valves_at_Over_Pressure;default.flow_limit_disabled;default.psi_per_sec;"
+init savelist := "default.FlowRLim[2];default.FlowRLimWarn[2];default.PMaxWarn[2];default.ErrorDisplayDisabled[2];default.flow_limit_disabled[2];default.psi_per_sec;"
 init filename := "LimPersist.dat"
 
 func RestoreComplete()
@@ -23629,14 +23944,14 @@ func RestoreComplete()
 endfunc
 Enddec
 Declare pv_Maintenance as PersistentVariablesV2
-Level 249231
+Level 249220
 #Visible True
 #Lock Me
 init savelist := "lbl_Maint_hrs.value;lbl_Date_of_Maint.value;default.MaintHours;"
 init filename := "Maint_Persist.dat"
 Enddec
 Declare pv_powerup as PersistentVariablesV2
-Level 249232
+Level 249221
 #Visible True
 #Lock False
 init savelist := "default.MLlastA;default.MLlastB;default.MLdeltaA;default.MLdeltaB;default.MLlasttot;default.timelast$;"
@@ -23694,7 +24009,7 @@ func OnStateChange()
 endfunc
 Enddec
 Declare rb_InV_Closed as RadioButtonV2
-Level 249682
+Level 249671
 #Visible True
 #Lock False
 init parent := valve_screen
@@ -23717,7 +24032,7 @@ endfunc
 init valueon := "OPEN"
 Enddec
 Declare rb_InV_Open as RadioButtonV2
-Level 249681
+Level 249670
 #Visible True
 #Lock False
 init parent := valve_screen
@@ -23738,7 +24053,7 @@ endfunc
 init valueon := "OPEN"
 Enddec
 Declare rb_PumpMode as RadioButtonV2
-Level 249492
+Level 249481
 #Visible True
 #Lock Me
 init parent := config_screen_single_and_dual
@@ -23754,7 +24069,7 @@ init xjustify := hjustify_centeralign
 init style := _crb_circle
 Enddec
 Declare rb_PumpMode_t_a as RadioButtonV2
-Level 249852
+Level 249841
 #Visible True
 #Lock False
 init parent := config_screen_twin
@@ -23770,7 +24085,7 @@ init xjustify := hjustify_centeralign
 init style := _crb_circle
 Enddec
 Declare rb_PumpMode_t_b as RadioButtonV2
-Level 249856
+Level 249845
 #Visible True
 #Lock False
 init parent := screen_1
@@ -23786,7 +24101,7 @@ init xjustify := hjustify_centeralign
 init style := _crb_circle
 Enddec
 Declare rb_Receive_Mode as RadioButtonV2
-Level 249493
+Level 249482
 #Visible True
 #Lock Me
 init parent := config_screen_single_and_dual
@@ -23802,7 +24117,7 @@ init xjustify := hjustify_centeralign
 init style := _crb_circle
 Enddec
 Declare rb_Receive_Mode_t_a as RadioButtonV2
-Level 249831
+Level 249820
 #Visible True
 #Lock Me
 init parent := config_screen_twin
@@ -23818,7 +24133,7 @@ init xjustify := hjustify_centeralign
 init style := _crb_circle
 Enddec
 Declare rb_receive_mode_t_b as RadioButtonV2
-Level 249857
+Level 249846
 #Visible True
 #Lock False
 init parent := screen_1
@@ -23834,7 +24149,7 @@ init xjustify := hjustify_centeralign
 init style := _crb_circle
 Enddec
 Declare Remote_Display as ScreenV2
-Level 249260
+Level 249249
 #Visible False
 #Lock False
 init xpos := 0
@@ -23844,7 +24159,7 @@ init height := 800
 init enabled := false
 Enddec
 Declare Screen_1 as ScreenV2
-Level 249858
+Level 249847
 #Visible True
 #Lock False
 init parent := config_screen_twin
@@ -23856,7 +24171,7 @@ init borderstyle := bdr_compositeobject
 init bgcolor := clr_buttonbackgroundalt
 Enddec
 Declare ScreenSaver as ScreenSaverV2
-Level 249235
+Level 249224
 #Visible False
 #Lock False
 init dimscreen_time := 0
@@ -23866,7 +24181,7 @@ init marqueefont := default_ttf
 init marqueeptsize := 51
 Enddec
 Declare Soft_Reset_Popup as PopupScreenV2
-Level 249723
+Level 249712
 #Visible True
 #Lock False
 init xpos := 80
@@ -23882,7 +24197,7 @@ init value := "Reset Terminal?"
 init parent := system_maintenance_screen
 Enddec
 Declare Sys_Setup_screen as ScreenV2
-Level 249352
+Level 249341
 #Visible False
 #Lock False
 init parent := default
@@ -23899,7 +24214,7 @@ func screenEnabled()
 endfunc
 Enddec
 Declare System_Maintenance_Screen as ScreenV2
-Level 249724
+Level 249713
 #Visible False
 #Lock False
 init width := 480
@@ -23909,7 +24224,7 @@ init ypos := 0
 init enabled := false
 Enddec
 Declare SystemStatus_1 as SystemStatusV2
-Level 249650
+Level 249639
 #Visible True
 #Lock False
 init parent := debugscrn
@@ -23919,7 +24234,7 @@ init width := 464
 init height := 312
 Enddec
 Declare Title_Screen as ScreenV2
-Level 249701
+Level 249690
 #Visible False
 #Lock Me
 init parent := default
@@ -23932,7 +24247,7 @@ init enabled := false
 init transparent := false
 Enddec
 Declare tmr_Burn_New_Var as TimerV2
-Level 249223
+Level 249212
 #Visible True
 #Lock False
 init timertype := _tt_oneshot
@@ -23943,10 +24258,11 @@ func timeout()
     GMCCommand.command = "BV"
     GMCCommand.executeCommand = true
     tmr_Burn_New_Var.enabled=false
+
 endfunc
 Enddec
 Declare tmr_Check_Connection as TimerV2
-Level 249229
+Level 249218
 #Visible True
 #Lock False
 init timertype := _tt_periodic
@@ -23966,7 +24282,7 @@ init timeperiod := 1
 init enabled := false
 Enddec
 Declare tmr_CheckML as TimerV2
-Level 249224
+Level 249213
 #Visible True
 #Lock False
 init timeunits := _tt_minutes
@@ -23984,7 +24300,7 @@ endfunc
 init enabled := false
 Enddec
 Declare tmr_Delay_Get_Config as TimerV2
-Level 249225
+Level 249214
 #Visible True
 #Lock False
 func timeout()
@@ -23996,7 +24312,7 @@ init timertype := _tt_oneshot
 init enabled := false
 Enddec
 Declare tmr_Delay_Init_Ramp as TimerV2
-Level 249228
+Level 249217
 #Visible True
 #Lock False
 init timertype := _tt_oneshot
@@ -24012,7 +24328,7 @@ init parent := default
 init timeperiod := 2
 Enddec
 Declare tmr_Delay_Start as TimerV2
-Level 249219
+Level 249208
 #Visible True
 #Lock False
 init timertype := _tt_oneshot
@@ -24049,7 +24365,7 @@ func timeout()
 endfunc
 Enddec
 Declare tmr_error_beep_delay as TimerV2
-Level 249558
+Level 249547
 #Visible True
 #Lock False
 init parent := daq_objects
@@ -24058,7 +24374,7 @@ init timertype := _tt_oneshot
 init enabled := false
 Enddec
 Declare tmr_Error_Beep_Repeat as TimerV2
-Level 249812
+Level 249801
 #Visible True
 #Lock False
 init parent := default
@@ -24071,7 +24387,7 @@ endfunc
 init enabled := false
 Enddec
 Declare tmr_Fact_Set as TimerV2
-Level 249227
+Level 249216
 #Visible True
 #Lock False
 init enabled := false
@@ -24083,7 +24399,7 @@ func timeout()
 endfunc
 Enddec
 Declare Tmr_finding as TimerV2
-Level 249639
+Level 249628
 #Visible True
 #Lock False
 init parent := daq_objects
@@ -24098,7 +24414,7 @@ endfunc
 init timertype := _tt_periodic
 Enddec
 Declare tmr_FirstPowerUp as TimerV2
-Level 249230
+Level 249219
 #Visible True
 #Lock False
 init timeperiod := 5
@@ -24112,7 +24428,7 @@ func timeout()
 endfunc
 Enddec
 Declare tmr_Hide_Error_Display as TimerV2
-Level 249222
+Level 249211
 #Visible True
 #Lock False
 init enabled := false
@@ -24124,7 +24440,7 @@ func timeout()
 endfunc
 Enddec
 Declare tmr_Initialize as TimerV2
-Level 249561
+Level 249550
 #Visible True
 #Lock False
 init timeperiod := 1
@@ -24143,7 +24459,7 @@ init parent := daq_objects
 init timertype := _tt_oneshot
 Enddec
 Declare tmr_MLaccum as TimerV2
-Level 249560
+Level 249549
 #Visible True
 #Lock False
 init parent := daq_objects
@@ -24156,7 +24472,7 @@ func timeout()
 endfunc
 Enddec
 Declare tmr_OverPresAck as TimerV2
-Level 249226
+Level 249215
 #Visible True
 #Lock False
 init parent := default
@@ -24171,7 +24487,7 @@ endfunc
 init timertype := _tt_oneshot
 Enddec
 Declare tmr_Profile_Times as TimerV2
-Level 249262
+Level 249251
 #Visible True
 #Lock False
 init parent := profile_screen
@@ -24189,7 +24505,7 @@ func timeout()
 endfunc
 Enddec
 Declare tmr_Receive_Warning as TimerV2
-Level 249218
+Level 249207
 #Visible True
 #Lock False
 init parent := default
@@ -24201,8 +24517,8 @@ func timeout()
     lbl_Receive_Mode_Warning.enabled=false
 endfunc
 Enddec
-Declare tmr_reenable_button as TimerV2
-Level 249917
+Declare tmr_reenable_button_a as TimerV2
+Level 249907
 #Visible True
 #Lock False
 init parent := twin_monitor_screen
@@ -24211,13 +24527,24 @@ init timertype := _tt_oneshot
 init enabled := false
 
 func timeout()
-    disabled_button.inactive=false
+    but_start_a.inactive=false
+endfunc
+Enddec
+Declare tmr_reenable_button_b as TimerV2
+Level 249908
+#Visible True
+#Lock False
+init parent := twin_monitor_screen
+init timeperiod := 1
+init timertype := _tt_oneshot
+init enabled := false
 
-
+func timeout()
+    but_start_b.inactive=false
 endfunc
 Enddec
 Declare tmr_refill as TimerV2
-Level 249220
+Level 249209
 #Visible True
 #Lock False
 init enabled := false
@@ -24239,7 +24566,7 @@ func timeout()
 endfunc
 Enddec
 Declare tmr_reset_flow_pressed as TimerV2
-Level 249811
+Level 249800
 #Visible False
 #Lock False
 init parent := default
@@ -24253,7 +24580,7 @@ func timeout()
 endfunc
 Enddec
 Declare tmr_restart_delay as TimerV2
-Level 249217
+Level 249206
 #Visible True
 #Lock False
 init parent := default
@@ -24276,7 +24603,7 @@ func timeout()
 endfunc
 Enddec
 Declare tmr_Segment as TimerV2
-Level 249261
+Level 249250
 #Visible True
 #Lock False
 init parent := profile_screen
@@ -24295,7 +24622,7 @@ func timeout()
 endfunc
 Enddec
 Declare Tmr_start_daq as TimerV2
-Level 249638
+Level 249627
 #Visible True
 #Lock False
 init parent := daq_objects
@@ -24310,7 +24637,7 @@ endfunc
 init timertype := _tt_oneshot
 Enddec
 Declare Tmr_Twin_Update as TimerV2
-Level 249632
+Level 249621
 #Visible True
 #Lock False
 init parent := daq_objects
@@ -24325,8 +24652,23 @@ func timeout()
 
 endfunc
 Enddec
+Declare tmr_update_config as TimerV2
+Level 249848
+#Visible True
+#Lock False
+init parent := config_screen_twin
+
+func timeout()
+    update_twin_config_screen()
+endfunc
+
+init timeunits := _tt_milliseconds
+init timertype := _tt_oneshot
+init enabled := false
+init timeperiod := 500
+Enddec
 Declare tmr_Wait_For_Refill as TimerV2
-Level 249221
+Level 249210
 #Visible True
 #Lock False
 init timeperiod := 1
@@ -24351,7 +24693,7 @@ func timeout()
 endfunc
 Enddec
 Declare Tmr_zero_xdcr as TimerV2
-Level 249637
+Level 249626
 #Visible True
 #Lock False
 init parent := daq_objects
@@ -24365,7 +24707,7 @@ endfunc
 init timertype := _tt_oneshot
 Enddec
 Declare tmrPowerUp as TimerV2
-Level 249559
+Level 249548
 #Visible True
 #Lock False
 init parent := daq_objects
@@ -24376,7 +24718,7 @@ func timeout()
 endfunc
 Enddec
 Declare TranslucentLabel_1 as TranslucentLabelV2
-Level 249417
+Level 249406
 #Visible True
 #Lock False
 init parent := flow_mode_screen
@@ -24389,7 +24731,7 @@ init font := helvr18_bdf
 init value := "Current Pressure"
 Enddec
 Declare TranslucentLabel_10 as TranslucentLabelV2
-Level 249379
+Level 249368
 #Visible True
 #Lock False
 init parent := pressure_mode_screen
@@ -24402,7 +24744,7 @@ init font := helvr18_bdf
 init value := "Total Vol Pumped"
 Enddec
 Declare TranslucentLabel_11 as TranslucentLabelV2
-Level 249378
+Level 249367
 #Visible True
 #Lock False
 init parent := pressure_mode_screen
@@ -24415,7 +24757,7 @@ init font := helvr18_bdf
 init value := "Current Flow Rate"
 Enddec
 Declare TranslucentLabel_12 as TranslucentLabelV2
-Level 249385
+Level 249374
 #Visible True
 #Lock False
 init parent := pressure_mode_screen
@@ -24428,7 +24770,7 @@ init font := helvr18_bdf
 init value := "Pressure Ramp Rate"
 Enddec
 Declare TranslucentLabel_13 as TranslucentLabelV2
-Level 249384
+Level 249373
 #Visible True
 #Lock False
 init parent := pressure_mode_screen
@@ -24441,7 +24783,7 @@ init font := helvr18_bdf
 init value := "Target Pressure"
 Enddec
 Declare TranslucentLabel_14 as TranslucentLabelV2
-Level 249383
+Level 249372
 #Visible True
 #Lock False
 init parent := pressure_mode_screen
@@ -24454,7 +24796,7 @@ init font := helvr24_bdf
 init value := "Pressure Control Settings"
 Enddec
 Declare TranslucentLabel_15 as TranslucentLabelV2
-Level 249663
+Level 249652
 #Visible True
 #Lock False
 init parent := valve_screen
@@ -24467,7 +24809,7 @@ init font := helvr18_bdf
 init value := "Cylinder B Outlet"
 Enddec
 Declare TranslucentLabel_16 as TranslucentLabelV2
-Level 249662
+Level 249651
 #Visible True
 #Lock False
 init parent := valve_screen
@@ -24480,7 +24822,7 @@ init font := helvr18_bdf
 init value := "Cylinder A Inlet"
 Enddec
 Declare TranslucentLabel_17 as TranslucentLabelV2
-Level 249661
+Level 249650
 #Visible True
 #Lock False
 init parent := valve_screen
@@ -24493,7 +24835,7 @@ init font := helvr18_bdf
 init value := "Cylinder A Outlet"
 Enddec
 Declare TranslucentLabel_18 as TranslucentLabelV2
-Level 249669
+Level 249658
 #Visible True
 #Lock False
 init parent := valve_screen
@@ -24506,7 +24848,7 @@ init font := helvr18_bdf
 init value := "Cylinder B Inlet"
 Enddec
 Declare TranslucentLabel_19 as TranslucentLabelV2
-Level 249707
+Level 249696
 #Visible True
 #Lock False
 init parent := system_maintenance_screen
@@ -24519,7 +24861,7 @@ init font := helvr18_bdf
 init value := "Date of last maintenance"
 Enddec
 Declare TranslucentLabel_2 as TranslucentLabelV2
-Level 249418
+Level 249407
 #Visible True
 #Lock False
 init parent := flow_mode_screen
@@ -24532,7 +24874,7 @@ init font := helvr18_bdf
 init value := "Total Vol Pumped"
 Enddec
 Declare TranslucentLabel_20 as TranslucentLabelV2
-Level 249710
+Level 249699
 #Visible True
 #Lock False
 init parent := system_maintenance_screen
@@ -24545,7 +24887,7 @@ init font := helvr18_bdf
 init value := "Hours since last maintenance"
 Enddec
 Declare TranslucentLabel_21 as TranslucentLabelV2
-Level 249386
+Level 249375
 #Visible True
 #Lock False
 init parent := pressure_mode_screen
@@ -24558,7 +24900,7 @@ init font := helvr18_bdf
 init value := "Flow Rate Limit"
 Enddec
 Declare TranslucentLabel_22 as TranslucentLabelV2
-Level 249734
+Level 249723
 #Visible True
 #Lock False
 init parent := power_up_screen
@@ -24571,7 +24913,7 @@ init font := helvr18_bdf
 init value := "Last saved position"
 Enddec
 Declare TranslucentLabel_23 as TranslucentLabelV2
-Level 249733
+Level 249722
 #Visible True
 #Lock False
 init parent := power_up_screen
@@ -24584,7 +24926,7 @@ init font := helvr18_bdf
 init value := "Current pressure"
 Enddec
 Declare TranslucentLabel_24 as TranslucentLabelV2
-Level 249747
+Level 249736
 #Visible True
 #Lock False
 init parent := power_up_screen
@@ -24597,7 +24939,7 @@ init font := helvr18_bdf
 init value := "Change from prev save"
 Enddec
 Declare TranslucentLabel_25 as TranslucentLabelV2
-Level 249746
+Level 249735
 #Visible True
 #Lock False
 init parent := power_up_screen
@@ -24610,7 +24952,7 @@ init font := helvr18_bdf
 init value := "Last saved position"
 Enddec
 Declare TranslucentLabel_26 as TranslucentLabelV2
-Level 249741
+Level 249730
 #Visible True
 #Lock False
 init parent := power_up_screen
@@ -24623,7 +24965,7 @@ init font := helvr18_bdf
 init value := "Current pressure"
 Enddec
 Declare TranslucentLabel_27 as TranslucentLabelV2
-Level 249750
+Level 249739
 #Visible True
 #Lock False
 init parent := power_up_screen
@@ -24636,7 +24978,7 @@ init font := helvr18_bdf
 init value := "Change from prev save"
 Enddec
 Declare TranslucentLabel_28 as TranslucentLabelV2
-Level 249765
+Level 249754
 #Visible True
 #Lock False
 init parent := manual_control_screen
@@ -24652,7 +24994,7 @@ init xjustify := hjustify_leftalign
 init yjustify := vjustify_topalign
 Enddec
 Declare TranslucentLabel_29 as TranslucentLabelV2
-Level 249764
+Level 249753
 #Visible True
 #Lock False
 init parent := manual_control_screen
@@ -24668,7 +25010,7 @@ init xjustify := hjustify_leftalign
 init yjustify := vjustify_topalign
 Enddec
 Declare TranslucentLabel_3 as TranslucentLabelV2
-Level 249419
+Level 249408
 #Visible True
 #Lock False
 init parent := flow_mode_screen
@@ -24681,7 +25023,7 @@ init font := helvr18_bdf
 init value := "Current Flow Rate"
 Enddec
 Declare TranslucentLabel_30 as TranslucentLabelV2
-Level 249763
+Level 249752
 #Visible True
 #Lock False
 init parent := manual_control_screen
@@ -24694,7 +25036,7 @@ init font := helvr24_bdf
 init value := "Cylinder A"
 Enddec
 Declare TranslucentLabel_31 as TranslucentLabelV2
-Level 249762
+Level 249751
 #Visible True
 #Lock False
 init parent := manual_control_screen
@@ -24710,7 +25052,7 @@ init xjustify := hjustify_leftalign
 init yjustify := vjustify_topalign
 Enddec
 Declare TranslucentLabel_32 as TranslucentLabelV2
-Level 249761
+Level 249750
 #Visible True
 #Lock False
 init parent := manual_control_screen
@@ -24726,7 +25068,7 @@ init xjustify := hjustify_leftalign
 init yjustify := vjustify_topalign
 Enddec
 Declare TranslucentLabel_33 as TranslucentLabelV2
-Level 249770
+Level 249759
 #Visible True
 #Lock False
 init parent := manual_control_screen
@@ -24742,7 +25084,7 @@ init xjustify := hjustify_leftalign
 init yjustify := vjustify_topalign
 Enddec
 Declare TranslucentLabel_34 as TranslucentLabelV2
-Level 249769
+Level 249758
 #Visible True
 #Lock False
 init parent := manual_control_screen
@@ -24758,7 +25100,7 @@ init xjustify := hjustify_leftalign
 init yjustify := vjustify_topalign
 Enddec
 Declare TranslucentLabel_35 as TranslucentLabelV2
-Level 249768
+Level 249757
 #Visible True
 #Lock False
 init parent := manual_control_screen
@@ -24771,7 +25113,7 @@ init font := helvr24_bdf
 init value := "Cylinder B"
 Enddec
 Declare TranslucentLabel_36 as TranslucentLabelV2
-Level 249767
+Level 249756
 #Visible True
 #Lock False
 init parent := manual_control_screen
@@ -24787,7 +25129,7 @@ init xjustify := hjustify_leftalign
 init yjustify := vjustify_topalign
 Enddec
 Declare TranslucentLabel_37 as TranslucentLabelV2
-Level 249766
+Level 249755
 #Visible True
 #Lock False
 init parent := manual_control_screen
@@ -24803,7 +25145,7 @@ init xjustify := hjustify_leftalign
 init yjustify := vjustify_topalign
 Enddec
 Declare TranslucentLabel_38 as TranslucentLabelV2
-Level 249772
+Level 249761
 #Visible True
 #Lock False
 init parent := manual_control_screen
@@ -24819,7 +25161,7 @@ init xjustify := hjustify_leftalign
 init yjustify := vjustify_topalign
 Enddec
 Declare TranslucentLabel_39 as TranslucentLabelV2
-Level 249771
+Level 249760
 #Visible True
 #Lock False
 init parent := manual_control_screen
@@ -24835,7 +25177,7 @@ init xjustify := hjustify_leftalign
 init yjustify := vjustify_topalign
 Enddec
 Declare TranslucentLabel_4 as TranslucentLabelV2
-Level 249420
+Level 249409
 #Visible True
 #Lock False
 init parent := flow_mode_screen
@@ -24848,7 +25190,7 @@ init font := helvr18_bdf
 init value := "Flow Rate"
 Enddec
 Declare TranslucentLabel_40 as TranslucentLabelV2
-Level 249773
+Level 249762
 #Visible True
 #Lock False
 init parent := manual_control_screen
@@ -24864,7 +25206,7 @@ init xjustify := hjustify_leftalign
 init yjustify := vjustify_topalign
 Enddec
 Declare TranslucentLabel_41 as TranslucentLabelV2
-Level 249774
+Level 249763
 #Visible True
 #Lock False
 init parent := manual_control_screen
@@ -24880,59 +25222,61 @@ init xjustify := hjustify_leftalign
 init yjustify := vjustify_topalign
 Enddec
 Declare TranslucentLabel_42 as TranslucentLabelV2
-Level 249923
+Level 249914
 #Visible True
-#Lock False
+#Lock Me
 init parent := limits_screen
-init xpos := 61
-init ypos := 147
-init width := 200
+init xpos := 28
+init ypos := 184
+init width := 195
 init height := 40
-init opacity := 1
+init opacity := 0
 init font := helvr18_bdf
 init value := "Flow Rate (Shut Down)"
 Enddec
 Declare TranslucentLabel_43 as TranslucentLabelV2
-Level 249922
+Level 249913
 #Visible True
-#Lock False
+#Lock Me
 init parent := limits_screen
-init xpos := 60
-init ypos := 97
-init width := 200
+init xpos := 28
+init ypos := 134
+init width := 195
 init height := 36
-init opacity := 1
+init opacity := 0
 init font := helvr18_bdf
 init value := "Flow Rate (Warning)"
 Enddec
 Declare TranslucentLabel_44 as TranslucentLabelV2
-Level 249935
+Level 249926
 #Visible True
-#Lock False
+#Lock Me
 init parent := limits_screen
-init xpos := 62
-init ypos := 300
-init width := 200
+init xpos := 29
+init ypos := 327
+init width := 195
 init height := 40
-init opacity := 1
+init opacity := 0
 init font := helvr18_bdf
 init value := "Pressure (Shut Down)"
+
+init enhancedforblackwhite := true
 Enddec
 Declare TranslucentLabel_45 as TranslucentLabelV2
-Level 249934
+Level 249925
 #Visible True
-#Lock False
+#Lock Me
 init parent := limits_screen
-init xpos := 61
-init ypos := 250
-init width := 200
+init xpos := 28
+init ypos := 277
+init width := 195
 init height := 36
-init opacity := 1
+init opacity := 0
 init font := helvr18_bdf
 init value := "Pressure (Warning)"
 Enddec
 Declare TranslucentLabel_46 as TranslucentLabelV2
-Level 249275
+Level 249264
 #Visible True
 #Lock False
 init parent := profile_screen
@@ -24945,7 +25289,7 @@ init font := helvr18_bdf
 init value := "Total Vol Pumped"
 Enddec
 Declare TranslucentLabel_47 as TranslucentLabelV2
-Level 249276
+Level 249265
 #Visible True
 #Lock False
 init parent := profile_screen
@@ -24958,7 +25302,7 @@ init font := helvr18_bdf
 init value := "Current Flow Rate"
 Enddec
 Declare TranslucentLabel_48 as TranslucentLabelV2
-Level 249277
+Level 249266
 #Visible True
 #Lock False
 init parent := profile_screen
@@ -24971,7 +25315,7 @@ init font := helvr18_bdf
 init value := "Current Pressure"
 Enddec
 Declare TranslucentLabel_49 as TranslucentLabelV2
-Level 249287
+Level 249276
 #Visible True
 #Lock False
 init parent := profile_screen
@@ -24984,7 +25328,7 @@ init font := helvr18_bdf
 init value := "Current Values"
 Enddec
 Declare TranslucentLabel_5 as TranslucentLabelV2
-Level 249421
+Level 249410
 #Visible True
 #Lock False
 init parent := flow_mode_screen
@@ -24997,7 +25341,7 @@ init font := helvr18_bdf
 init value := "Volume to Pump"
 Enddec
 Declare TranslucentLabel_50 as TranslucentLabelV2
-Level 249320
+Level 249309
 #Visible True
 #Lock False
 init parent := profile_screen
@@ -25012,7 +25356,7 @@ init value := "Lapsed Time"
 init xjustify := hjustify_leftalign
 Enddec
 Declare TranslucentLabel_51 as TranslucentLabelV2
-Level 249325
+Level 249314
 #Visible True
 #Lock False
 init parent := profile_screen
@@ -25025,7 +25369,7 @@ init font := helvr18_bdf
 init value := "Mode"
 Enddec
 Declare TranslucentLabel_52 as TranslucentLabelV2
-Level 249326
+Level 249315
 #Visible True
 #Lock False
 init parent := profile_screen
@@ -25038,7 +25382,7 @@ init font := helvr18_bdf
 init value := "Rate"
 Enddec
 Declare TranslucentLabel_53 as TranslucentLabelV2
-Level 249327
+Level 249316
 #Visible True
 #Lock False
 init parent := profile_screen
@@ -25051,7 +25395,7 @@ init font := helvr18_bdf
 init value := "Limit"
 Enddec
 Declare TranslucentLabel_54 as TranslucentLabelV2
-Level 249679
+Level 249668
 #Visible True
 #Lock False
 init parent := valve_screen
@@ -25064,7 +25408,7 @@ init font := helvr18_bdf
 init value := "Cylinders moving down"
 Enddec
 Declare TranslucentLabel_55 as TranslucentLabelV2
-Level 249680
+Level 249669
 #Visible True
 #Lock False
 init parent := valve_screen
@@ -25077,7 +25421,7 @@ init font := helvr18_bdf
 init value := "Cylinders moving up"
 Enddec
 Declare TranslucentLabel_56 as TranslucentLabelV2
-Level 249254
+Level 249243
 #Visible True
 #Lock False
 init parent := remote_display
@@ -25090,7 +25434,7 @@ init font := helvr24_bdf
 init value := "Current Values"
 Enddec
 Declare TranslucentLabel_57 as TranslucentLabelV2
-Level 249255
+Level 249244
 #Visible True
 #Lock False
 init parent := remote_display
@@ -25103,7 +25447,7 @@ init font := helvr18_bdf
 init value := "Current Flow Rate"
 Enddec
 Declare TranslucentLabel_58 as TranslucentLabelV2
-Level 249256
+Level 249245
 #Visible True
 #Lock False
 init parent := remote_display
@@ -25116,7 +25460,7 @@ init font := helvr18_bdf
 init value := "Total Vol Pumped"
 Enddec
 Declare TranslucentLabel_59 as TranslucentLabelV2
-Level 249257
+Level 249246
 #Visible True
 #Lock False
 init parent := remote_display
@@ -25129,7 +25473,7 @@ init font := helvr18_bdf
 init value := "Current Pressure"
 Enddec
 Declare TranslucentLabel_6 as TranslucentLabelV2
-Level 249422
+Level 249411
 #Visible True
 #Lock False
 init parent := flow_mode_screen
@@ -25142,7 +25486,7 @@ init font := helvb24_bdf
 init value := "Flow Settings"
 Enddec
 Declare TranslucentLabel_60 as TranslucentLabelV2
-Level 249259
+Level 249248
 #Visible True
 #Lock False
 init parent := remote_display
@@ -25155,7 +25499,7 @@ init font := helvr18_bdf
 init value := "Control Mode"
 Enddec
 Declare TranslucentLabel_61 as TranslucentLabelV2
-Level 249869
+Level 249859
 #Visible True
 #Lock False
 init parent := twin_monitor_screen
@@ -25168,7 +25512,7 @@ init font := helvr18_bdf
 init value := "Pressure (psi)"
 Enddec
 Declare TranslucentLabel_62 as TranslucentLabelV2
-Level 249868
+Level 249858
 #Visible True
 #Lock False
 init parent := twin_monitor_screen
@@ -25181,7 +25525,7 @@ init font := helvr18_bdf
 init value := "Vol Pumped (ml)"
 Enddec
 Declare TranslucentLabel_63 as TranslucentLabelV2
-Level 249867
+Level 249857
 #Visible True
 #Lock False
 init parent := twin_monitor_screen
@@ -25194,7 +25538,7 @@ init font := helvr18_bdf
 init value := "Flow Rate (ml/min)"
 Enddec
 Declare TranslucentLabel_66 as TranslucentLabelV2
-Level 249865
+Level 249855
 #Visible True
 #Lock False
 init parent := twin_monitor_screen
@@ -25207,7 +25551,7 @@ init font := helvr24_bdf
 init value := "Current Values"
 Enddec
 Declare TranslucentLabel_68 as TranslucentLabelV2
-Level 249898
+Level 249888
 #Visible True
 #Lock False
 init parent := twin_monitor_screen
@@ -25220,7 +25564,7 @@ init font := helvr24_bdf
 init value := "A"
 Enddec
 Declare TranslucentLabel_69 as TranslucentLabelV2
-Level 249899
+Level 249889
 #Visible True
 #Lock False
 init parent := twin_monitor_screen
@@ -25233,7 +25577,7 @@ init font := helvr24_bdf
 init value := "B"
 Enddec
 Declare TranslucentLabel_7 as TranslucentLabelV2
-Level 249423
+Level 249412
 #Visible True
 #Lock False
 init parent := flow_mode_screen
@@ -25246,7 +25590,7 @@ init font := helvr24_bdf
 init value := "Current Values"
 Enddec
 Declare TranslucentLabel_8 as TranslucentLabelV2
-Level 249381
+Level 249370
 #Visible True
 #Lock False
 init parent := pressure_mode_screen
@@ -25259,7 +25603,7 @@ init font := helvr18_bdf
 init value := "Current Pressure"
 Enddec
 Declare TranslucentLabel_9 as TranslucentLabelV2
-Level 249380
+Level 249369
 #Visible True
 #Lock False
 init parent := pressure_mode_screen
@@ -25272,8 +25616,8 @@ init font := helvr24_bdf
 init value := "Current Values"
 Enddec
 Declare Twin_Monitor_Screen as ScreenV2
-Level 249918
-#Visible False
+Level 249909
+#Visible True
 #Lock False
 init parent := default
 init xpos := 0
@@ -25284,7 +25628,7 @@ init enabled := false
 init bgcolor := clr_buttonbackgroundalt
 Enddec
 Declare Valve_Screen as ScreenV2
-Level 249688
+Level 249677
 #Visible False
 #Lock False
 init width := 480
@@ -25297,7 +25641,7 @@ init ypos := -4
 init enabled := false
 Enddec
 Declare Vol_Cal_screen as ScreenV2
-Level 249557
+Level 249546
 #Visible False
 #Lock False
 init parent := default
@@ -25308,7 +25652,7 @@ init height := 800
 init enabled := False
 Enddec
 Declare Wait_For_Cycle_screen as ScreenV2
-Level 249691
+Level 249680
 #Visible False
 #Lock False
 init parent := default
@@ -25319,7 +25663,7 @@ init height := 800
 init enabled := False
 Enddec
 Declare Welcome_Screen as ScreenV2
-Level 249207
+Level 249196
 #Visible True
 #Lock Me
 init width := 480
