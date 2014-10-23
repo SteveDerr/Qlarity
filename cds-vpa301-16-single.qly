@@ -14608,7 +14608,7 @@ func ResponseReceived (response as reference to string)
     endif
 
 
-    lbl_Vol_Tot.value=_FormatFloat(MLtot,6,2,_FLOAT_NORMAL)
+    'lbl_Vol_Tot.value=_FormatFloat(MLtot,6,2,_FLOAT_NORMAL)
     lbl_Vol_Tot_1.value=_FormatFloat(MLtot,6,2,_FLOAT_NORMAL)
 endfunc
 init updateperiod := 400
