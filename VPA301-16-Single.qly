@@ -12463,12 +12463,12 @@ func ResponseReceived(response as string)
     enderr
     lbl_p_range.value=_FormatFloat(PRange,5,0,_FLOAT_NORMAL)
     lbl_press_range.value=_FormatFloat(PRange,5,0,_FLOAT_NORMAL)
-    eb_PMax.max=PRange*1.2
+    eb_PMax.max=PRange*1.1
     eb_PMax.min=PRange*.01
-    eb_PMax_1.max=PRange*1.2
+    eb_PMax_1.max=PRange*1.1
     eb_PMax_1.min=PRange*.01
-    eb_Target_Press.max=1.2*PRange
-    eb_PMax_Warn.max=PRange*1.2
+    eb_Target_Press.max=1.1*PRange
+    eb_PMax_Warn.max=PRange*1.1
     eb_PMax_Warn.min=PRange*.01
     If PRange > 15 and PRange < 25 then
         Pxdcr=0
