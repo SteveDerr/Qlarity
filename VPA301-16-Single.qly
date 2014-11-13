@@ -7939,7 +7939,7 @@ func click()
         Warning_Sound()
         lbl_Sys_Config_Instructions.value="Forward Max values must be greater than Reverse Min values"
         but_OK.enabled= true
-    elseif (TempPmax>(1.2*PRange)) then
+    elseif (TempPmax>(1.1*PRange)) then
         Warning_Sound()
         lbl_Sys_Config_Instructions.value="Maximum pressure must be lesss than 1.1 * The pressure trasnducer range"
         but_OK.enabled= true
@@ -13801,7 +13801,7 @@ func ResponseReceived (response as reference to string)
             lbl_P_Act_3.value=tmpStr
         endif
     endif
-    If Pcur > (1.1*PRange) or Pcur < (-1.1*PRange) then
+    If Pcur > (PRange) or Pcur < (PRange) then
         lbl_P_Act.BlinkPeriod=2000
         lbl_P_Act.fgColor=225
 
@@ -17703,7 +17703,7 @@ init ptsize := 20
 Enddec
 Declare lbl_Pressure_Warning as LabelV2
 Level 249808
-#Visible False
+#Visible True
 #Lock False
 init value := "PRESSURE RANGE EXCEEDED"
 init parent := default
