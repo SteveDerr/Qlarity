@@ -5949,6 +5949,48 @@ func screenEnabled()
 
 endfunc
 Enddec
+Declare btn_estop_remote as ButtonV2
+Level 249445
+#Visible True
+#Lock False
+init value := "E-STOP"
+init parent := remote_display
+init xpos := 50
+init ypos := 476
+init width := 380
+init height := 60
+init font := helvb18_bdf
+init fgcolor := 225
+
+func click()
+    gmccommand.command="HX1"
+    gmccommand.executeCommand=true
+    gmccommand.command="XQ#ESTOP,1"
+    gmccommand.executeCommand=true
+
+endfunc
+Enddec
+Declare btn_force_control as ButtonV2
+Level 249446
+#Visible True
+#Lock False
+init value := "TAKE LOCAL CONTROL"
+init parent := remote_display
+init xpos := 50
+init ypos := 542
+init width := 380
+init height := 60
+init font := helvb18_bdf
+init fgcolor := clr_buttonforeground
+
+func click()
+    gmccommand.command="HX1"
+    gmccommand.executeCommand=true
+    gmccommand.command="XQ#ESTOP,1"
+    gmccommand.executeCommand=true
+
+endfunc
+Enddec
 Declare but__Exit_Sys_Setup as ButtonV2
 Level 249535
 #Visible True
@@ -6320,6 +6362,25 @@ func click()
     lbl_p_cal_msg.value="Make sure current pressure is zero, then press SET ZERO."
 endfunc
 Enddec
+Declare but_cancel_control as ButtonV2
+Level 249449
+#Visible True
+#Lock False
+init value := "CANCEL"
+init parent := popup_force_control
+init xpos := 160
+init ypos := 249
+init width := 130
+init height := 60
+init font := helvb18_bdf
+
+func click()
+    popup_force_control.enabled=false
+
+endfunc
+
+init xjustify := hjustify_centeralign
+Enddec
 Declare But_Cancel_FactSet as ButtonV2
 Level 249812
 #Visible True
@@ -6569,6 +6630,28 @@ func click()
 endfunc
 
 init xjustify := hjustify_leftalign
+Enddec
+Declare but_confirm_control as ButtonV2
+Level 249448
+#Visible True
+#Lock False
+init value := "CONFIRM"
+init parent := popup_force_control
+init xpos := 10
+init ypos := 249
+init width := 130
+init height := 60
+init font := helvb18_bdf
+
+func click()
+    gmccommand.command="Remote=0"
+    gmccommand.executeCommand=true
+    popup_force_control.enabled=false
+
+
+endfunc
+
+init xjustify := hjustify_centeralign
 Enddec
 Declare But_Confirm_Init as ButtonV2
 Level 249638
@@ -8648,7 +8731,7 @@ Declare Cycle_Popup_Screen as PopupScreenV2
 Level 249988
 #Visible False
 #Lock False
-init xpos := 80
+init xpos := 90
 init ypos := 200
 init width := 300
 init height := 350
@@ -9193,7 +9276,7 @@ init height := 800
 init enabled := False
 Enddec
 Declare DelimitedComm_1 as DelimitedCommV2
-Level 249400
+Level 249394
 #Visible True
 #Lock False
 
@@ -11099,7 +11182,7 @@ init height := 16
 init bgcolor := 20
 Enddec
 Declare elps_A_3 as RectangleV2
-Level 249439
+Level 249433
 #Visible True
 #Lock False
 init parent := remote_display
@@ -11121,7 +11204,7 @@ init height := 16
 init bgcolor := 161
 Enddec
 Declare elps_b_3 as RectangleV2
-Level 249438
+Level 249432
 #Visible False
 #Lock False
 init parent := remote_display
@@ -11149,7 +11232,7 @@ init titlebgcolor := 225
 init enabled := false
 Enddec
 Declare ExceptionDisplay as ExceptionDisplayV2
-Level 249428
+Level 249422
 #Visible False
 #Lock False
 init font := default_ttf
@@ -11180,7 +11263,7 @@ init enabled := false
 init bgcolor := clr_buttonbackgroundalt
 Enddec
 Declare G_55_PopupMenu_1 as G55PopupMenu
-Level 249401
+Level 249395
 #Visible True
 #Lock False
     init mainsubmenu := g_55_popupmenu_2
@@ -11197,7 +11280,7 @@ init xpos := 0
 init ypos := -80
 Enddec
 Declare G_55_PopupMenu_2 as G55PopupMenu
-Level 249402
+Level 249396
 #Visible True
 #Lock False
     init mainsubmenu := g_55_popupmenu_3
@@ -11214,7 +11297,7 @@ init xpos := 0
 init ypos := -80
 Enddec
 Declare G_55_PopupMenu_3 as G55PopupMenu
-Level 249403
+Level 249397
 #Visible True
 #Lock False
     init mainsubmenu := g_55_popupmenu_4
@@ -11231,7 +11314,7 @@ init xpos := 0
 init ypos := -80
 Enddec
 Declare G_55_PopupMenu_4 as G55PopupMenu
-Level 249404
+Level 249398
 #Visible True
 #Lock False
     init mainsubmenu := g_55_popupmenu_5
@@ -11248,7 +11331,7 @@ init xpos := 0
 init ypos := -80
 Enddec
 Declare G_55_PopupMenu_5 as G55PopupMenu
-Level 249405
+Level 249399
 #Visible True
 #Lock False
     init mainsubmenu := g_55_popupmenu_6
@@ -11265,7 +11348,7 @@ init xpos := 0
 init ypos := -80
 Enddec
 Declare G_55_PopupMenu_6 as G55PopupMenu
-Level 249406
+Level 249400
 #Visible True
 #Lock False
     init mainsubmenu := g_55_popupmenu_7
@@ -11282,7 +11365,7 @@ init xpos := 0
 init ypos := -80
 Enddec
 Declare G_55_PopupMenu_7 as G55PopupMenu
-Level 249407
+Level 249401
 #Visible True
 #Lock False
     init mainsubmenu := g_55_popupmenu_8
@@ -11299,7 +11382,7 @@ init xpos := 0
 init ypos := -80
 Enddec
 Declare G_55_PopupMenu_8 as G55PopupMenu
-Level 249408
+Level 249402
 #Visible True
 #Lock False
     init initialselected := 0
@@ -11413,7 +11496,7 @@ init font := helvr18_bdf
 init ptsize := 12
 Enddec
 Declare Gauge_VolumeA_5 as GaugeV2
-Level 249441
+Level 249435
 #Visible True
 #Lock False
 init parent := remote_display
@@ -11473,7 +11556,7 @@ init font := helvr18_bdf
 init ptsize := 12
 Enddec
 Declare Gauge_VolumeB_5 as GaugeV2
-Level 249440
+Level 249434
 #Visible False
 #Lock False
 init parent := remote_display
@@ -14420,7 +14503,7 @@ init image := Banner_Rev5
 init transparent := true
 Enddec
 Declare Image_16 as ImageV2
-Level 249398
+Level 249392
 #Visible True
 #Lock False
 init parent := welcome_screen
@@ -14429,7 +14512,7 @@ init ypos := 0
 init image := G_72_OpeningScreen
 Enddec
 Declare Image_17 as ImageV2
-Level 249429
+Level 249423
 #Visible True
 #Lock Me
 init parent := remote_display
@@ -14554,14 +14637,14 @@ init height := 800
 init enabled := false
 Enddec
 Declare KeypadSettings as KeypadSettingsv2
-Level 249426
+Level 249420
 #Visible False
 #Lock False
 init barfont := default_ttf
 init barptsize := 12
 Enddec
 Declare KeyTranslator as KeyTranslationv2
-Level 249427
+Level 249421
 #Visible False
 #Lock False
 init translationtable := "0þ241þF1ÿ1þ242þF2ÿ2þ243þF3ÿ3þ244þF4ÿ8þ76þLÿ9þ85þUÿ10þ68þDÿ11þ82þRÿ16þ45þ-ÿ17þ49þ1ÿ18þ50þ2ÿ19þ51þ3ÿ24þ46þ.ÿ25þ52þ4ÿ26þ53þ5ÿ27þ54þ6ÿ32þ8þ\x08ÿ33þ55þ7ÿ34þ56þ8ÿ35þ57þ9ÿ41þ27þ\x1bÿ42þ48þ0ÿ43þ13þ\rÿ"
@@ -15720,7 +15803,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare Label_72 as LabelV2
-Level 249442
+Level 249436
 #Visible True
 #Lock False
 init value := "ml/min"
@@ -15738,7 +15821,7 @@ init ptsize := 12
 init transparent := true
 Enddec
 Declare Label_73 as LabelV2
-Level 249443
+Level 249437
 #Visible True
 #Lock False
 init value := "ml"
@@ -15756,7 +15839,7 @@ init ptsize := 12
 init transparent := true
 Enddec
 Declare Label_74 as LabelV2
-Level 249444
+Level 249438
 #Visible True
 #Lock False
 init value := "psi"
@@ -15777,7 +15860,7 @@ Declare Label_77 as LabelV2
 Level 249529
 #Visible True
 #Lock False
-init value := "Software Version VPAS301 7/30/2014"
+init value := "Software Version VPAS301 11/14/2014"
 init parent := sys_setup_screen
 init xpos := 20
 init ypos := 744
@@ -16083,7 +16166,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_Current_Flow_Rate_3 as LabelV2
-Level 249433
+Level 249427
 #Visible True
 #Lock False
 init value := "0.00"
@@ -16102,7 +16185,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_Current_Mode as LabelV2
-Level 249449
+Level 249443
 #Visible True
 #Lock False
 init value := "IDLE"
@@ -16142,7 +16225,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_Current_Pos_1 as LabelV2
-Level 249436
+Level 249430
 #Visible True
 #Lock False
 init value := "0.00"
@@ -16329,7 +16412,7 @@ init ptsize := 20
 init bgcolor := clr_softkeybarbackground
 Enddec
 Declare lbl_Current_pos_bk_17 as LabelV2
-Level 249430
+Level 249424
 #Visible True
 #Lock False
 init value := ""
@@ -16828,6 +16911,23 @@ init yinset := 0
 init ptsize := 20
 init bgcolor := clr_softkeybarbackground
 init yjustify := vjustify_centeralign
+Enddec
+Declare lbl_force_control as LabelV2
+Level 249447
+#Visible True
+#Lock False
+init value := "This pump is being controlled remotely. Are you sure you want to force local control?"
+init parent := popup_force_control
+init xpos := 10
+init ypos := 50
+init width := 280
+init height := 101
+init font := helvb18_bdf
+init borderstyle := bdr_bumpborder
+init xjustify := hjustify_leftalign
+init yjustify := vjustify_topalign
+
+init bgcolor := clr_messagebackground
 Enddec
 Declare lbl_FS_volts as LabelV2
 Level 249696
@@ -17441,7 +17541,7 @@ init ptsize := 20
 init xjustify := hjustify_centeralign
 Enddec
 Declare lbl_P_Act_3 as LabelV2
-Level 249434
+Level 249428
 #Visible True
 #Lock False
 init value := "10000"
@@ -17508,7 +17608,7 @@ init fgcolor := 255
 init font := helvb12_bdf
 Enddec
 Declare lbl_P_Act_A_3 as LabelV2
-Level 249432
+Level 249426
 #Visible False
 #Lock False
 init value := ""
@@ -17538,7 +17638,7 @@ init fgcolor := 255
 init font := helvb12_bdf
 Enddec
 Declare lbl_P_Act_B_3 as LabelV2
-Level 249431
+Level 249425
 #Visible False
 #Lock False
 init value := ""
@@ -17703,7 +17803,7 @@ init ptsize := 20
 Enddec
 Declare lbl_Pressure_Warning as LabelV2
 Level 249808
-#Visible True
+#Visible False
 #Lock False
 init value := "PRESSURE RANGE EXCEEDED"
 init parent := default
@@ -18046,7 +18146,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_Remote_Display as LabelV2
-Level 249437
+Level 249431
 #Visible True
 #Lock False
 init value := "REMOTE DISPLAY"
@@ -18065,7 +18165,7 @@ init ptsize := 26
 init transparent := true
 Enddec
 Declare lbl_Remote_Instructions as LabelV2
-Level 249435
+Level 249429
 #Visible True
 #Lock False
 init value := "Pump is being controlled remotely"
@@ -18624,6 +18724,23 @@ init width := 480
 init height := 800
 init enabled := False
 Enddec
+Declare popup_force_control as PopupScreenV2
+Level 249450
+#Visible False
+#Lock False
+init xpos := 90
+init ypos := 200
+init width := 300
+init height := 350
+init dragmode := _ps_nodrag
+init cancelbutton := false
+init value := "FORCE CONTROL?"
+init font := helvb18_bdf
+init xjustify := hjustify_centeralign
+init enabled := false
+
+init parent := remote_display
+Enddec
 Declare PopupKP as NumberKeypadV2
 Level 249841
 #Visible False
@@ -18894,7 +19011,7 @@ init enabled := false
 Enddec
 Declare Pressure_mode_screen as ScreenV2
 Level 249598
-#Visible True
+#Visible False
 #Lock False
 init parent := default
 init xpos := 0
@@ -18913,21 +19030,21 @@ init height := 800
 init enabled := false
 Enddec
 Declare pv_Limits as PersistentVariablesV2
-Level 249424
+Level 249418
 #Visible True
 #Lock False
 init savelist := "default.FlowRLim;default.FlowRLimWarn;default.PMaxWarn;default.PMax;default.ErrorDisplayDisabled;default.Open_Valves_at_Over_Pressure;default.flow_limit_disabled;default.psi_per_sec;"
 init filename := "LimPersist.dat"
 Enddec
 Declare pv_Maintenance as PersistentVariablesV2
-Level 249422
+Level 249416
 #Visible True
 #Lock Me
 init savelist := "lbl_Maint_hrs.value;lbl_Date_of_Maint.value;default.MaintHours;"
 init filename := "Maint_Persist.dat"
 Enddec
 Declare pv_powerup as PersistentVariablesV2
-Level 249423
+Level 249417
 #Visible True
 #Lock False
 init savelist := "default.MLlastA;default.MLlastB;default.MLdeltaA;default.MLdeltaB;default.MLlasttot;default.timelast$;"
@@ -19065,7 +19182,7 @@ init height := 800
 init enabled := false
 Enddec
 Declare ScreenSaver as ScreenSaverV2
-Level 249425
+Level 249419
 #Visible False
 #Lock False
 init dimscreen_time := 0
@@ -19076,7 +19193,7 @@ init marqueeptsize := 51
 Enddec
 Declare Sys_Setup_screen as ScreenV2
 Level 249540
-#Visible False
+#Visible True
 #Lock False
 init parent := default
 init xpos := -1
@@ -19110,7 +19227,7 @@ init enabled := false
 init transparent := false
 Enddec
 Declare tmr_Burn_New_Var as TimerV2
-Level 249414
+Level 249408
 #Visible True
 #Lock False
 init timertype := _tt_oneshot
@@ -19124,7 +19241,7 @@ func timeout()
 endfunc
 Enddec
 Declare tmr_Check_Connection as TimerV2
-Level 249420
+Level 249414
 #Visible True
 #Lock False
 init timertype := _tt_periodic
@@ -19142,7 +19259,7 @@ init timeperiod := 1
 init enabled := false
 Enddec
 Declare tmr_CheckML as TimerV2
-Level 249415
+Level 249409
 #Visible True
 #Lock False
 init timeunits := _tt_minutes
@@ -19160,7 +19277,7 @@ endfunc
 init enabled := false
 Enddec
 Declare tmr_delay_check_DAQ as TimerV2
-Level 249416
+Level 249410
 #Visible True
 #Lock False
 init timeperiod := 2
@@ -19171,7 +19288,7 @@ func timeout()
 endfunc
 Enddec
 Declare tmr_Delay_Get_Config as TimerV2
-Level 249417
+Level 249411
 #Visible True
 #Lock False
 func timeout()
@@ -19183,7 +19300,7 @@ init timertype := _tt_oneshot
 init enabled := false
 Enddec
 Declare tmr_Delay_Start as TimerV2
-Level 249410
+Level 249404
 #Visible True
 #Lock False
 init timertype := _tt_oneshot
@@ -19220,7 +19337,7 @@ func timeout()
 endfunc
 Enddec
 Declare tmr_Disabled as TimerV2
-Level 249419
+Level 249413
 #Visible True
 #Lock False
 func timeout()
@@ -19247,7 +19364,7 @@ func timeout()
 endfunc
 Enddec
 Declare tmr_Fact_Set as TimerV2
-Level 249418
+Level 249412
 #Visible True
 #Lock False
 init enabled := false
@@ -19259,7 +19376,7 @@ func timeout()
 endfunc
 Enddec
 Declare tmr_FirstPowerUp as TimerV2
-Level 249421
+Level 249415
 #Visible True
 #Lock False
 init timeperiod := 5
@@ -19273,7 +19390,7 @@ func timeout()
 endfunc
 Enddec
 Declare tmr_Hide_Error_Display as TimerV2
-Level 249413
+Level 249407
 #Visible True
 #Lock False
 init enabled := false
@@ -19335,7 +19452,7 @@ func timeout()
 endfunc
 Enddec
 Declare tmr_Receive_Warning as TimerV2
-Level 249409
+Level 249403
 #Visible True
 #Lock False
 init parent := default
@@ -19348,7 +19465,7 @@ func timeout()
 endfunc
 Enddec
 Declare tmr_refill as TimerV2
-Level 249411
+Level 249405
 #Visible True
 #Lock False
 init enabled := false
@@ -19403,7 +19520,7 @@ func timeout()
 endfunc
 Enddec
 Declare tmr_Wait_For_Refill as TimerV2
-Level 249412
+Level 249406
 #Visible True
 #Lock False
 init timeperiod := 1
@@ -20030,7 +20147,7 @@ init font := helvr18_bdf
 init value := "Cylinders moving up"
 Enddec
 Declare TranslucentLabel_56 as TranslucentLabelV2
-Level 249445
+Level 249439
 #Visible True
 #Lock False
 init parent := remote_display
@@ -20043,7 +20160,7 @@ init font := helvr24_bdf
 init value := "Current Values"
 Enddec
 Declare TranslucentLabel_57 as TranslucentLabelV2
-Level 249446
+Level 249440
 #Visible True
 #Lock False
 init parent := remote_display
@@ -20056,7 +20173,7 @@ init font := helvr18_bdf
 init value := "Current Flow Rate"
 Enddec
 Declare TranslucentLabel_58 as TranslucentLabelV2
-Level 249447
+Level 249441
 #Visible True
 #Lock False
 init parent := remote_display
@@ -20069,7 +20186,7 @@ init font := helvr18_bdf
 init value := "Total Vol Pumped"
 Enddec
 Declare TranslucentLabel_59 as TranslucentLabelV2
-Level 249448
+Level 249442
 #Visible True
 #Lock False
 init parent := remote_display
@@ -20095,7 +20212,7 @@ init font := helvb24_bdf
 init value := "Flow Settings"
 Enddec
 Declare TranslucentLabel_60 as TranslucentLabelV2
-Level 249450
+Level 249444
 #Visible True
 #Lock False
 init parent := remote_display
@@ -20182,7 +20299,7 @@ init height := 800
 init enabled := False
 Enddec
 Declare Welcome_Screen as ScreenV2
-Level 249399
+Level 249393
 #Visible True
 #Lock False
 init width := 480
@@ -20191,8 +20308,8 @@ Enddec
 Declare Zero_Pressure_Popup_Screen as PopupScreenV2
 Level 249985
 #Visible False
-#Lock Me
-init xpos := 80
+#Lock False
+init xpos := 90
 init ypos := 200
 init width := 300
 init height := 350
