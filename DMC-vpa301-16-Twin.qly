@@ -21233,7 +21233,7 @@ Declare lbl_Sys_Setup_Msg as LabelV2
 Level 249247
 #Visible True
 #Lock Me
-init value := "Calibration factors and Alarm Limits have been reset to factory settings.  VPA should be initialized again for settings to be correct."
+init value := "Calibration factors and Alarm Limits have been reset to factory settings.  VPA should be initialized again for settings to be correct. "
 init parent := sys_setup_screen
 init xpos := 20
 init ypos := 669
