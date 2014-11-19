@@ -475,7 +475,7 @@ func Controller_Communication_Error(strObj as String,strResp as String, FailReas
     'lbl_msg_Title.enabled=true
     lbl_msg_Title.value="Galil Communication Error: " + strObj
     DebugMessage = "Global Function Controller_Communication_Error, FailureReceived response="+strResp+", FailureReceived reason="+str(FailReasonResp)
-    Write_To_Debug(lbl_msg_title.value, DebugMessage)
+'    Write_To_Debug(lbl_msg_title.value, DebugMessage)
 endfunc
 func Cycle_To_Start()
     'send "Cycle=1
@@ -1030,8 +1030,8 @@ REM Rem Buttons can only be set in Set_Error_Buttons
     if Hold_This_Error then'we won't handle any more errors
         return
     endif
-    error_log_eb.Append("\n\n"+strtime+" Error ID "+str(ErrorID), true)
-    Error_Log_eb.append("\nCurrent Values - PcurA: " +str(pcur[0]) +", PcurB: " +str(pcur[1]) +", AveSpA: " + str(avesp[0])+", AveSpB: "+str(avesp[1])+", Pressure warning limit: " +eb_pmax_warn_a.Value +", Pressure Shutdown limit " + eb_pmax_a.value +", Flow Warning " + eb_flowrlim_warn_a.value +", Flow Shutdown " + eb_flowrlim_a.Value,true)
+'    error_log_eb.Append("\n\n"+strtime+" Error ID "+str(ErrorID), true)
+'    Error_Log_eb.append("\nCurrent Values - PcurA: " +str(pcur[0]) +", PcurB: " +str(pcur[1]) +", AveSpA: " + str(avesp[0])+", AveSpB: "+str(avesp[1])+", Pressure warning limit: " +eb_pmax_warn_a.Value +", Pressure Shutdown limit " + eb_pmax_a.value +", Flow Warning " + eb_flowrlim_warn_a.value +", Flow Shutdown " + eb_flowrlim_a.Value,true)
     pv_errorlog.Save()
 
     REM errors 12 and 13 are handled by Galil and the pump should already be stopped
@@ -1053,7 +1053,7 @@ REM Rem Buttons can only be set in Set_Error_Buttons
         'do not update the error log or display message
     else
         debugText="Error ID "+str(ErrorID)+"\nCurrent Values - PcurA: " +str(PcurA) +", PcurB: " +str(PcurB) +", AveSpA: " + str(avesp[0])+", AveSpB: " + str(avesp[1])+", Pressure warning limit: " +eb_pmax_warn_a.Value +", Pressure Shutdown limit " + eb_pmax_a.value +", Flow Warning " + eb_flowrlim_warn_a.value +", Flow Shutdown " + eb_flowrlim_a.Value
-        Write_To_Debug(debugText, "Global Function Handle_Error")
+'        Write_To_Debug(debugText, "Global Function Handle_Error")
 
         Date_and_Time(strTime)
         Update_Error_Arrays(errorID,strTime)
@@ -2491,7 +2491,7 @@ func update_ui()
         gauge_volumea_6.Value=mlcur[0]
         gauge_volumeb_6.Value=mlcur[1]
         lbl_pres_twn_a.value=_formatfloat(pcur[0],6,0,_FLOAT_NORMAL)
-        if avesp[0]<1 then
+        if avesp[0]<1 and avesp[0]>0 then
             avesp_digits=3
         else
             avesp_digits=2
@@ -14746,7 +14746,7 @@ init bgcolor := clr_labelbackground
 Enddec
 Declare Flow_mode_screen as ScreenV2
 Level 249467
-#Visible False
+#Visible True
 #Lock Me
 init parent := default
 init xpos := 0
@@ -14894,8 +14894,8 @@ Enddec
 Declare g_72_ver_lbl as LabelV2
 Level 249249
 #Visible True
-#Lock Me
-init value := "Terminal Version Twin 11/14/2014"
+#Lock False
+init value := "Terminal Version Twin 11/18/2014"
 init parent := sys_setup_screen
 init xpos := 20
 init ypos := 744
@@ -15357,7 +15357,7 @@ func ResponseReceived(response as string)
     else
         REM Bad data
         debugText="Value of PowerUp read as "+str(tmpPowerUp)
-        Write_To_Debug(debugText, "GMCCOM_PowerUP")
+'        Write_To_Debug(debugText, "GMCCOM_PowerUP")
 
     endif
 
@@ -15621,7 +15621,7 @@ func ResponseReceived(response as string)
         val(tmp_CyclDones[1],right(response,length[7]))
     on error
         Date_and_Time(strTime)
-        error_log_eb.Append("\n\n"+strtime+" "+str(me)+"  Error reading twin cylinder variables. Response read as "+response, true)
+'        error_log_eb.Append("\n\n"+strtime+" "+str(me)+"  Error reading twin cylinder variables. Response read as "+response, true)
         _clearexception()
     enderr
 
@@ -15683,7 +15683,7 @@ func ResponseReceived(response as string)
         val(pready[1],right(response,length[7]))
     on error
         Date_and_Time(strTime)
-        error_log_eb.Append("\n\n"+strtime+" "+str(me)+"  Error reading twin cylinder variables. Response read as "+response, true)
+'        error_log_eb.Append("\n\n"+strtime+" "+str(me)+"  Error reading twin cylinder variables. Response read as "+response, true)
         _clearexception()
     enderr
     REM Rounding pressure to int.
@@ -15739,7 +15739,7 @@ func ResponseReceived(response as string)
         val(tmp_cycl[1],right(response,length[7]))
     on error
         Date_and_Time(strTime)
-        error_log_eb.Append("\n\n"+strtime+" "+str(me)+"  Error reading twin cylinder variables. Response read as "+response, true)
+'        error_log_eb.Append("\n\n"+strtime+" "+str(me)+"  Error reading twin cylinder variables. Response read as "+response, true)
         _clearexception()
     enderr
 
@@ -15817,7 +15817,7 @@ func ResponseReceived(response as string)
         val(PowerUp,right(response,length[7]))
     on error
         Date_and_Time(strTime)
-        error_log_eb.Append("\n\n"+strtime+" "+str(me)+"  Error reading twin cylinder variables. Response read as "+response, true)
+'        error_log_eb.Append("\n\n"+strtime+" "+str(me)+"  Error reading twin cylinder variables. Response read as "+response, true)
         _clearexception()
     enderr
 
@@ -15880,7 +15880,7 @@ func ResponseReceived(response as string)
         val(tmp_Flowing[1],right(response,length[5]))
     on error
         Date_and_Time(strTime)
-        error_log_eb.Append("\n\n"+strtime+" "+str(me)+"  Error reading twin cylinder variables. Response read as "+response, true)
+'        error_log_eb.Append("\n\n"+strtime+" "+str(me)+"  Error reading twin cylinder variables. Response read as "+response, true)
         _clearexception()
     enderr
 
@@ -15948,7 +15948,7 @@ func ResponseReceived(response as string)
         val(CylNum,right(response,length[7]))
     on error
         Date_and_Time(strTime)
-        error_log_eb.Append("\n\n"+strtime+" "+str(me)+"  Error reading twin cylinder variables. Response read as "+response, true)
+'        error_log_eb.Append("\n\n"+strtime+" "+str(me)+"  Error reading twin cylinder variables. Response read as "+response, true)
         _clearexception()
     enderr
     daq_config_done[0]=true
@@ -16005,7 +16005,7 @@ func ResponseReceived(response as string)
         val(PMax[1],right(response,length[7]))
     on error
         Date_and_Time(strTime)
-        error_log_eb.Append("\n\n"+strtime+" "+str(me)+"  Error reading twin cylinder variables. Response read as "+response, true)
+'        error_log_eb.Append("\n\n"+strtime+" "+str(me)+"  Error reading twin cylinder variables. Response read as "+response, true)
         _clearexception()
     enderr
 
@@ -16062,7 +16062,7 @@ func ResponseReceived(response as string)
         val(rcvstart[1],right(response,length[6]))
     on error
         Date_and_Time(strTime)
-        error_log_eb.Append("\n\n"+strtime+" "+str(me)+"  Error reading twin cylinder variables. Response read as "+response, true)
+'        error_log_eb.Append("\n\n"+strtime+" "+str(me)+"  Error reading twin cylinder variables. Response read as "+response, true)
         _clearexception()
     enderr
     daq_config_done[2]=true
@@ -16112,7 +16112,7 @@ func ResponseReceived(response as string)
         val(vol[1],right(response,length[7]))
     on error
         Date_and_Time(strTime)
-        error_log_eb.Append("\n\n"+strtime+" "+str(me)+"  Error reading twin cylinder variables. Response read as "+response, true)
+'        error_log_eb.Append("\n\n"+strtime+" "+str(me)+"  Error reading twin cylinder variables. Response read as "+response, true)
         _clearexception()
     enderr
 
@@ -16159,7 +16159,7 @@ func ResponseReceived(response as string)
 
     on error
         Date_and_Time(strTime)
-        error_log_eb.Append("\n\n"+strtime+" "+str(me)+"  Error reading twin cylinder variables. Response read as "+response, true)
+'        error_log_eb.Append("\n\n"+strtime+" "+str(me)+"  Error reading twin cylinder variables. Response read as "+response, true)
         _clearexception()
     enderr
 
@@ -21232,7 +21232,7 @@ Enddec
 Declare lbl_Sys_Setup_Msg as LabelV2
 Level 249247
 #Visible True
-#Lock Me
+#Lock False
 init value := "Calibration factors and Alarm Limits have been reset to factory settings.  VPA should be initialized again for settings to be correct. "
 init parent := sys_setup_screen
 init xpos := 20
@@ -22545,7 +22545,7 @@ init parent := system_maintenance_screen
 Enddec
 Declare Sys_Setup_screen as ScreenV2
 Level 249262
-#Visible True
+#Visible False
 #Lock False
 init parent := default
 init xpos := -1
@@ -23008,7 +23008,7 @@ Level 249583
 #Visible True
 #Lock False
 init parent := daq_objects
-init timeperiod := 500
+init timeperiod := 1000
 init enabled := false
 
 func timeout()
@@ -24108,7 +24108,7 @@ init value := "Current Values"
 Enddec
 Declare Twin_Monitor_Screen as ScreenV2
 Level 249882
-#Visible False
+#Visible True
 #Lock Me
 init parent := default
 init xpos := 0
