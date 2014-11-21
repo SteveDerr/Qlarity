@@ -1096,10 +1096,10 @@ func update_twin_config_screen()
     lbl_p_range_t.value=_formatfloat(prange,6,1,_FLOAT_NORMAL)
     lbl_rod_dia_t.value=_formatfloat(roddia,6,2,_FLOAT_NORMAL)
     eb_pmax_t_a.Value=_formatfloat(pmax[0],6,1,_FLOAT_NORMAL)
-    eb_pmax_t_a.max=1.1*prange
+    eb_pmax_t_a.max=1.2*prange
     eb_pmax_t_a.min=.01*prange
     eb_pmax_t_b.Value=_formatfloat(pmax[1],6,1,_FLOAT_NORMAL)
-    eb_pmax_t_b.max=1.1*prange
+    eb_pmax_t_b.max=1.2*prange
     eb_pmax_t_b.min=.01*prange
 
     eb_fillr_t_a.Value=_formatfloat(reflpc[0],6,1,_FLOAT_NORMAL)
@@ -1422,17 +1422,17 @@ func update_limits_screen()
         eb_flowRLim_b.min=1
 
         eb_pmax_warn_a.Value=_formatfloat(pmaxwarn[0],6,2,_FLOAT_NORMAL)
-        eb_pmax_warn_a.max=(1.1*prange)
+        eb_pmax_warn_a.max=(1.2*prange)
         eb_pmax_warn_a.min=(.01*prange)
         eb_pmax_warn_b.Value=_formatfloat(pmaxwarn[1],6,2,_FLOAT_NORMAL)
-        eb_pmax_warn_b.max=(1.1*prange)
+        eb_pmax_warn_b.max=(1.2*prange)
         eb_pmax_warn_b.min=(.01*prange)
 
         eb_pmax_a.Value=_formatfloat(pmax[0],6,2,_FLOAT_NORMAL)
-        eb_pmax_a.max=(1.1*prange)
+        eb_pmax_a.max=(1.2*prange)
         eb_pmax_a.min=(.01*prange)
         eb_pmax_b.Value=_formatfloat(pmax[1],6,2,_FLOAT_NORMAL)
-        eb_pmax_b.max=(1.1*prange)
+        eb_pmax_b.max=(1.2*prange)
         eb_pmax_b.min=(.01*prange)
 
         if errordisplaydisabled[0] then
@@ -10610,7 +10610,7 @@ init showtime := false
 Enddec
 Declare Config_screen_single_and_dual as ScreenV2
 Level 249506
-#Visible False
+#Visible True
 #Lock Me
 init parent := default
 init xpos := 0
@@ -13041,10 +13041,10 @@ func valueChanged()
 
 
     if new_pmax<pcur[0] then
-        if (1.1*pcur[0]>PRange) then
-            me.Value=str(1.1*PRange)
+        if (1.2*pcur[0]>PRange) then
+            me.Value=str(1.2*PRange)
         else
-            me.Value=str(1.1*pcur[0])
+            me.Value=str(1.2*pcur[0])
 
         endif
     endif
@@ -13094,10 +13094,10 @@ func valueChanged()
 
 
     if new_pmax<pcur[1] then
-        if (1.1*pcur[1]>PRange) then
-            me.Value=str(1.1*PRange)
+        if (1.2*pcur[1]>PRange) then
+            me.Value=str(1.2*PRange)
         else
-            me.Value=str(1.1*pcur[1])
+            me.Value=str(1.2*pcur[1])
 
         endif
     endif
@@ -24108,7 +24108,7 @@ init value := "Current Values"
 Enddec
 Declare Twin_Monitor_Screen as ScreenV2
 Level 249882
-#Visible True
+#Visible False
 #Lock Me
 init parent := default
 init xpos := 0
