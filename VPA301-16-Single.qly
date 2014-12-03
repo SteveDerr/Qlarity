@@ -13884,7 +13884,7 @@ func ResponseReceived (response as reference to string)
             lbl_P_Act_3.value=tmpStr
         endif
     endif
-    If Pcur > (PRange) or Pcur < (PRange) then
+    If Pcur > PRange or Pcur < -PRange then
         lbl_P_Act.BlinkPeriod=2000
         lbl_P_Act.fgColor=225
 
