@@ -1963,26 +1963,27 @@ endfunc
 
 func Send_FlowR(Vol as float,FlowRate as Float)
     dim strCommand as string
-    dim TarVolFloat as float
+
 
     'Send PmpRate = FlowRate - Invert value before sending (Galil Code requires Negative Value)
     if PmpMode == 1 then
         FlowRate=-FlowRate
+    else
+        vol=-vol
     endif
 
     strCommand = "PmpRate=" + str(FlowRate)
     Send_GMCcommand(strCommand)
     'Send TarVol= Vol
-    If Vol<2000000000 then
-        tarvolfloat=vol
+    If Vol<2000000000 and vol>-2000000000 then
+        strCommand="TarVol=" + str(vol)
     else
-        TarVolFloat=2000000000
+        if PmpMode==1 then
+            strCommand="TarVol=2000000000"
+        else
+            strCommand="TarVol=-2000000000"
+        endif
     endif
-    if PmpMode==0 then
-        TarVolFloat=(-1*TarvolFloat)
-        vol=(-1*vol)
-    endif
-    strCommand="TarVol=" + str(TarVolFloat)
 
     Send_GMCcommand(strCommand)
     Target_Volume=Vol
@@ -20889,11 +20890,17 @@ func EnterPressed()
                 mlmax=2000000000
                 Tar_Vol_Reached=False
                 eb_Tar_Vol.Value="INF"
-            elseIf temp<= MLTot then
+            elseIf (temp <= MLTot) and (PmpMode==1) then
                 eb_Tar_Vol.Value=currentvalue
                 valueChanged=false
                 eb_Tar_Vol.Value="Invalid"
-                lbl_Flow_Instructions.value="Enter a volume greater than the current volume"
+                'lbl_Flow_Instructions.value="Enter a volume greater than the current volume"
+                Warning_Sound()
+            elseif (PmpMode==0) and (temp<=-MLTot) then
+                eb_Tar_Vol.Value=currentvalue
+                valueChanged=false
+                eb_Tar_Vol.Value="Invalid"
+                'lbl_Flow_Instructions.value="Enter a volume less than the current volume"
                 Warning_Sound()
             else
                 mlmax=temp
