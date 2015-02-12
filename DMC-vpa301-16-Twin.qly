@@ -10680,8 +10680,8 @@ init height := 53
 init selectonpress := False
 init font := helvb18_bdf
 init initiallistcontent := "FLOW MODE;PRES. MODE;"
-init selected := 0
-init curseltext := "FLOW MODE"
+init selected := 1
+init curseltext := "PRES. MODE"
 
 func ValueChanged()
     update_control_buttons_visibility()
