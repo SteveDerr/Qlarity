@@ -2150,6 +2150,14 @@ func Send_MLPmm(factor as float,Cyl as string)
     endif
 
 endfunc
+
+func send_new_ext_config()
+    REM Set EngUnit, VMax, VMin, EngMax, EngMin then run Galil #SETEXTCF,1
+    gmccommand.command="EngUnit="+str(ddl_efs_eu.selected)+";VMax="+str(eb_efs_max_volts.Value)+";Vmin="+str(eb_efs_min_volts.Value)+";EngMax="+str(eb_efs_max_eus.Value)+";EngMin="+str(eb_efs_min_eus.Value)
+    gmccommand.executeCommand=true
+    gmccommand.command="XQ#SETEXTCF,1"
+    gmccommand.executeCommand=true
+endfunc
 func Send_SP(NewSP as float)
     dim strCommand as string
 
@@ -7656,6 +7664,9 @@ init font := helvb18_bdf
 
 func click()
     External_Settings_Changed=true
+
+    send_new_ext_config()
+
 
 endfunc
 Enddec
