@@ -2151,12 +2151,20 @@ func Send_MLPmm(factor as float,Cyl as string)
 
 endfunc
 
-func send_new_ext_config()
+func send_new_ext_config(burn_variables as boolean)
     REM Set EngUnit, VMax, VMin, EngMax, EngMin then run Galil #SETEXTCF,1
-    gmccommand.command="EngUnit="+str(ddl_efs_eu.selected)+";VMax="+str(eb_efs_max_volts.Value)+";Vmin="+str(eb_efs_min_volts.Value)+";EngMax="+str(eb_efs_max_eus.Value)+";EngMin="+str(eb_efs_min_eus.Value)
+    dim burn_str as string
+    if burn_variables then
+        burn_str="1"
+    else
+        burn_str="0"
+    endif
+
+    gmccommand.command="EngUnit="+str(ddl_efs_eu.selected)+";VMax="+str(eb_efs_max_volts.Value)+";VMin="+str(eb_efs_min_volts.Value)+";EngMax="+str(eb_efs_max_eus.Value)+";EngMin="+str(eb_efs_min_eus.Value)+";Burn="+burn_str
     gmccommand.executeCommand=true
     gmccommand.command="XQ#SETEXTCF,1"
     gmccommand.executeCommand=true
+
 endfunc
 func Send_SP(NewSP as float)
     dim strCommand as string
@@ -7592,7 +7600,7 @@ init height := 49
 init font := helvb18_bdf
 
 func click()
-    REM MG VMax, Vmin, EngMax, EngMin, EngUnit, ExtZOf
+    REM MG VMax, VMin, EngMax, EngMin, EngUnit, ExtZOf
     external_feedback_setup_screen.enabled=false
     init_setup_screen()
     if External_Settings_Changed then
@@ -7632,6 +7640,9 @@ init height := 49
 init font := helvb18_bdf
 
 func click()
+    send_new_ext_config(true)
+
+
 
 endfunc
 Enddec
@@ -7649,6 +7660,8 @@ init font := helvb18_bdf
 
 func click()
     External_Settings_Changed=true
+    gmccommand.command="XQ#ZEROEXT,1"
+    gmccommand.executeCommand=true
 endfunc
 Enddec
 Declare But_efs_update_eus as ButtonV2
@@ -7666,7 +7679,7 @@ init font := helvb18_bdf
 func click()
     External_Settings_Changed=true
 
-    send_new_ext_config()
+    send_new_ext_config(false)
 
 
 endfunc
@@ -11146,13 +11159,13 @@ init width := 92
 init height := 43
 init fgcolor := clr_buttonforeground
 init bgcolor := clr_buttonbackground
-init value := "1.234"
+init value := "10.00"
 
 init usesoftkeybar := false
 init maxlines := 1
 init min := -10
 init max := 10
-init charlimit := 4
+init charlimit := 5
 init xjustify := hjustify_center
 init yjustify := vjustify_center
 init boxtype := eb_numeric
