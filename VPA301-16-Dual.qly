@@ -14241,7 +14241,7 @@ Level 249654
 #Lock False
 init parent := daq_objects
 init commobject := galilcomm
-init command := "MG ExtTarEU, MaxEU, MinEU, ExtRatEU, ExtMaxR"
+init command := "MG ExtTarEU, ExtMaxEU, ExtMinEU, ExtRatEU, ExtMaxR"
 
 func ResponseReceived(response as string)
     dim num_response[8] as float
@@ -14345,7 +14345,7 @@ Level 249658
 #Lock False
 init parent := daq_objects
 init commobject := galilcomm
-init command := "MG VMax, VMin, MaxEU, MinEU, EngUnit, ExtZOf"
+init command := "MG ExtMaxV, ExtMinV, ExtMaxEU, ExtMinEU, EngUnit, ExtZOf"
 
 func ResponseReceived(response as string)
     REM Setup the External Feedback Setup Screen.
