@@ -356,7 +356,7 @@ dim currentvalue as string
     dim ExtTarEU, ExtRateEU, ExtCurV, ExtCurEU, ExtZOf as float
     dim EU_Digits_prec as integer
     dim CyclDone_bool, cycling, External_Settings_Changed as boolean
-    dim valveopen[4], ExtRamping as boolean
+    dim valveopen[4], ExtRamping, ExternalDisabled as boolean
     dim external_fb_cancel_values[6] as float
 
 
@@ -2764,6 +2764,7 @@ func update_external_control_buttons(ext_state as integer)
     REM 10 - Start flow or pressure requested
     if ext_state==7 or ext_state==9 or ext_state==10 then
         rem need to disable all buttons until different state.
+        ExternalDisabled=true
         but_cyctostart_3.inactive=true
         but_start_ext_control.inactive=true
         but_efm_update.inactive=true
@@ -2772,7 +2773,8 @@ func update_external_control_buttons(ext_state as integer)
         but_zeroxdcrs_3.inactive=true
         but_openvalves_3.inactive=true
         but_efm_quit.inactive=true
-    elseif but_cyctostart_3.inactive==true then
+        but_efm_stop_ext_control.inactive=true
+    elseif ExternalDisabled then
         rem buttons are disabled, need to reenable
         but_cyctostart_3.inactive=false
         but_start_ext_control.inactive=false
@@ -2782,6 +2784,7 @@ func update_external_control_buttons(ext_state as integer)
         but_zeroxdcrs_3.inactive=false
         but_openvalves_3.inactive=false
         but_efm_quit.inactive=false
+        but_efm_stop_ext_control.inactive=false
     endif
     if ExtRamping then
         if ramphold==false then
@@ -2800,6 +2803,7 @@ func update_external_control_buttons(ext_state as integer)
         but_set_mode_2.enabled=true 'Mode button
         but_zeroxdcrs_3.enabled=true 'zero transducers
         but_openvalves_3.enabled=true 'open valves
+        but_efm_stop_ext_control.enabled=false 'stop button
     elseif ext_state==1 then 'cycled and ok params
         but_efm_quit.enabled=true
         but_cyctostart_3.enabled=true 'Cycle button
@@ -2808,6 +2812,7 @@ func update_external_control_buttons(ext_state as integer)
         but_set_mode_2.enabled=true 'Mode button
         but_zeroxdcrs_3.enabled=true 'zero transducers
         but_openvalves_3.enabled=true 'open valves
+        but_efm_stop_ext_control.enabled=false 'stop button
     elseif ext_state==2 then 'pump controlling
         but_efm_quit.enabled=false
         but_cyctostart_3.enabled=false 'Cycle button
@@ -2820,6 +2825,7 @@ func update_external_control_buttons(ext_state as integer)
         but_set_mode_2.enabled=false 'Mode button
         but_zeroxdcrs_3.enabled=false 'zero transducers
         but_openvalves_3.enabled=false 'open valves
+        but_efm_stop_ext_control.enabled=true 'stop button
     elseif ext_state==3 then 'Update available
         but_efm_quit.enabled=false
         but_cyctostart_3.enabled=false 'Cycle button
@@ -2832,6 +2838,7 @@ func update_external_control_buttons(ext_state as integer)
         but_set_mode_2.enabled=false 'Mode button
         but_zeroxdcrs_3.enabled=false 'zero transducers
         but_openvalves_3.enabled=false 'open valves
+        but_efm_stop_ext_control.enabled=true 'stop button
     elseif ext_state==4 then 'ramping paused
         but_efm_quit.enabled=false
         but_cyctostart_3.enabled=false 'Cycle button
@@ -2840,6 +2847,7 @@ func update_external_control_buttons(ext_state as integer)
         but_set_mode_2.enabled=false 'Mode button
         but_zeroxdcrs_3.enabled=false 'zero transducers
         but_openvalves_3.enabled=false 'open valves
+        but_efm_stop_ext_control.enabled=true 'stop button
     elseif ext_state==5 then 'ramping to set point
         but_efm_quit.enabled=false
         but_cyctostart_3.enabled=false 'Cycle button
@@ -2848,6 +2856,7 @@ func update_external_control_buttons(ext_state as integer)
         but_set_mode_2.enabled=false 'Mode button
         but_zeroxdcrs_3.enabled=false 'zero transducers
         but_openvalves_3.enabled=false 'open valves
+        but_efm_stop_ext_control.enabled=true 'stop button
     elseif ext_state==6 then 'cycling cylinders
         but_efm_quit.enabled=false
         but_cyctostart_3.enabled=false 'Cycle button
@@ -2856,6 +2865,7 @@ func update_external_control_buttons(ext_state as integer)
         but_set_mode_2.enabled=false 'Mode button
         but_zeroxdcrs_3.enabled=false 'zero transducers
         but_openvalves_3.enabled=false 'open valves
+        but_efm_stop_ext_control.enabled=true 'stop button
     elseif ext_state==8 then 'cycled but invalid start conditions
         but_efm_quit.enabled=true
         but_cyctostart_3.enabled=true 'Cycle button
@@ -2864,6 +2874,7 @@ func update_external_control_buttons(ext_state as integer)
         but_set_mode_2.enabled=true 'Mode button
         but_zeroxdcrs_3.enabled=true 'zero transducers
         but_openvalves_3.enabled=true 'open valves
+        but_efm_stop_ext_control.enabled=false 'stop button
     endif
 endfunc
 
@@ -13209,7 +13220,7 @@ endfunc
 Enddec
 Declare External_Feedback_Setup_Screen as ScreenV2
 Level 249927
-#Visible False
+#Visible True
 #Lock Me
 init parent := default
 init xpos := 0
@@ -22997,7 +23008,7 @@ init enabled := false
 Enddec
 Declare Pressure_mode_screen as ScreenV2
 Level 249427
-#Visible True
+#Visible False
 #Lock False
 init parent := default
 init xpos := 0
@@ -23694,7 +23705,7 @@ init width := 172
 init height := 36
 init opacity := 1
 init font := helvr18_bdf
-init value := "Current Flow Rate"
+init value := "Flow Rate"
 Enddec
 Declare TranslucentLabel_12 as TranslucentLabelV2
 Level 249399
@@ -24551,7 +24562,7 @@ init width := 172
 init height := 36
 init opacity := 1
 init font := helvr18_bdf
-init value := "Current Pressure"
+init value := "Transducer"
 Enddec
 Declare TranslucentLabel_9 as TranslucentLabelV2
 Level 249394
