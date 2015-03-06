@@ -1112,8 +1112,12 @@ func calc_new_scale_factor()
     val(temp_num[1], eb_efs_min_eus_1.Value)' Min EUs
     val(temp_num[2], eb_efs_max_volts_1.Value)'Max Volts
     val(temp_num[3], eb_efs_min_volts_1.Value)'Min volts
-
-    tmp_scale=(temp_num[0]-temp_num[1])/(temp_num[2]-temp_num[3])
+    check error
+        tmp_scale=(temp_num[0]-temp_num[1])/(temp_num[2]-temp_num[3])
+    on error
+        _clearexception()
+        tmp_scale=0
+    enderr
     lbl_popup_efs_scale.value=_formatfloat(tmp_scale, 6,4,_FLOAT_NORMAL)
 
 
@@ -1886,10 +1890,10 @@ func Send_MLPmm(factor as float,Cyl as string)
 endfunc
 
 func send_new_ext_config()
-    REM Set EngUnit, VMax, VMin, EngMax, EngMin then run Galil #SETEXTCF,1
-    gmccommand.command="EngUnit="+str(ddl_efs_eu.selected)+";VMax="+str(eb_efs_max_volts_1.Value)+";VMin="+str(eb_efs_min_volts_1.Value)+";EngMax="+str(eb_efs_max_eus_1.Value)+";EngMin="+str(eb_efs_min_eus_1.Value)+";Burn=1"
+    REM Set EngUnit, VMax, VMin, EngMax, EngMin then do BV
+    gmccommand.command="EngUnit="+str(ddl_efs_eu.selected)+";ExtMaxV="+eb_efs_max_volts_1.Value+";ExtMinV="+eb_efs_min_volts_1.Value+";ExtMaxEU="+eb_efs_max_eus_1.Value+";ExtMinEU="+eb_efs_min_eus_1.Value
     gmccommand.executeCommand=true
-    gmccommand.command="XQ#SETEXTCF,1"
+    gmccommand.command="BV"
     gmccommand.executeCommand=true
 endfunc
 
@@ -6584,7 +6588,7 @@ init font := helvb18_bdf
 func click()
 
     eb_efs_scale_factor.Value=lbl_popup_efs_scale.value
-    gmccommand.command="ExtScale="+str(eb_efs_scale_factor.Value)
+    gmccommand.command="ExtScale="+eb_efs_scale_factor.value
     gmccommand.executeCommand=true
     popup_efs_advanced_scale.enabled=false
 
@@ -7455,8 +7459,8 @@ init font := helvb18_bdf
 
 func click()
     send_new_ext_config()
-
-
+    external_feedback_setup_screen.enabled=false
+    init_setup_screen()
 
 endfunc
 Enddec
@@ -11025,11 +11029,6 @@ func valueChanged()
 
 endfunc
 init incrstep := .01
-
-func finishEdit()
-    gmccommand.command="ExtZOf="+str(me.Value)
-    gmccommand.executeCommand=true
-endfunc
 Enddec
 Declare eb_efs_pid_password as EditBoxV2
 Level 249906
@@ -11092,16 +11091,10 @@ init xinset := 1
 init yinset := 0
 init ptsize := 20
 
-func valueChanged()
-
-
-
-endfunc
 init incrstep := .01
 
-func finishEdit()
-     gmccommand.command="ExtScale="+str(me.Value)
-     gmccommand.executeCommand=true
+
+func valueChanged()
 
 
 endfunc
@@ -13091,7 +13084,7 @@ init ptsize := 12
 Enddec
 Declare External_Control_Screen as ScreenV2
 Level 249872
-#Visible False
+#Visible True
 #Lock False
 init parent := default
 init xpos := 0
@@ -13315,7 +13308,7 @@ Declare GalilComm as GalilCommV2
 Level 249668
 #Visible True
 #Lock Me
-init connectiontype := gmc_useserial
+init connectiontype := gmc_ethernettcp
 init serialformat := gmc_use_default
 init messagefilter := _cc_suppressallmessages
 
@@ -19939,9 +19932,9 @@ Level 249844
 #Lock False
 init value := "100.12"
 init parent := external_control_screen
-init xpos := 240
+init xpos := 231
 init ypos := 205
-init width := 120
+init width := 136
 init height := 42
 init borderstyle := bdr_bumpborder
 init bgcolor := 0
@@ -19958,7 +19951,7 @@ Level 249865
 #Lock False
 init value := "123.45"
 init parent := external_control_screen
-init xpos := 240
+init xpos := 231
 init ypos := 118
 init width := 136
 init height := 42
@@ -19995,7 +19988,7 @@ Level 249841
 #Lock False
 init value := "10000"
 init parent := external_control_screen
-init xpos := 240
+init xpos := 231
 init ypos := 161
 init width := 136
 init height := 42
@@ -20050,7 +20043,7 @@ Level 249839
 #Lock False
 init value := "1000.00"
 init parent := external_control_screen
-init xpos := 240
+init xpos := 231
 init ypos := 248
 init width := 136
 init height := 42
@@ -22093,7 +22086,7 @@ Declare lbl_Vol_Cal_msg_B_1 as LabelV2
 Level 249908
 #Visible True
 #Lock False
-init value := "Enter the minimum and maximum values for both volts and the Engineering Units. The scale factor will be calculated (Max EU - Min EU)/(Max Volts - Min Volts). The EUs used will be calculated by taking the voltage input, subtracting the offset and multiplying by the scale factor."
+init value := "Enter the minimum and maximum values for both volts and the Engineering Units. The Scale Factor will be calculated\n(Max EU - Min EU)/(Max Volts - Min Volts). \n\nThe Engineering Units will be calculated\n(Signal Voltage - Offset)*Scale Factor."
 init parent := popup_efs_advanced_scale
 init xpos := 15
 init ypos := 297
@@ -22469,7 +22462,7 @@ init parent := external_feedback_setup_screen
 Enddec
 Declare popup_efs_advanced_scale as PopupScreenV2
 Level 249921
-#Visible False
+#Visible True
 #Lock False
 init xpos := 30
 init ypos := 122
@@ -22754,6 +22747,17 @@ func EnterPressed()
         Set_Manual_Flow_Buttons()
     endif
 
+    if currentEB==eb_efs_scale_factor then
+        REM Changing scale factor in external config
+        gmccommand.command="ExtScale="+strval
+        gmccommand.executeCommand=true
+    endif
+
+    if currentEB==eb_efs_offset then
+        REM Chanign offset in external config
+        gmccommand.command="ExtZOf="+strval
+        gmccommand.executeCommand=true
+    endif
 
 endfunc
 
@@ -24255,7 +24259,7 @@ Level 249835
 init parent := external_control_screen
 init xpos := 62
 init ypos := 209
-init width := 172
+init width := 164
 init height := 36
 init opacity := 1
 init font := helvr18_bdf
@@ -24268,7 +24272,7 @@ Level 249834
 init parent := external_control_screen
 init xpos := 61
 init ypos := 252
-init width := 172
+init width := 164
 init height := 36
 init opacity := 1
 init font := helvr18_bdf
@@ -24281,7 +24285,7 @@ Level 249866
 init parent := external_control_screen
 init xpos := 60
 init ypos := 123
-init width := 172
+init width := 164
 init height := 36
 init opacity := 1
 init font := helvr18_bdf
@@ -24307,7 +24311,7 @@ Level 249832
 init parent := external_control_screen
 init xpos := 60
 init ypos := 166
-init width := 172
+init width := 164
 init height := 36
 init opacity := 1
 init font := helvr18_bdf
