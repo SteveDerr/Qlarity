@@ -282,7 +282,7 @@ dim currentvalue as string
     dim ExtTarEU, ExtRateEU, ExtCurV, ExtCurEU, ExtZOf as float
     dim EU_Digits_prec as integer
     dim CyclDone_bool, cycling as boolean
-    dim valveopen[4], ExtRamping, ExternalDisabled as boolean
+    dim valveopen[4], ExtRamping, ExternalDisabled, ExtPaused as boolean
     dim external_fb_cancel_values[6] as float
 
 
@@ -2432,7 +2432,7 @@ func determine_pump_state_external() returns integer
     REM 1 - Cycled, parameters are ok
     REM 2 - Running (Pressure or flow)
     REM 3 - Update Available
-    REM 4 - Ramping in pressure mode paused
+    REM 4 - Ramping in pressure/external control mode paused
     REM 5 - Ramping to set pressure
     REM 6 - Cycling cylinder
     REM 7 - Stopping
@@ -2490,7 +2490,7 @@ func determine_pump_state_external() returns integer
         REM in external control mode
         if valuechanged then
             return 3
-        elseif ramphold==true then
+        elseif ExtPaused==true then
             return 4
         elseif ExtRamping then
             return 5
@@ -7385,6 +7385,8 @@ init height := 49
 
 
 func click()
+    gmccommand.command="ExtTarEU="+eb_efm_target_eu.Value+";ExtRatEU="+eb_efm_eu_ramp_rate.Value+";XQ#EXTUPD,1"
+    gmccommand.executeCommand=true
     valuechanged=false
 
 endfunc
@@ -9318,11 +9320,17 @@ func click()
     'this button will also handle code for pause. Need to figure out what the text is.
     if value=="START CONTROL" then
         external_pressed=start
+        gmccommand.command="ExtTarEU="+eb_efm_target_eu.Value+";ExtRatEU="+eb_efm_eu_ramp_rate.Value+";XQ#STRTECT,1"
+        gmccommand.executeCommand=true
 
     elseif value=="PAUSE" then
-        ramphold=true
+
+        gmccommand.command="Paused=1"
+        gmccommand.executeCommand=true
     elseif value=="RESUME" then
-        ramphold=false
+
+        gmccommand.command="ExtTarEU="+eb_efm_target_eu.Value+";ExtRatEU="+eb_efm_eu_ramp_rate.Value+";XQ#CONVEU2V,1;Paused=0"
+        gmccommand.executeCommand=true
     endif
 
     tmr_reset_external_pressed.enabled=true
@@ -13100,7 +13108,7 @@ endfunc
 Enddec
 Declare External_Feedback_Setup_Screen as ScreenV2
 Level 249922
-#Visible True
+#Visible False
 #Lock Me
 init parent := default
 init xpos := 0
@@ -15236,7 +15244,7 @@ Level 249656
 #Lock False
 init parent := daq_objects
 init commobject := galilcomm
-init command := "MG @OUT[1], @OUT[2], @OUT[3], @OUT[4]"
+init command := "MG @OUT[1], @OUT[2], @OUT[3], @OUT[4], Paused"
 
 func ResponseReceived(response as string)
     dim num_response[8] as float
@@ -15251,6 +15259,11 @@ func ResponseReceived(response as string)
             valveopen[valve_idx]=false
         endif
     next
+    if num_response[4]==1 then
+        ExtPaused=True
+    else
+        ExtPaused=False
+    endif
 
     REM We now have all updated info to make decisioncs about the pump state.
     update_external_ui()
