@@ -283,7 +283,7 @@ dim currentvalue as string
     dim EU_Digits_prec as integer
     dim CyclDone_bool, cycling as boolean
     dim valveopen[4], ExtRamping, ExternalDisabled, ExtPaused as boolean
-    dim external_fb_cancel_values[6] as float
+    dim external_fb_cancel_values[7] as float
 
 
 
@@ -1890,8 +1890,8 @@ func Send_MLPmm(factor as float,Cyl as string)
 endfunc
 
 func send_new_ext_config()
-    REM Set EngUnit, VMax, VMin, EngMax, EngMin then do BV
-    gmccommand.command="EngUnit="+str(ddl_efs_eu.selected)+";ExtMaxV="+eb_efs_max_volts_1.Value+";ExtMinV="+eb_efs_min_volts_1.Value+";ExtMaxEU="+eb_efs_max_eus_1.Value+";ExtMinEU="+eb_efs_min_eus_1.Value
+    REM Set ExtUnit, VMax, VMin, EngMax, EngMin then do BV
+    gmccommand.command="ExtUnit="+str(ddl_efs_eu.selected)+";ExtMaxV="+eb_efs_max_volts_1.Value+";ExtMinV="+eb_efs_min_volts_1.Value+";ExtMaxEU="+eb_efs_max_eus_1.Value+";ExtMinEU="+eb_efs_min_eus_1.Value
     gmccommand.executeCommand=true
     gmccommand.command="BV"
     gmccommand.executeCommand=true
@@ -2164,11 +2164,13 @@ Func Set_Mode(mode as Float)
     If mode==0 then
         but_Set_Mode_1.value ="RECEIVE MODE"
         but_Set_Mode.value ="RECEIVE MODE"
+        but_Set_Mode_2.value ="RECEIVE MODE"
         PmpMode = 0
         lbl_vol_to_pmp.Value="Volume to Receive"
     else
         but_Set_Mode_1.value="PUMP MODE"
         but_Set_Mode.value="PUMP MODE"
+        but_Set_Mode_2.value="PUMP MODE"
         PmpMode = 1
         lbl_vol_to_pmp.Value="Volume to Pump"
     endif
@@ -2387,6 +2389,89 @@ func SecondsToDispString(sec as integer) returns string
     return hStr + ":" + mStr + ":" + sStr
 endfunc
 
+func Check_Flow_Limit(TmpAveSp as float)
+    If not flow_limit_disabled then
+        If TmpAveSp>FlowRLimWarn or -TmpAveSp>FlowRLimWarn then
+            If WarnSpeedComCheck then
+                REM Make sure to read twice before hitting error
+                REM We have exceeded the flowrate warning limit and need to warn the operator
+
+                If not AlreadyWarned then
+                    Handle_Error(7)
+                endif
+
+                AlreadyWarned=true
+            else
+
+                debugText="Value of AveSp read as "+str(CurRate)
+                Write_To_Debug(debugText, "GMCPoll_CurFlow")
+
+                WarnSpeedComCheck=true
+            endif
+
+        elseif WarnSpeedComCheck then
+            REM Not Overspeed, but comcheck is on, turn it off
+            WarnSpeedComCheck=false
+
+        endif
+
+
+        If TmpAveSp>FlowRLim or -TmpAveSp>FlowRLim then
+            IF OverSpeedComCheck then
+                REM Make sure to check twice before stopping pump
+                'We have exceeded the flowrate max limit and need to stop the pump
+
+                If not AlreadyWarnedMaxFlow then
+                    'Stop flow
+
+                    If external_control_screen.enabled then
+                        gmccommand.command="XQ#STPBOTH,1"
+                        gmccommand.executeCommand=true
+                    endif
+
+                    If flow_mode_screen.enabled then
+                        Stop_Flow()
+                        Exit_Flow_Mode_screen()
+                    endif
+
+                    If Pressure_mode_screen.enabled then
+                        hold_press_ramp()
+                        'Stop P Mode
+                        Stop_P_Mode()
+                        P_Cont_On=false
+                        Exit_Press_Mode_screen()
+                    endif
+
+                    If Profile_screen.enabled then
+                        but_profile.value="START PROFILE"
+                        lbl_Profile_Msg.value="Stopping Profile"
+                        tmr_Segment.enabled=false
+                        tmr_Profile_Times.enabled=false
+                        NumberofSegments=Current_Segment
+                        Exit_Segment(Current_Segment)
+                    endif
+
+                    Handle_Error(10)
+                endif
+
+            AlreadyWarnedMaxFlow=true
+
+            else
+                REM Overspeed, but haven't checked twice
+                debugText=CurrentDate+"Value of AveSp read as "+str(CurRate)
+                Write_To_Debug(debugText, "GMCPoll_CurFlow")
+
+
+                OverSpeedComCheck=true
+            endif
+
+        elseif OverSpeedComCheck then
+            REM Not overspeed but com check is on, turn it off
+            OverSpeedComCheck=false
+        endif
+    endif
+endfunc
+
 func set_eng_unit_labels(EngUnits as float)
     ddl_efs_eu.selected=EngUnits'we need to set this to get our labels from the dropdown list.
     REM set the flow mode labels.
@@ -2538,7 +2623,7 @@ func update_external_control_buttons(ext_state as integer)
         but_efm_stop_ext_control.inactive=false
     endif
     if ExtRamping then
-        if ramphold==false then
+        if ExtPaused==false then
             but_start_ext_control.Value="PAUSE"
         else
             but_start_ext_control.Value="RESUME"
@@ -7367,6 +7452,8 @@ init height := 49
 init font := helvb18_bdf
 
 func click()
+    gmccommand.command="XQ#STPBOTH,1"
+    gmccommand.executeCommand=true
     external_pressed=stop
     tmr_reset_external_pressed.enabled=true
 
@@ -7421,10 +7508,10 @@ init height := 49
 init font := helvb18_bdf
 
 func click()
-    REM MG VMax, VMin, EngMax, EngMin, EngUnit, ExtZOf
+    REM MG VMax, VMin, EngMax, EngMin, ExtUnit, ExtZOf
     external_feedback_setup_screen.enabled=false
     init_setup_screen()
-    gmccommand.command="VMax="+str(external_fb_cancel_values[0])+";VMin="+str(external_fb_cancel_values[1])+";EngMax="+str(external_fb_cancel_values[2])+";EngMin="+str(external_fb_cancel_values[3])+";EngUnit="+str(external_fb_cancel_values[4])+";ExtZOf="+str(external_fb_cancel_values[5])+";ExtScale="+str(external_fb_cancel_values[6])
+    gmccommand.command="ExtMaxV="+str(external_fb_cancel_values[0])+";ExtMinV="+str(external_fb_cancel_values[1])+";ExtMaxEU="+str(external_fb_cancel_values[2])+";ExtMinEU="+str(external_fb_cancel_values[3])+";ExtUnit="+str(external_fb_cancel_values[4])+";ExtZOf="+str(external_fb_cancel_values[5])+";ExtScale="+str(external_fb_cancel_values[6])
     gmccommand.executeCommand=true
 
 
@@ -9280,6 +9367,7 @@ func click()
         Set_Mode(1)
     endif
 endfunc
+init enabled := false
 Enddec
 Declare but_Setup as ButtonV2
 Level 249701
@@ -9963,6 +10051,7 @@ init font := helvr12_bdf
 init initiallistcontent := "Not Cycled;Cycled\\, parms ok;Running;Update Avail.;Ramping paused;Ramping;Cycling Cyl;Stopping;Cycled\\, invalid parms;Zeroing xdcr;Starting requested;"
 init selected := 0
 init curseltext := "Not Cycled"
+init enabled := false
 Enddec
 Declare ddl_Profile_1 as DropDownListV2
 Level 249331
@@ -13316,7 +13405,7 @@ Declare GalilComm as GalilCommV2
 Level 249668
 #Visible True
 #Lock Me
-init connectiontype := gmc_ethernettcp
+init connectiontype := gmc_useserial
 init serialformat := gmc_use_default
 init messagefilter := _cc_suppressallmessages
 
@@ -14097,7 +14186,7 @@ Level 249653
 #Lock False
 init parent := daq_objects
 init commobject := galilcomm
-init command := "MG ExtTarEU, ExtMaxEU, ExtMinEU, ExtRatEU, ExtMaxR, EngUnit"
+init command := "MG ExtTarEU, ExtMaxEU, ExtMinEU, ExtRatEU, ExtMaxR, ExtUnit"
 
 func ResponseReceived(response as string)
     dim num_response[8] as float
@@ -14196,7 +14285,7 @@ Level 249657
 #Lock False
 init parent := daq_objects
 init commobject := galilcomm
-init command := "MG ExtMaxV, ExtMinV, ExtMaxEU, ExtMinEU, EngUnit, ExtZOf, ExtScale"
+init command := "MG ExtMaxV, ExtMinV, ExtMaxEU, ExtMinEU, ExtUnit, ExtZOf, ExtScale"
 
 func ResponseReceived(response as string)
     REM Setup the External Feedback Setup Screen.
@@ -15265,6 +15354,7 @@ func ResponseReceived(response as string)
         ExtPaused=False
     endif
 
+    Check_Flow_Limit(CurRate)
     REM We now have all updated info to make decisioncs about the pump state.
     update_external_ui()
 
@@ -15550,81 +15640,7 @@ func ResponseReceived (response as reference to string)
         endif
     endif
 
-    If not flow_limit_disabled then
-        If CurRate>FlowRLimWarn or -CurRate>FlowRLimWarn then
-            If WarnSpeedComCheck then
-                REM Make sure to read twice before hitting error
-                REM We have exceeded the flowrate warning limit and need to warn the operator
-
-                If not AlreadyWarned then
-                    Handle_Error(7)
-                endif
-
-                AlreadyWarned=true
-            else
-
-                debugText="Value of AveSp read as "+str(CurRate)
-                Write_To_Debug(debugText, "GMCPoll_CurFlow")
-
-                WarnSpeedComCheck=true
-            endif
-
-        elseif WarnSpeedComCheck then
-            REM Not Overspeed, but comcheck is on, turn it off
-            WarnSpeedComCheck=false
-
-        endif
-
-
-        If CurRate>FlowRLim or -CurRate>FlowRLim then
-            IF OverSpeedComCheck then
-                REM Make sure to check twice before stopping pump
-                'We have exceeded the flowrate max limit and need to stop the pump
-
-                If not AlreadyWarnedMaxFlow then
-                    'Stop flow
-
-                    If flow_mode_screen.enabled then
-                        Stop_Flow()
-                        Exit_Flow_Mode_screen()
-                    endif
-
-                    If Pressure_mode_screen.enabled then
-                        hold_press_ramp()
-                        'Stop P Mode
-                        Stop_P_Mode()
-                        P_Cont_On=false
-                        Exit_Press_Mode_screen()
-                    endif
-
-                    If Profile_screen.enabled then
-                        but_profile.value="START PROFILE"
-                        lbl_Profile_Msg.value="Stopping Profile"
-                        tmr_Segment.enabled=false
-                        tmr_Profile_Times.enabled=false
-                        NumberofSegments=Current_Segment
-                        Exit_Segment(Current_Segment)
-                    endif
-
-                    Handle_Error(10)
-                endif
-
-            AlreadyWarnedMaxFlow=true
-
-            else
-                REM Overspeed, but haven't checked twice
-                debugText=CurrentDate+"Value of AveSp read as "+str(CurRate)
-                Write_To_Debug(debugText, "GMCPoll_CurFlow")
-
-
-                OverSpeedComCheck=true
-            endif
-
-        elseif OverSpeedComCheck then
-            REM Not overspeed but com check is on, turn it off
-            OverSpeedComCheck=false
-        endif
-    endif
+    Check_Flow_Limit(CurRate)
 
 endfunc
 init updateperiod := 400
@@ -22475,7 +22491,7 @@ init parent := external_feedback_setup_screen
 Enddec
 Declare popup_efs_advanced_scale as PopupScreenV2
 Level 249921
-#Visible True
+#Visible False
 #Lock False
 init xpos := 30
 init ypos := 122
