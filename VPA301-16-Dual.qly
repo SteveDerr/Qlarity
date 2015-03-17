@@ -13477,7 +13477,7 @@ Declare GalilComm as GalilCommV2
 Level 249717
 #Visible True
 #Lock Me
-init connectiontype := gmc_ethernettcp
+init connectiontype := gmc_useserial
 init serialformat := gmc_use_default
 init messagefilter := _cc_suppressallmessages
 
