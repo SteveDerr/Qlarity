@@ -13252,11 +13252,7 @@ init font := default_ttf
 init ptsize := 12
 Enddec
 Declare External_Control_Screen as ScreenV2
-<<<<<<< HEAD
 Level 249870
-=======
-Level 249872
->>>>>>> 8ec6db2cab38348551094c66c1e0fe17eb260ddf
 #Visible False
 #Lock False
 init parent := default
@@ -13273,7 +13269,7 @@ endfunc
 Enddec
 Declare External_Feedback_Setup_Screen as ScreenV2
 Level 249921
-#Visible True
+#Visible False
 #Lock Me
 init parent := default
 init xpos := 0
@@ -13449,7 +13445,7 @@ Declare g_72_ver_lbl as LabelV2
 Level 249370
 #Visible True
 #Lock False
-init value := "Terminal Version VPA D301 03/13/2015"
+init value := "Terminal Version VPA D301 03/16/2015"
 init parent := sys_setup_screen
 init xpos := 20
 init ypos := 744
@@ -22893,7 +22889,7 @@ init enabled := false
 Enddec
 Declare Pressure_mode_screen as ScreenV2
 Level 249428
-#Visible True
+#Visible False
 #Lock False
 init parent := default
 init xpos := 0
@@ -23141,13 +23137,8 @@ init value := "Reset Terminal?"
 init parent := system_maintenance_screen
 Enddec
 Declare Sys_Setup_screen as ScreenV2
-<<<<<<< HEAD
 Level 249384
-#Visible False
-=======
-Level 249388
 #Visible True
->>>>>>> 8ec6db2cab38348551094c66c1e0fe17eb260ddf
 #Lock False
 init parent := default
 init xpos := -1
