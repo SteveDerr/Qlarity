@@ -289,7 +289,7 @@ dim currentvalue as string
     enum displayunit as psi:=0, bar:=1
     dim enumPresDispUnit as displayunit
     const psiPerBar:=14.50377 as float
-    dim presDigits as integer
+    dim presDigits, intPresDispUnit as integer
 
 
 Func Write_To_Debug(DebugDesc_ as charstr, DebugSource_ as string)
@@ -1089,6 +1089,9 @@ func Init_Const_P_Screen()
     label_11.value=strPresDispUnit
     eb_target_press.DecimalPlaces=PresDigits
     eb_pressr.DecimalPlaces=PresDigits
+    eb_target_press.max=scaledDisp(Prange)
+    eb_target_press.min=scaledDisp(20)
+
 
     p_stop_pressed=false
     p_start_pressed=false
@@ -6738,7 +6741,7 @@ func click()
 endfunc
 Enddec
 Declare but_advanced_scale_cancel as ButtonV2
-Level 249903
+Level 249959
 #Visible True
 #Lock False
 init value := "CANCEL"
@@ -6758,7 +6761,7 @@ endfunc
 init xjustify := hjustify_centeralign
 Enddec
 Declare but_advanced_scale_save as ButtonV2
-Level 249902
+Level 249958
 #Visible True
 #Lock False
 init value := "SAVE NEW INPUT LIMITS"
@@ -7083,7 +7086,7 @@ endfunc
 init xjustify := hjustify_centeralign
 Enddec
 Declare but_Cancel_IP_Address as ButtonV2
-Level 249926
+Level 249871
 #Visible True
 #Lock False
 init value := "CANCEL"
@@ -7100,7 +7103,7 @@ func click()
 endfunc
 Enddec
 Declare but_Cancel_Limits_Screen as ButtonV2
-Level 249955
+Level 249900
 #Visible True
 #Lock False
 init value := "CANCEL"
@@ -7157,7 +7160,7 @@ endfunc
 init xjustify := hjustify_center
 Enddec
 Declare but_Close_Debug as ButtonV2
-Level 249940
+Level 249885
 #Visible True
 #Lock False
 init value := "CLOSE"
@@ -7577,7 +7580,7 @@ endfunc
 init font := helvb18_bdf
 Enddec
 Declare But_efs_advanced_scale as ButtonV2
-Level 249885
+Level 249941
 #Visible True
 #Lock False
 init value := "OPEN INPUT LIMITS"
@@ -7594,7 +7597,7 @@ func click()
 endfunc
 Enddec
 Declare But_efs_cancel as ButtonV2
-Level 249880
+Level 249936
 #Visible True
 #Lock False
 init value := "CANCEL"
@@ -7612,7 +7615,7 @@ func click()
 endfunc
 Enddec
 Declare But_efs_pid_settings as ButtonV2
-Level 249881
+Level 249937
 #Visible True
 #Lock False
 init value := "PID SETTINGS"
@@ -7631,7 +7634,7 @@ func click()
 endfunc
 Enddec
 Declare but_efs_save as ButtonV2
-Level 249879
+Level 249935
 #Visible True
 #Lock False
 init value := "SAVE AND EXIT"
@@ -7651,7 +7654,7 @@ func click()
 endfunc
 Enddec
 Declare but_Enable_Open_Valves as ButtonV2
-Level 249967
+Level 249912
 #Visible True
 #Lock False
 init value := "DISABLED"
@@ -7677,7 +7680,7 @@ func click()
 endfunc
 Enddec
 Declare but_Enable_Shutdown as ButtonV2
-Level 249969
+Level 249914
 #Visible True
 #Lock False
 init value := "ENABLED"
@@ -7701,7 +7704,7 @@ func click()
 endfunc
 Enddec
 Declare but_Enable_Warnings as ButtonV2
-Level 249965
+Level 249910
 #Visible True
 #Lock False
 init value := "ENABLED"
@@ -7769,7 +7772,7 @@ endfunc
 init xjustify := hjustify_leftalign
 Enddec
 Declare but_Error_Port as ButtonV2
-Level 249941
+Level 249886
 #Visible True
 #Lock False
 init value := "Error Port On"
@@ -8570,7 +8573,7 @@ func click()
 endfunc
 Enddec
 Declare but_pid_cancel as ButtonV2
-Level 249886
+Level 249942
 #Visible True
 #Lock False
 init value := "CANCEL"
@@ -8590,7 +8593,7 @@ endfunc
 init xjustify := hjustify_centeralign
 Enddec
 Declare but_pid_proceed as ButtonV2
-Level 249896
+Level 249952
 #Visible True
 #Lock False
 init value := "PROCEED"
@@ -8616,7 +8619,7 @@ endfunc
 init xjustify := hjustify_centeralign
 Enddec
 Declare but_pid_save as ButtonV2
-Level 249887
+Level 249943
 #Visible True
 #Lock False
 init value := "SAVE AND EXIT"
@@ -8642,7 +8645,7 @@ endfunc
 init xjustify := hjustify_centeralign
 Enddec
 Declare but_pid_warn_cancel as ButtonV2
-Level 249897
+Level 249953
 #Visible True
 #Lock False
 init value := "CANCEL"
@@ -9292,7 +9295,7 @@ func click()
 endfunc
 Enddec
 Declare but_save_n_exit as ButtonV2
-Level 249954
+Level 249899
 #Visible True
 #Lock False
 init value := "SAVE & EXIT"
@@ -9387,7 +9390,7 @@ func click()
 endfunc
 Enddec
 Declare but_Set_IP as ButtonV2
-Level 249927
+Level 249872
 #Visible True
 #Lock False
 init value := "SET"
@@ -9825,7 +9828,7 @@ func click()
 endfunc
 Enddec
 Declare but_zero_no as ButtonV2
-Level 249974
+Level 249919
 #Visible True
 #Lock False
 init value := "NO"
@@ -9845,7 +9848,7 @@ endfunc
 init xjustify := hjustify_centeralign
 Enddec
 Declare but_zero_yes as ButtonV2
-Level 249975
+Level 249920
 #Visible True
 #Lock False
 init value := "YES"
@@ -10193,10 +10196,12 @@ func ValueChanged()
         strPresDispUnit="psi"
         enumPresDispUnit=psi
         PresDigits=0
+        intPresDispUnit=0
     else
         strPresDispUnit="bar"
         enumPresDispUnit=bar
         presDigits=1
+        intPresDispUnit=1
     endif
     lbl_p_cal_msg.value="Pressure calibration must be done in psi. All other pressure displays and inputs will use selected unit."
     pv_display_settings.Save()
@@ -10711,7 +10716,7 @@ init curseltext := "Ethernet"
 init font := helvb18_bdf
 Enddec
 Declare DebugEB as EditBoxV2
-Level 249939
+Level 249884
 #Visible True
 #Lock False
 init parent := debugscrn
@@ -10730,7 +10735,7 @@ init edittype := eb_readonly_scroll
 init scrollwidth := 40
 Enddec
 Declare DebugScrn as ScreenV2
-Level 249943
+Level 249888
 #Visible False
 #Lock Me
 init parent := default
@@ -10912,7 +10917,7 @@ func valueChanged()
 endfunc
 Enddec
 Declare eb_comp_limit as EditBoxV2
-Level 249971
+Level 249916
 #Visible True
 #Lock False
 init parent := limits_screen
@@ -10948,7 +10953,7 @@ func valueChanged()
 endfunc
 Enddec
 Declare eb_d_gain as EditBoxV2
-Level 249893
+Level 249949
 #Visible True
 #Lock False
 init parent := pid_settings_popup
@@ -11094,7 +11099,7 @@ func valueChanged()
 endfunc
 Enddec
 Declare eb_efs_EU_label as EditBoxV2
-Level 249878
+Level 249934
 #Visible True
 #Lock False
 init parent := external_feedback_setup_screen
@@ -11120,7 +11125,7 @@ init charlimit := 3
 init xjustify := hjustify_center
 Enddec
 Declare eb_efs_max_eus as EditBoxV2
-Level 249906
+Level 249962
 #Visible True
 #Lock False
 init parent := popup_efs_input_limits
@@ -11154,7 +11159,7 @@ func valueChanged()
 endfunc
 Enddec
 Declare eb_efs_min_eus as EditBoxV2
-Level 249907
+Level 249963
 #Visible True
 #Lock False
 init parent := popup_efs_input_limits
@@ -11188,7 +11193,7 @@ func valueChanged()
 endfunc
 Enddec
 Declare eb_efs_offset as EditBoxV2
-Level 249884
+Level 249940
 #Visible True
 #Lock False
 init parent := external_feedback_setup_screen
@@ -11222,7 +11227,7 @@ endfunc
 init incrstep := .01
 Enddec
 Declare eb_efs_pid_password as EditBoxV2
-Level 249899
+Level 249955
 #Visible True
 #Lock False
 init parent := pid_warning_popup
@@ -11255,7 +11260,7 @@ endfunc
 init incrstep := 1
 Enddec
 Declare eb_efs_scale_factor as EditBoxV2
-Level 249883
+Level 249939
 #Visible True
 #Lock False
 init parent := external_feedback_setup_screen
@@ -11502,7 +11507,7 @@ endfunc
 init edittype := eb_readonly
 Enddec
 Declare eb_FlowRLim_1 as EditBoxV2
-Level 249957
+Level 249902
 #Visible True
 #Lock False
 init parent := limits_screen
@@ -11533,7 +11538,7 @@ init borderstyle := bdr_tabborder
 init cursorcolor := clr_buttonforeground
 Enddec
 Declare eb_FlowRLim_Warn as EditBoxV2
-Level 249956
+Level 249901
 #Visible True
 #Lock False
 init parent := limits_screen
@@ -11591,7 +11596,7 @@ func focusOff()
 endfunc
 Enddec
 Declare eb_i_gain as EditBoxV2
-Level 249892
+Level 249948
 #Visible True
 #Lock False
 init parent := pid_settings_popup
@@ -11661,7 +11666,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare eb_IP_1 as EditBoxV2
-Level 249928
+Level 249873
 #Visible True
 #Lock False
 init parent := ip_address_screen
@@ -11694,7 +11699,7 @@ init cursorcolor := clr_buttonforeground
 init enabled := true
 Enddec
 Declare eb_IP_2 as EditBoxV2
-Level 249929
+Level 249874
 #Visible True
 #Lock False
 init parent := ip_address_screen
@@ -11725,7 +11730,7 @@ init borderstyle := bdr_tabborder
 init cursorcolor := clr_buttonforeground
 Enddec
 Declare eb_IP_3 as EditBoxV2
-Level 249930
+Level 249875
 #Visible True
 #Lock False
 init parent := ip_address_screen
@@ -11756,7 +11761,7 @@ init borderstyle := bdr_tabborder
 init cursorcolor := clr_buttonforeground
 Enddec
 Declare eb_IP_4 as EditBoxV2
-Level 249931
+Level 249876
 #Visible True
 #Lock False
 init parent := ip_address_screen
@@ -12269,7 +12274,7 @@ func valueChanged()
 endfunc
 Enddec
 Declare eb_p_gain as EditBoxV2
-Level 249888
+Level 249944
 #Visible True
 #Lock False
 init parent := pid_settings_popup
@@ -12339,7 +12344,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare eb_PMax_1 as EditBoxV2
-Level 249958
+Level 249903
 #Visible True
 #Lock False
 init parent := limits_screen
@@ -12401,7 +12406,7 @@ func valueChanged()
 endfunc
 Enddec
 Declare eb_PMax_warn as EditBoxV2
-Level 249959
+Level 249904
 #Visible True
 #Lock False
 init parent := limits_screen
@@ -13317,7 +13322,7 @@ init font := default_ttf
 init ptsize := 12
 Enddec
 Declare External_Control_Screen as ScreenV2
-Level 249921
+Level 249866
 #Visible False
 #Lock False
 init parent := default
@@ -13333,10 +13338,10 @@ func screenEnabled()
 endfunc
 Enddec
 Declare External_Feedback_Setup_Screen as ScreenV2
-Level 249920
+Level 249976
 #Visible False
-#Lock Me
-init parent := external_control_screen
+#Lock False
+init parent := default
 init xpos := 0
 init ypos := 0
 init width := 480
@@ -13542,7 +13547,7 @@ Declare GalilComm as GalilCommV2
 Level 249713
 #Visible True
 #Lock Me
-init connectiontype := gmc_useserial
+init connectiontype := gmc_ethernettcp
 init serialformat := gmc_use_default
 init messagefilter := _cc_suppressallmessages
 
@@ -13922,18 +13927,22 @@ init command := "MG CylCfg"
 
 func ResponseReceived(response as string)
     REM This will disable the External buttons if only a dual configuration.
+    dim tempFlt as float
 
 
     check error
-         val(CylCfg,response)
+         val(tempFlt,response)
+         CylCfg=TempFlt
     on error
         _ClearException()
         CylCfg=2
     enderr
     if CylCfg==2 then
         but_external_fb_mode.inactive=true
-    else
         but_external_feedback_configuration.inactive=true
+    elseif CylCfg==4 then
+        but_external_fb_mode.inactive=false
+        but_external_feedback_configuration.inactive=false
     endif
 
 endfunc
@@ -17467,7 +17476,7 @@ init image := Banner_Rev5
 init transparent := true
 Enddec
 Declare Image_13 as ImageV2
-Level 249945
+Level 249890
 #Visible True
 #Lock False
 init parent := limits_screen
@@ -17478,7 +17487,7 @@ init image := Banner_Rev5
 init transparent := true
 Enddec
 Declare Image_14 as ImageV2
-Level 249923
+Level 249868
 #Visible True
 #Lock False
 init parent := ip_address_screen
@@ -17549,7 +17558,7 @@ init ypos := 0
 init image := Banner_Rev5
 Enddec
 Declare Image_20 as ImageV2
-Level 249866
+Level 249922
 #Visible True
 #Lock False
 init parent := external_feedback_setup_screen
@@ -17652,7 +17661,7 @@ init height := 800
 init enabled := False
 Enddec
 Declare IP_Address_Screen as ScreenV2
-Level 249938
+Level 249883
 #Visible False
 #Lock False
 init width := 480
@@ -17750,7 +17759,7 @@ init ptsize := 26
 init transparent := true
 Enddec
 Declare Label_106 as LabelV2
-Level 249889
+Level 249945
 #Visible True
 #Lock False
 init value := "P"
@@ -17764,7 +17773,7 @@ init xjustify := hjustify_leftalign
 init borderstyle := bdr_none
 Enddec
 Declare Label_107 as LabelV2
-Level 249890
+Level 249946
 #Visible True
 #Lock False
 init value := "I"
@@ -17778,7 +17787,7 @@ init xjustify := hjustify_leftalign
 init borderstyle := bdr_none
 Enddec
 Declare Label_108 as LabelV2
-Level 249891
+Level 249947
 #Visible True
 #Lock False
 init value := "D"
@@ -18485,7 +18494,7 @@ init ptsize := 12
 init transparent := true
 Enddec
 Declare Label_47 as LabelV2
-Level 249953
+Level 249898
 #Visible True
 #Lock False
 init value := "PRESSURE & FLOW RATE LIMITS"
@@ -18522,7 +18531,7 @@ init yinset := 0
 init ptsize := 26
 Enddec
 Declare Label_49 as LabelV2
-Level 249952
+Level 249897
 #Visible True
 #Lock False
 init value := "ml/min"
@@ -18554,7 +18563,7 @@ init xjustify := hjustify_leftalign
 init borderstyle := bdr_none
 Enddec
 Declare Label_50 as LabelV2
-Level 249951
+Level 249896
 #Visible True
 #Lock False
 init value := "ml/min"
@@ -18572,7 +18581,7 @@ init ptsize := 12
 init transparent := true
 Enddec
 Declare Label_51 as LabelV2
-Level 249963
+Level 249908
 #Visible True
 #Lock False
 init value := "psi"
@@ -18590,7 +18599,7 @@ init ptsize := 12
 init transparent := true
 Enddec
 Declare Label_52 as LabelV2
-Level 249962
+Level 249907
 #Visible True
 #Lock False
 init value := "psi"
@@ -18626,7 +18635,7 @@ init ptsize := 12
 init transparent := true
 Enddec
 Declare Label_54 as LabelV2
-Level 249925
+Level 249870
 #Visible True
 #Lock False
 init value := "IP ADDRESS"
@@ -18645,7 +18654,7 @@ init ptsize := 26
 init transparent := true
 Enddec
 Declare Label_55 as LabelV2
-Level 249932
+Level 249877
 #Visible True
 #Lock False
 init value := "."
@@ -18661,7 +18670,7 @@ init fgcolor := clr_buttonforeground
 init font := helvb24_bdf
 Enddec
 Declare Label_56 as LabelV2
-Level 249933
+Level 249878
 #Visible True
 #Lock False
 init value := "."
@@ -18677,7 +18686,7 @@ init fgcolor := clr_buttonforeground
 init font := helvb24_bdf
 Enddec
 Declare Label_57 as LabelV2
-Level 249934
+Level 249879
 #Visible True
 #Lock False
 init value := "."
@@ -19057,7 +19066,7 @@ init ptsize := 26
 init transparent := true
 Enddec
 Declare Label_77 as LabelV2
-Level 249905
+Level 249961
 #Visible True
 #Lock False
 init value := "Minimum"
@@ -19073,7 +19082,7 @@ init borderstyle := bdr_none
 init bgcolor := clr_softkeybarbuttonbg
 Enddec
 Declare Label_78 as LabelV2
-Level 249904
+Level 249960
 #Visible True
 #Lock False
 init value := "Maximum"
@@ -19089,7 +19098,7 @@ init borderstyle := bdr_none
 init bgcolor := clr_softkeybarbuttonbg
 Enddec
 Declare Label_79 as LabelV2
-Level 249909
+Level 249965
 #Visible True
 #Lock False
 init value := "Engineering Units"
@@ -19123,7 +19132,7 @@ init ptsize := 12
 init transparent := true
 Enddec
 Declare Label_80 as LabelV2
-Level 249910
+Level 249966
 #Visible True
 #Lock False
 init value := "Volts DC"
@@ -19175,7 +19184,7 @@ init ptsize := 12
 init transparent := true
 Enddec
 Declare Label_89 as LabelV2
-Level 249877
+Level 249933
 #Visible True
 #Lock False
 init value := "Engineering Units (EU)"
@@ -19209,7 +19218,7 @@ init ptsize := 26
 init transparent := true
 Enddec
 Declare Label_90 as LabelV2
-Level 249876
+Level 249932
 #Visible True
 #Lock False
 init value := "Current Input (volts)"
@@ -19228,7 +19237,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare Label_91 as LabelV2
-Level 249875
+Level 249931
 #Visible True
 #Lock False
 init value := "EXTERNAL FEEDBACK SETUP"
@@ -19247,7 +19256,7 @@ init ptsize := 26
 init transparent := true
 Enddec
 Declare Label_92 as LabelV2
-Level 249874
+Level 249930
 #Visible True
 #Lock False
 init value := "Scale Factor"
@@ -19279,7 +19288,7 @@ init ptsize := 12
 init transparent := true
 Enddec
 Declare Label_94 as LabelV2
-Level 249873
+Level 249929
 #Visible True
 #Lock False
 init value := "Zero Offset"
@@ -19350,7 +19359,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_comp_limit as LabelV2
-Level 249970
+Level 249915
 #Visible True
 #Lock False
 init value := "Compressibility Limit\n(% of cylinder)"
@@ -19457,7 +19466,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_current_input as LabelV2
-Level 249872
+Level 249928
 #Visible True
 #Lock False
 init value := "Current Input (ml)"
@@ -19610,7 +19619,7 @@ init bgcolor := clr_softkeybarbackground
 init yjustify := vjustify_centeralign
 Enddec
 Declare lbl_Current_pos_bk_12 as LabelV2
-Level 249946
+Level 249891
 #Visible True
 #Lock False
 init value := "Pressure Control Mode"
@@ -19629,7 +19638,7 @@ init bgcolor := clr_softkeybarbackground
 init yjustify := vjustify_topalign
 Enddec
 Declare lbl_Current_pos_bk_13 as LabelV2
-Level 249947
+Level 249892
 #Visible True
 #Lock False
 init value := "Flow Control Mode"
@@ -19648,7 +19657,7 @@ init bgcolor := clr_softkeybarbackground
 init yjustify := vjustify_topalign
 Enddec
 Declare lbl_Current_pos_bk_14 as LabelV2
-Level 249922
+Level 249867
 #Visible True
 #Lock False
 init value := "IP Address"
@@ -19667,7 +19676,7 @@ init bgcolor := clr_softkeybarbackground
 init yjustify := vjustify_topalign
 Enddec
 Declare lbl_Current_pos_bk_15 as LabelV2
-Level 249935
+Level 249880
 #Visible True
 #Lock False
 init value := "DHCP"
@@ -20037,7 +20046,7 @@ init ptsize := 20
 init yjustify := vjustify_topalign
 Enddec
 Declare lbl_DP_Range_Bgnd_2 as LabelV2
-Level 249867
+Level 249923
 #Visible True
 #Lock False
 init value := "CURRENT VALUES"
@@ -20075,7 +20084,7 @@ init ptsize := 20
 init yjustify := vjustify_topalign
 Enddec
 Declare lbl_DP_Range_Bgnd_4 as LabelV2
-Level 249868
+Level 249924
 #Visible True
 #Lock False
 init value := "EXTERNAL INPUT SETTINGS"
@@ -20291,7 +20300,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_efs_current_eus as LabelV2
-Level 249870
+Level 249926
 #Visible True
 #Lock False
 init value := "00.00"
@@ -20310,7 +20319,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_efs_current_vdc as LabelV2
-Level 249871
+Level 249927
 #Visible True
 #Lock False
 init value := "00.00"
@@ -20329,7 +20338,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_efs_message as LabelV2
-Level 249869
+Level 249925
 #Visible True
 #Lock False
 init value := "Enter engineering units, scale factor and offset for display of the input signal.\n\nEngineering units is a label up to three characters long.\n\nThe calculation for displaying the feedback signal is: \n(voltage input - Zero Offset)*Scale Factor"
@@ -20504,7 +20513,7 @@ init ptsize := 26
 init transparent := true
 Enddec
 Declare lbl_Flow_Shutdown as LabelV2
-Level 249968
+Level 249913
 #Visible True
 #Lock False
 init value := "Flow Rate (Shut Down)"
@@ -20607,7 +20616,7 @@ init yjustify := vjustify_topalign
 init bgcolor := clr_messagebackground
 Enddec
 Declare lbl_IP_Msg as LabelV2
-Level 249924
+Level 249869
 #Visible True
 #Lock False
 init value := "Current IP address shown, Enter new IP address"
@@ -20776,7 +20785,7 @@ init ptsize := 12
 init transparent := true
 Enddec
 Declare lbl_Limits_Msg as LabelV2
-Level 249950
+Level 249895
 #Visible True
 #Lock False
 init value := "Set limits for warning and for shut down. For maximum pressure in flow control mode and for maximum flow rate in pressure control mode"
@@ -20876,7 +20885,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_min_eu_2 as LabelV2
-Level 249908
+Level 249964
 #Visible True
 #Lock False
 init value := "Rate (EU/sec)"
@@ -20892,7 +20901,7 @@ init borderstyle := bdr_none
 init bgcolor := clr_softkeybarbuttonbg
 Enddec
 Declare lbl_min_eu_3 as LabelV2
-Level 249913
+Level 249969
 #Visible True
 #Lock False
 init value := "Rate (vdc/sec)"
@@ -21080,7 +21089,7 @@ init ptsize := 20
 init yjustify := vjustify_topalign
 Enddec
 Declare lbl_Open_Valves_On_OP as LabelV2
-Level 249966
+Level 249911
 #Visible True
 #Lock False
 init value := "Open Valves at 110% P range"
@@ -21446,7 +21455,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_pid_message as LabelV2
-Level 249894
+Level 249950
 #Visible True
 #Lock False
 init value := "Enter the proportional, integral, and derivative gains."
@@ -21485,7 +21494,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_popup_efs_max_rate_eu as LabelV2
-Level 249915
+Level 249971
 #Visible True
 #Lock False
 init value := "10"
@@ -21504,7 +21513,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_popup_efs_max_rate_vdc as LabelV2
-Level 249917
+Level 249973
 #Visible True
 #Lock False
 init value := "10"
@@ -21523,7 +21532,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_popup_efs_max_vdc as LabelV2
-Level 249911
+Level 249967
 #Visible True
 #Lock False
 init value := "10"
@@ -21542,7 +21551,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_popup_efs_min_rate_eu as LabelV2
-Level 249914
+Level 249970
 #Visible True
 #Lock False
 init value := "10"
@@ -21561,7 +21570,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_popup_efs_min_rate_vdc as LabelV2
-Level 249916
+Level 249972
 #Visible True
 #Lock False
 init value := ".0001"
@@ -21580,7 +21589,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_popup_efs_min_vdc as LabelV2
-Level 249912
+Level 249968
 #Visible True
 #Lock False
 init value := "10"
@@ -22415,7 +22424,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_Vol_Cal_msg_B_1 as LabelV2
-Level 249901
+Level 249957
 #Visible True
 #Lock False
 init value := "Enter the minimum and maximum values for the Engineering Units. The maximum engineering unit is (10-Zero Offset)*Scale Factor, the minumum is (-10-Zero Offest)*Scale Factor.\n\nThe minimum rate/second is .0001*Scale Factor, the maximum rate/sec is 10*Scale Factor"
@@ -22436,7 +22445,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_Vol_Cal_msg_B_3 as LabelV2
-Level 249898
+Level 249954
 #Visible True
 #Lock False
 init value := "The PID values are advanced settings and can cause unpredictable control of the pump if set incorrectly. \nEnter password to proceed."
@@ -22693,7 +22702,7 @@ init blinkperiod := 1000
 init enabled := false
 Enddec
 Declare lbl_Warnings_Enabled as LabelV2
-Level 249964
+Level 249909
 #Visible True
 #Lock False
 init value := "Warning Limits"
@@ -22712,7 +22721,7 @@ init bgcolor := clr_softkeybarbackground
 init yjustify := vjustify_centeralign
 Enddec
 Declare lbl_Zero_Msg as LabelV2
-Level 249973
+Level 249918
 #Visible True
 #Lock False
 init value := "One of the transducers currently exceeds 30 psi (2.068 bar).  Are you sure you want to zero the pressure transducers?"
@@ -22729,7 +22738,7 @@ init yjustify := vjustify_topalign
 init bgcolor := clr_messagebackground
 Enddec
 Declare Limits_screen as ScreenV2
-Level 249972
+Level 249917
 #Visible False
 #Lock False
 init width := 480
@@ -22751,7 +22760,7 @@ init ypos := 0
 Enddec
 Declare P_Cal_screen as ScreenV2
 Level 249536
-#Visible False
+#Visible True
 #Lock Me
 init parent := default
 init xpos := 0
@@ -22761,7 +22770,7 @@ init height := 800
 init enabled := False
 Enddec
 Declare PID_Settings_Popup as PopupScreenV2
-Level 249895
+Level 249951
 #Visible False
 #Lock False
 init xpos := 80
@@ -22777,7 +22786,7 @@ init value := "PID SETTINGS"
 init parent := external_feedback_setup_screen
 Enddec
 Declare PID_Warning_popup as PopupScreenV2
-Level 249900
+Level 249956
 #Visible False
 #Lock False
 init xpos := 99
@@ -22793,7 +22802,7 @@ init value := "WARNING"
 init parent := external_feedback_setup_screen
 Enddec
 Declare popup_efs_input_limits as PopupScreenV2
-Level 249918
+Level 249974
 #Visible False
 #Lock False
 init xpos := 30
@@ -23141,11 +23150,25 @@ init height := 800
 init enabled := false
 Enddec
 Declare pv_display_settings as PersistentVariablesV2
-Level 249944
+Level 249889
 #Visible True
 #Lock False
 init filename := "pv_display set.dat"
-init savelist := "eb_efs_EU_label.value;ddl_pres_dis_units.selected;default.strPresDispUnit;default.enumPresDispUnit;default.presDigits;"
+init savelist := "eb_efs_EU_label.value;ddl_pres_disp_units.selected;default.strPresDispUnit;default.IntPresDispUnit;default.presDigits;"
+
+func RestoreComplete()
+
+
+endfunc
+
+func StartUp()
+    handles MSG_INIT
+
+    'You should generally call the default Startup() function
+    'before you execute any code of your own, to ensure that this
+    'object is properly initialized
+    default ()
+endfunc
 Enddec
 Declare pv_errorlog as PersistentVariablesV2
 Level 249251
@@ -23184,7 +23207,7 @@ func RestoreComplete()
 endfunc
 Enddec
 Declare QwertyKeypad as QwertyKeypadV2
-Level 249919
+Level 249975
 #Visible False
 #Lock False
 init parent := external_feedback_setup_screen
@@ -23207,7 +23230,7 @@ endfunc
 init maxlength := 3
 Enddec
 Declare rb_DHCP_Disabled as RadioButtonV2
-Level 249937
+Level 249882
 #Visible True
 #Lock False
 init parent := ip_address_screen
@@ -23222,7 +23245,7 @@ init ischecked := False
 init checksize := 20
 Enddec
 Declare rb_DHCP_Enabled as RadioButtonV2
-Level 249936
+Level 249881
 #Visible True
 #Lock False
 init parent := ip_address_screen
@@ -23397,7 +23420,7 @@ init ypos := 0
 init enabled := false
 Enddec
 Declare SystemStatus_1 as SystemStatusV2
-Level 249942
+Level 249887
 #Visible True
 #Lock False
 init parent := debugscrn
@@ -23440,6 +23463,12 @@ Level 249247
 init timertype := _tt_periodic
 
 func timeout()
+    REM Seem to have trouble saving an enum to PV. Added Int and just set here.
+    if intPresDispUnit==0 then
+        enumPresDispUnit=psi
+    else
+        enumPresDispUnit=bar
+    endif
 
     If GalilComm.IsConnectionPending()<>true then
         tmr_FirstPowerUp.enabled=true
@@ -23727,7 +23756,7 @@ func timeout()
 endfunc
 Enddec
 Declare tmr_update_ext_setup as TimerV2
-Level 249882
+Level 249938
 #Visible True
 #Lock False
 init parent := external_feedback_setup_screen
@@ -24317,7 +24346,7 @@ init xjustify := hjustify_leftalign
 init yjustify := vjustify_topalign
 Enddec
 Declare TranslucentLabel_42 as TranslucentLabelV2
-Level 249949
+Level 249894
 #Visible True
 #Lock False
 init parent := limits_screen
@@ -24330,7 +24359,7 @@ init font := helvr18_bdf
 init value := "Flow Rate (Shut Down)"
 Enddec
 Declare TranslucentLabel_43 as TranslucentLabelV2
-Level 249948
+Level 249893
 #Visible True
 #Lock False
 init parent := limits_screen
@@ -24343,7 +24372,7 @@ init font := helvr18_bdf
 init value := "Flow Rate (Warning)"
 Enddec
 Declare TranslucentLabel_44 as TranslucentLabelV2
-Level 249961
+Level 249906
 #Visible True
 #Lock False
 init parent := limits_screen
@@ -24356,7 +24385,7 @@ init font := helvr18_bdf
 init value := "Pressure (Shut Down)"
 Enddec
 Declare TranslucentLabel_45 as TranslucentLabelV2
-Level 249960
+Level 249905
 #Visible True
 #Lock False
 init parent := limits_screen
@@ -24753,7 +24782,7 @@ init width := 480
 init height := 800
 Enddec
 Declare Zero_Pressure_Popup_Screen as PopupScreenV2
-Level 249976
+Level 249921
 #Visible False
 #Lock Me
 init xpos := 80
