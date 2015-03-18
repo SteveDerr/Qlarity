@@ -10858,23 +10858,7 @@ init borderstyle := bdr_tabborder
 init cursorcolor := clr_buttonforeground
 
 func valueChanged()
-    dim New_Pmax as integer
 
-    check error
-            val(New_Pmax, eb_pmax_1.Value)
-        on error
-            _ClearException()
-        enderr
-
-
-    if new_pmax<pcur then
-        if (1.1*pcur>PRange) then
-            me.Value=str(1.1*PRange)
-        else
-            me.Value=str(1.1*pcur)
-
-        endif
-    endif
 
 
 endfunc
@@ -13206,7 +13190,7 @@ init ptsize := 12
 Enddec
 Declare External_Control_Screen as ScreenV2
 Level 249866
-#Visible False
+#Visible True
 #Lock False
 init parent := default
 init xpos := 0
@@ -13809,19 +13793,22 @@ init command := "MG CylCfg"
 
 
 func ResponseReceived(response as string)
+    dim tmpFlt as float
     REM This will disable the External buttons if only a dual configuration.
 
-
     check error
-         val(CylCfg,response)
+         val(tmpFlt,response)
+         CylCfg=TmpFlt
     on error
         _ClearException()
         CylCfg=2
     enderr
     if CylCfg==2 then
         but_external_fb_mode.inactive=true
-    else
         but_external_feedback_configuration.inactive=true
+    elseif CylCfg==4 then
+        but_external_fb_mode.inactive=false
+        but_external_feedback_configuration.inactive=false
     endif
 
 endfunc
