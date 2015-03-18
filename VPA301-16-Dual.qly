@@ -285,6 +285,11 @@ dim currentvalue as string
     dim valveopen[4], ExtRamping, ExternalDisabled, ExtPaused as boolean
     dim external_fb_cancel_values[7] as float
 
+    dim strPresDispUnit as string
+    enum displayunit as psi:=0, bar:=1
+    dim enumPresDispUnit as displayunit
+    const psiPerBar:=14.50377 as float
+    dim presDigits as integer
 
 
 Func Write_To_Debug(DebugDesc_ as charstr, DebugSource_ as string)
@@ -1067,6 +1072,10 @@ endfunc
 
 func Init_Config_Screen()
     lbl_Sys_Config_Instructions.value=defaultConfigMsg
+    lbl_dp_range_bgnd.value="Press range("+strPresDispUnit+")"
+    lbl_pmax_bgnd.value="Pressure Limit("+strPresDispUnit+")"
+    eb_pmax.DecimalPlaces=PresDigits
+
     but_OK.enabled= false
     Config_Screen.enabled=true
 ' fix - I don't think this needs to be populated at init - do we need to do something with Config_screen2?
@@ -1076,6 +1085,11 @@ func Init_Config_Screen()
 endfunc
 
 func Init_Const_P_Screen()
+    label_8.value=strPresDispUnit
+    label_11.value=strPresDispUnit
+    eb_target_press.DecimalPlaces=PresDigits
+    eb_pressr.DecimalPlaces=PresDigits
+
     p_stop_pressed=false
     p_start_pressed=false
     pressure_mode_screen.enabled = true
@@ -1098,11 +1112,11 @@ func Init_Const_P_Screen()
     Set_Press_Buttons()
 
     If psi_per_sec then
-        but_psi_per_sec_min.Value="psi/sec"
-        eb_PressR.max=200
+        but_psi_per_sec_min.Value=strPresDispUnit+"/sec"
+        eb_PressR.max=scaleddisp(200)
     else
-        but_psi_per_sec_min.Value="psi/min"
-        eb_PressR.max=12000
+        but_psi_per_sec_min.Value=strPresDispUnit+"/min"
+        eb_PressR.max=scaleddisp(12000)
     endif
 endfunc
 
@@ -1116,6 +1130,7 @@ func Init_External_FB_Screen()
     gmccommand.command="Local=1"
     gmccommand.executeCommand=true
     gmccom_get_ext_mode_init_vals.executeCommand=true
+    label_93.value=strPresDispUnit
     external_control_screen.enabled=true
 
 endfunc
@@ -1238,6 +1253,7 @@ endfunc
 
 
 func Init_Flow_Mode_screen()
+    label_45.value=strPresDispUnit
 
     flow_mode_screen.enabled = true
     gmcpoll_mlcura.enabled=true
@@ -1266,8 +1282,13 @@ endfunc
 func Init_Limits_screen()
         gmccom_update_limits_values.executeCommand=true
         Limits_screen.enabled=true
-        eb_Pmax_1.value=_FormatFloat(Pmax,6,2,_FLOAT_NORMAL)
-        eb_Pmax_Warn.value=_FormatFloat(PmaxWarn,6,2,_FLOAT_NORMAL)
+        eb_pmax_1.DecimalPlaces=PresDigits
+        eb_pmax_warn.DecimalPlaces=PresDigits
+        label_51.value=strPresDispUnit
+        label_52.value=strPresDispUnit
+        eb_Pmax_1.value=_FormatFloat(ScaledDisp(Pmax),6,PresDigits,_FLOAT_NORMAL)
+        eb_Pmax_Warn.value=_FormatFloat(ScaledDisp(PmaxWarn),6,PresDigits,_FLOAT_NORMAL)
+
         eb_flowrlim_1.value=_FormatFloat(FlowRLim,6,2,_FLOAT_NORMAL)
         eb_FlowRLim_warn.value=_FormatFloat(FlowRLimWarn,6,2,_FLOAT_NORMAL)
         if ErrorDisplayDisabled then
@@ -1301,6 +1322,8 @@ endfunc
 
 func Init_Manual_Control_screen()
 
+    label_33.value=strPresDispUnit
+    label_39.value=strPresDispUnit
     Manual_Control_screen.enabled = true
 
     gmccom_ReflRate_ManA.executeCommand=true
@@ -1344,6 +1367,26 @@ func Init_Manual_Control_screen()
     but_BIn.Value="CLOSED"
 endfunc
 
+func ScaledInput(inputPres as float) returns float
+    REM scale input to psi if displaying bar
+    if enumPresDispUnit==psi then
+        return inputPres
+    else
+        return (inputPres*psiPerBar)
+    endif
+endfunc
+
+func ScaledDisp(dispPres as float) returns float
+    REM Scale display to bar if displaying bar
+    if enumPresDispUnit==psi then
+        return dispPres
+    else
+        return (dispPres/psiPerBar)
+    endif
+endfunc
+
+
+
 func Init_Power_Up_Screen()
     Power_Up_Screen.enabled=true
     GMCPoll_PcurA.enabled=true
@@ -1355,6 +1398,8 @@ func Init_Power_Up_Screen()
     lbl_vol_cur_B.value=_FormatFloat(MLlastB,6,2,_FLOAT_NORMAL)
     lbl_Vol_Cur_change_A.value=_FormatFloat(MLdeltaA,6,4,_FLOAT_NORMAL)
     lbl_Vol_Cur_change_B.value=_FormatFloat(MLdeltaB,6,4,_FLOAT_NORMAL)
+    label_30.value=strPresDispUnit
+    label_31.value=strPresDispUnit
 endfunc
 
 func Init_P_Cal_screen()
@@ -1415,6 +1460,7 @@ func Init_Press_Ramp()
 endfunc
 
 func Init_Profile_Screen()
+    label_61.value=strPresDispUnit
     Zero_Profile_Arrays()
     Profile_screen.enabled=true
     gmcpoll_mlcura.enabled=true
@@ -1600,6 +1646,7 @@ func Init_Vol_Cal_Screen ()
 endfunc
 
 func Init_Remote_Display()
+    label_74.value=strPresDispUnit
     Remote_Display.enabled=true
     Title_screen.enabled=false
     gmcpoll_Target_Press.enabled=true
@@ -1712,6 +1759,7 @@ func Reset_Profile_Arrays()
 endfunc
 
 func Send_Config()
+    dim tmpPmax as float
     dim strCommand as string
     'send PmpStart
     strCommand = "PmpStart=" + eb_start_vol_pump.value
@@ -1760,7 +1808,10 @@ func Send_Config()
     GMCCommand.executeCommand = true
 
     'send PMax
-    strCommand = "PMax=" + eb_Pmax.value
+    REM Need to convert if in bar
+    val(tmpPmax, eb_pmax.Value)
+    tmpPmax=ScaledInput(tmpPmax)
+    strCommand = "PMax=" + str(tmpPmax)
     GMCCommand.command = strCommand
     GMCCommand.executeCommand = true
 
@@ -2232,6 +2283,7 @@ Func Set_Press_Buttons()
     else
         check error
             val(rampentered,eb_PressR.Value)
+            rampentered=scaledinput(rampentered)
         on error
             _ClearException()
         enderr
@@ -2241,6 +2293,7 @@ Func Set_Press_Buttons()
     else
         check error
             val(tarpresentered,eb_Target_Press.Value)
+            tarPresEntered=scaledinput(TarPresEntered)
         on error
             _ClearException()
         enderr
@@ -2527,11 +2580,11 @@ func update_external_ui()
 
     REM update the displays
     lbl_efm_current_input.value=_formatfloat(ExtCurEu, 6, eu_digits_prec, _FLOAT_NORMAL)
-    lbl_efm_current_pressure.value=_formatfloat(Pcur, 6,0,_FLOAT_NORMAL)
+    lbl_efm_current_pressure.value=_formatfloat(ScaledDisp(Pcur), 6,presDigits,_FLOAT_NORMAL)
     lbl_efm_current_flow.value=_formatfloat(currate,3,2,_FLOAT_NORMAL)
     lbl_efm_vol_pumped.value=_formatfloat(mltot, 6,2,_FLOAT_NORMAL)
-    lbl_p_act_a_4.value=_formatfloat(pcura,6,0,_FLOAT_NORMAL)
-    lbl_p_act_b_4.value=_formatfloat(pcurb,6,0,_FLOAT_NORMAL)
+    lbl_p_act_a_4.value=_formatfloat(ScaledDisp(pcura),6,PresDigits,_FLOAT_NORMAL)
+    lbl_p_act_b_4.value=_formatfloat(ScaledDisp(pcurb),6,PresDigits,_FLOAT_NORMAL)
     elps_a_4.bgcolor=determine_valve_color(0)
     elps_b_4.bgcolor=determine_valve_color(1)
     gauge_volumea_6.Value=mlcura
@@ -6685,7 +6738,7 @@ func click()
 endfunc
 Enddec
 Declare but_advanced_scale_cancel as ButtonV2
-Level 249904
+Level 249903
 #Visible True
 #Lock False
 init value := "CANCEL"
@@ -6705,7 +6758,7 @@ endfunc
 init xjustify := hjustify_centeralign
 Enddec
 Declare but_advanced_scale_save as ButtonV2
-Level 249903
+Level 249902
 #Visible True
 #Lock False
 init value := "SAVE NEW INPUT LIMITS"
@@ -7524,7 +7577,7 @@ endfunc
 init font := helvb18_bdf
 Enddec
 Declare But_efs_advanced_scale as ButtonV2
-Level 249886
+Level 249885
 #Visible True
 #Lock False
 init value := "OPEN INPUT LIMITS"
@@ -7541,7 +7594,7 @@ func click()
 endfunc
 Enddec
 Declare But_efs_cancel as ButtonV2
-Level 249881
+Level 249880
 #Visible True
 #Lock False
 init value := "CANCEL"
@@ -7559,7 +7612,7 @@ func click()
 endfunc
 Enddec
 Declare But_efs_pid_settings as ButtonV2
-Level 249882
+Level 249881
 #Visible True
 #Lock False
 init value := "PID SETTINGS"
@@ -7578,7 +7631,7 @@ func click()
 endfunc
 Enddec
 Declare but_efs_save as ButtonV2
-Level 249880
+Level 249879
 #Visible True
 #Lock False
 init value := "SAVE AND EXIT"
@@ -8517,7 +8570,7 @@ func click()
 endfunc
 Enddec
 Declare but_pid_cancel as ButtonV2
-Level 249887
+Level 249886
 #Visible True
 #Lock False
 init value := "CANCEL"
@@ -8537,7 +8590,7 @@ endfunc
 init xjustify := hjustify_centeralign
 Enddec
 Declare but_pid_proceed as ButtonV2
-Level 249897
+Level 249896
 #Visible True
 #Lock False
 init value := "PROCEED"
@@ -8563,7 +8616,7 @@ endfunc
 init xjustify := hjustify_centeralign
 Enddec
 Declare but_pid_save as ButtonV2
-Level 249888
+Level 249887
 #Visible True
 #Lock False
 init value := "SAVE AND EXIT"
@@ -8589,7 +8642,7 @@ endfunc
 init xjustify := hjustify_centeralign
 Enddec
 Declare but_pid_warn_cancel as ButtonV2
-Level 249898
+Level 249897
 #Visible True
 #Lock False
 init value := "CANCEL"
@@ -8759,9 +8812,9 @@ func click()
 
     dim tempprate as Float
 
-    If value=="psi/sec" then
-        value="psi/min"
-        eb_PressR.max=12000
+    If value=="psi/sec" or value=="bar/sec" then
+        value=strPresDispUnit+"/min"
+        eb_PressR.max=scaleddisp(12000)
         val(tempprate,eb_PressR.Value)
         tempprate=tempprate*60
         eb_PressR.Value=str(tempprate)
@@ -8769,14 +8822,14 @@ func click()
 
 
     Else
-        value="psi/sec"
+        value=strPresDispUnit+"/sec"
         val(tempprate,eb_PressR.Value)
         tempprate=tempprate/60
         If tempprate < 1 then
             tempprate=1
         endif
         eb_PressR.Value=str(tempprate)
-        eb_PressR.max=200
+        eb_PressR.max=scaleddisp(200)
         psi_per_sec=true
 
     endif
@@ -9191,6 +9244,7 @@ func click()
         Val(TempBmin,eb_Bmin.Value)
         Val(TempBmax,eb_Bmax.Value)
         Val(TempPmax,eb_Pmax.Value)
+        TempPmax=ScaledInput(TempPmax)
         Val(TempVPC,eb_VolPCyl.Value)
         Val(TempPmpStart,eb_start_vol_pump.Value)
         Val(TempRcvStart,eb_start_receive.Value)
@@ -9254,7 +9308,9 @@ func click()
     'Read Values
     check error
         val(PMax,eb_PMax_1.Value)
+        Pmax=ScaledInput(Pmax)
         val(PMaxWarn,eb_PMax_warn.Value)
+        PMaxWarn=ScaledInput(PMaxWarn)
         val(FlowRLim,eb_flowrlim_1.Value)
         val(FlowRLimWarn,eb_FlowRLim_Warn.Value)
         val(CompLmt,eb_comp_limit.Value)
@@ -10117,6 +10173,35 @@ init selected := 0
 init curseltext := "Not Cycled"
 init enabled := false
 Enddec
+Declare ddl_pres_disp_units as DropDownListV2
+Level 249535
+#Visible True
+#Lock False
+init parent := p_cal_screen
+init xpos := 140
+init ypos := 588
+init width := 200
+init height := 37
+init selectonpress := False
+init font := helvb18_bdf
+init initiallistcontent := "psi;bar;"
+init selected := 0
+init curseltext := "psi"
+
+func ValueChanged()
+    if selected==0 then
+        strPresDispUnit="psi"
+        enumPresDispUnit=psi
+        PresDigits=0
+    else
+        strPresDispUnit="bar"
+        enumPresDispUnit=bar
+        presDigits=1
+    endif
+    lbl_p_cal_msg.value="Pressure calibration must be done in psi. All other pressure displays and inputs will use selected unit."
+    pv_display_settings.Save()
+endfunc
+Enddec
 Declare ddl_Profile_1 as DropDownListV2
 Level 249320
 #Visible True
@@ -10127,9 +10212,9 @@ init ypos := 319
 init width := 139
 init height := 34
 init selectonpress := true
-init selected := 1
+init selected := 3
 init initiallistcontent := "Not Used;Flow-Time;Flow-Vol;Press-Ramp;Press-Const;"
-init curseltext := "Flow-Time"
+init curseltext := "Press-Ramp"
 init font := helvr18_bdf
 init numdropdownrows := 5
 
@@ -10159,25 +10244,25 @@ func ValueChanged()
 
     endif
     If Selected==3 then
-        lbl_Rate_Seg_1.value="psi/sec"
-        lbl_Lim_Seg_1.value="psi"
+        lbl_Rate_Seg_1.value=strPresDispUnit+"/sec"
+        lbl_Lim_Seg_1.value=strPresDispUnit
         eb_Rate_Profile_1.enabled=true
         SegTypeArray[1]=3
 
 '        eb_Limit_Profile_1.DecimalPlaces=0
-        eb_Rate_Profile_1.max=200
-        eb_Limit_Profile_1.max=prange
+        eb_Rate_Profile_1.max=scaledDisp(200)
+        eb_Limit_Profile_1.max=scaledDisp(prange)
     endif
     If Selected==4 then
         lbl_Profile_Msg.value="A pressure ramp profile must preceed a constant pressure profile"
         Selected=3
         SegTypeArray[1]=3
-        lbl_Rate_Seg_1.value="psi/sec"
+        lbl_Rate_Seg_1.value=strPresDispUnit+"/sec"
         eb_Rate_Profile_1.enabled=true
 
 '        eb_Limit_Profile_1.DecimalPlaces=0
-        eb_Limit_Profile_1.max=200
-        eb_Limit_Profile_1.max=prange
+        eb_Limit_Profile_1.max=scaleddisp(200)
+        eb_Limit_Profile_1.max=scaledDisp(prange)
     endif
 
 endfunc
@@ -10192,9 +10277,9 @@ init ypos := 367
 init width := 139
 init height := 34
 init selectonpress := true
-init selected := 2
+init selected := 3
 init initiallistcontent := "Not Used;Flow-Time;Flow-Vol;Press-Ramp;Press-Const;"
-init curseltext := "Flow-Vol"
+init curseltext := "Press-Ramp"
 init font := helvr18_bdf
 init numdropdownrows := 5
 init inactive := true
@@ -10236,14 +10321,14 @@ func ValueChanged()
                 eb_Limit_Profile_2.max=2000000000
             endif
             If Selected==3 then
-                lbl_Rate_Seg_2.value="psi/sec"
-                lbl_Lim_Seg_2.value="psi"
+                lbl_Rate_Seg_2.value=strPresDispUnit+"/sec"
+                lbl_Lim_Seg_2.value=strPresDispUnit
                 SegTypeArray[2]=3
                 eb_Rate_Profile_2.enabled=true
                eb_Rate_Profile_2.DecimalPlaces=2
 '                eb_Limit_Profile_2.DecimalPlaces=0
-                eb_Rate_Profile_2.max=200
-                eb_Limit_Profile_2.max=prange
+                eb_Rate_Profile_2.max=scaledDisp(200)
+                eb_Limit_Profile_2.max=scaledDisp(prange)
             endif
             If Selected==4 then
                 If SegTypeArray[1]== 3 then
@@ -10255,16 +10340,16 @@ func ValueChanged()
                     eb_Rate_Profile_2.enabled=false
 '                    eb_Limit_Profile_2.DecimalPlaces=0
                     eb_Rate_Profile_2.DecimalPlaces=2
-                    eb_Limit_Profile_2.max=10000
+                    eb_Limit_Profile_2.max=scaledDisp(10000)
                 else
                     lbl_Profile_Msg.value="A pressure ramp profile must preceed a constant pressure profile"
                     Selected=3
-                    lbl_Rate_Seg_2.value="psi/sec"
+                    lbl_Rate_Seg_2.value=strPresDispUnit+"/sec"
                     SegTypeArray[2]=3
 '                    eb_Rate_Profile_2.DecimalPlaces=0
                     eb_Limit_Profile_2.DecimalPlaces=2
-                    eb_Rate_Profile_2.max=200
-                    eb_Limit_Profile_2.max=prange
+                    eb_Rate_Profile_2.max=scaledDisp(200)
+                    eb_Limit_Profile_2.max=scaledDisp(prange)
                 endif
             endif
         endif
@@ -10280,9 +10365,9 @@ init ypos := 415
 init width := 139
 init height := 34
 init selectonpress := true
-init selected := 3
+init selected := 0
 init initiallistcontent := "Not Used;Flow-Time;Flow-Vol;Press-Ramp;Press-Const;"
-init curseltext := "Press-Ramp"
+init curseltext := "Not Used"
 init font := helvr18_bdf
 init numdropdownrows := 5
 init inactive := true
@@ -10322,14 +10407,14 @@ func ValueChanged()
                 eb_Limit_Profile_3.max=2000000000
             endif
             If Selected==3 then
-                lbl_Rate_Seg_3.value="psi/sec"
-                lbl_Lim_Seg_3.value="psi"
+                lbl_Rate_Seg_3.value=strPresDispUnit+"/sec"
+                lbl_Lim_Seg_3.value=strPresDispUnit
                 SegTypeArray[3]=3
                 eb_Rate_Profile_3.enabled=true
 '                eb_Rate_Profile_3.DecimalPlaces=0
 '                eb_Limit_Profile_3.DecimalPlaces=0
-                eb_Rate_Profile_3.max=200
-                eb_Limit_Profile_3.max=prange
+                eb_Rate_Profile_3.max=scaledDisp(200)
+                eb_Limit_Profile_3.max=scaledDisp(prange)
             endif
             If Selected==4 then
                 If SegTypeArray[2]== 3 then
@@ -10340,16 +10425,16 @@ func ValueChanged()
                     eb_Limit_Profile_3.enabled=true
                     eb_Rate_Profile_3.enabled=false
 '                   eb_Limit_Profile_3.DecimalPlaces=0
-                    eb_Limit_Profile_3.max=10000
+                    eb_Limit_Profile_3.max=scaledDisp(10000)
                 else
                     lbl_Profile_Msg.value="A pressure ramp profile must preceed a constant pressure profile"
                     Selected=3
-                    lbl_Rate_Seg_3.value="psi/sec"
+                    lbl_Rate_Seg_3.value=strPresDispUnit+"/sec"
                     SegTypeArray[3]=3
 '                    eb_Rate_Profile_3.DecimalPlaces=0
 '                    eb_Limit_Profile_3.DecimalPlaces=0
-                    eb_Rate_Profile_3.max=200
-                    eb_Limit_Profile_3.max=prange
+                    eb_Rate_Profile_3.max=scaledDisp(200)
+                    eb_Limit_Profile_3.max=scaledDisp(prange)
                 endif
             endif
         endif
@@ -10365,9 +10450,9 @@ init ypos := 465
 init width := 139
 init height := 34
 init selectonpress := true
-init selected := 4
+init selected := 0
 init initiallistcontent := "Not Used;Flow-Time;Flow-Vol;Press-Ramp;Press-Const;"
-init curseltext := "Press-Const"
+init curseltext := "Not Used"
 init font := helvr18_bdf
 init numdropdownrows := 5
 init inactive := true
@@ -10407,14 +10492,14 @@ func ValueChanged()
                 eb_Limit_Profile_4.max=2000000000
             endif
             If Selected==3 then
-                lbl_Rate_Seg_4.value="psi/sec"
-                lbl_Lim_Seg_4.value="psi"
+                lbl_Rate_Seg_4.value=strPresDispUnit+"/sec"
+                lbl_Lim_Seg_4.value=strPresDispUnit
                 SegTypeArray[4]=3
                 eb_Rate_Profile_4.enabled=true
 '                eb_Rate_Profile_4.DecimalPlaces=0
 '                eb_Limit_Profile_4.DecimalPlaces=0
-                eb_Rate_Profile_4.max=200
-                eb_Limit_Profile_4.max=prange
+                eb_Rate_Profile_4.max=scaledDisp(200)
+                eb_Limit_Profile_4.max=scaledDisp(prange)
             endif
             If Selected==4 then
                 If SegTypeArray[3]== 3 then
@@ -10425,16 +10510,16 @@ func ValueChanged()
                     eb_Limit_Profile_4.enabled=true
                     eb_Rate_Profile_4.enabled=false
 '                    eb_Limit_Profile_4.DecimalPlaces=0
-                    eb_Limit_Profile_4.max=10000
+                    eb_Limit_Profile_4.max=scaledDisp(10000)
                 else
                     lbl_Profile_Msg.value="A pressure ramp profile must preceed a constant pressure profile"
                     Selected=3
-                    lbl_Rate_Seg_4.value="psi/sec"
+                    lbl_Rate_Seg_4.value=strPresDispUnit+"/sec"
                     SegTypeArray[4]=3
 '                    eb_Rate_Profile_4.DecimalPlaces=0
 '                    eb_Limit_Profile_4.DecimalPlaces=0
-                    eb_Rate_Profile_4.max=200
-                    eb_Limit_Profile_4.max=prange
+                    eb_Rate_Profile_4.max=scaledDisp(200)
+                    eb_Limit_Profile_4.max=scaledDisp(prange)
                 endif
             endif
         endif
@@ -10492,14 +10577,14 @@ func ValueChanged()
                 eb_Limit_Profile_5.max=2000000000
             endif
             If Selected==3 then
-                lbl_Rate_Seg_5.value="psi/sec"
-                lbl_Lim_Seg_5.value="psi"
+                lbl_Rate_Seg_5.value=strPresDispUnit+"/sec"
+                lbl_Lim_Seg_5.value=strPresDispUnit
                 SegTypeArray[5]=3
                 eb_Rate_Profile_5.enabled=true
 '                eb_Rate_Profile_5.DecimalPlaces=0
 '                eb_Limit_Profile_5.DecimalPlaces=0
-                eb_Rate_Profile_5.max=200
-                eb_Limit_Profile_5.max=prange
+                eb_Rate_Profile_5.max=scaledDisp(200)
+                eb_Limit_Profile_5.max=scaledDisp(prange)
             endif
             If Selected==4 then
                 If SegTypeArray[4]== 3 then
@@ -10510,16 +10595,16 @@ func ValueChanged()
                     eb_Limit_Profile_5.enabled=true
                     eb_Rate_Profile_5.enabled=false
 '                    eb_Limit_Profile_5.DecimalPlaces=0
-                    eb_Limit_Profile_5.max=10000
+                    eb_Limit_Profile_5.max=scaledDisp(10000)
                 else
                     lbl_Profile_Msg.value="A pressure ramp profile must preceed a constant pressure profile"
                     Selected=3
-                    lbl_Rate_Seg_5.value="psi/sec"
+                    lbl_Rate_Seg_5.value=strPresDispUnit+"/sec"
                     SegTypeArray[5]=3
 '                    eb_Rate_Profile_5.DecimalPlaces=0
 '                    eb_Limit_Profile_5.DecimalPlaces=0
-                    eb_Rate_Profile_5.max=200
-                    eb_Limit_Profile_5.max=prange
+                    eb_Rate_Profile_5.max=scaledDisp(200)
+                    eb_Limit_Profile_5.max=scaledDisp(prange)
                 endif
             endif
         endif
@@ -10577,14 +10662,14 @@ func ValueChanged()
                 eb_Limit_Profile_6.max=2000000000
             endif
             If Selected==3 then
-                lbl_Rate_Seg_6.value="psi/sec"
-                lbl_Lim_Seg_6.value="psi"
+                lbl_Rate_Seg_6.value=strPresDispUnit+"/sec"
+                lbl_Lim_Seg_6.value=strPresDispUnit
                 SegTypeArray[6]=3
                 eb_Rate_Profile_6.enabled=true
 '                eb_Rate_Profile_6.DecimalPlaces=0
 '                eb_Limit_Profile_6.DecimalPlaces=0
-                eb_Rate_Profile_6.max=200
-                eb_Limit_Profile_6.max=prange
+                eb_Rate_Profile_6.max=scaledDisp(200)
+                eb_Limit_Profile_6.max=scaledDisp(prange)
             endif
             If Selected==4 then
                 If SegTypeArray[5]== 3 then
@@ -10595,16 +10680,16 @@ func ValueChanged()
                     eb_Limit_Profile_6.enabled=true
                     eb_Rate_Profile_6.enabled=false
 '                    eb_Limit_Profile_6.DecimalPlaces=0
-                    eb_Limit_Profile_6.max=10000
+                    eb_Limit_Profile_6.max=scaledDisp(10000)
                 else
                     lbl_Profile_Msg.value="A pressure ramp profile must preceed a constant pressure profile"
                     Selected=3
-                    lbl_Rate_Seg_6.value="psi/sec"
+                    lbl_Rate_Seg_6.value=strPresDispUnit+"/sec"
                     SegTypeArray[6]=3
 '                    eb_Rate_Profile_6.DecimalPlaces=0
 '                    eb_Limit_Profile_6.DecimalPlaces=0
-                    eb_Rate_Profile_6.max=200
-                    eb_Limit_Profile_6.max=prange
+                    eb_Rate_Profile_6.max=scaledDisp(200)
+                    eb_Limit_Profile_6.max=scaledDisp(prange)
                 endif
             endif
         endif
@@ -10680,21 +10765,6 @@ Level 249226
 #Visible True
 #Lock False
 
-Enddec
-Declare DropDownList_1 as DropDownListV2
-Level 249535
-#Visible True
-#Lock False
-init parent := p_cal_screen
-init xpos := 140
-init ypos := 588
-init width := 200
-init height := 37
-init selectonpress := False
-init font := helvb18_bdf
-init initiallistcontent := "psi;bar;"
-init selected := 0
-init curseltext := "psi"
 Enddec
 Declare eb_Amax as EditBoxV2
 Level 249494
@@ -10873,29 +10943,12 @@ init borderstyle := bdr_tabborder
 init cursorcolor := clr_buttonforeground
 
 func valueChanged()
-    dim New_Pmax as integer
-
-    check error
-            val(New_Pmax, eb_pmax_1.Value)
-        on error
-            _ClearException()
-        enderr
-
-
-    if new_pmax<pcur then
-        if (1.1*pcur>PRange) then
-            me.Value=str(1.1*PRange)
-        else
-            me.Value=str(1.1*pcur)
-
-        endif
-    endif
 
 
 endfunc
 Enddec
 Declare eb_d_gain as EditBoxV2
-Level 249894
+Level 249893
 #Visible True
 #Lock False
 init parent := pid_settings_popup
@@ -11041,7 +11094,7 @@ func valueChanged()
 endfunc
 Enddec
 Declare eb_efs_EU_label as EditBoxV2
-Level 249879
+Level 249878
 #Visible True
 #Lock False
 init parent := external_feedback_setup_screen
@@ -11067,7 +11120,7 @@ init charlimit := 3
 init xjustify := hjustify_center
 Enddec
 Declare eb_efs_max_eus as EditBoxV2
-Level 249907
+Level 249906
 #Visible True
 #Lock False
 init parent := popup_efs_input_limits
@@ -11101,7 +11154,7 @@ func valueChanged()
 endfunc
 Enddec
 Declare eb_efs_min_eus as EditBoxV2
-Level 249908
+Level 249907
 #Visible True
 #Lock False
 init parent := popup_efs_input_limits
@@ -11135,7 +11188,7 @@ func valueChanged()
 endfunc
 Enddec
 Declare eb_efs_offset as EditBoxV2
-Level 249885
+Level 249884
 #Visible True
 #Lock False
 init parent := external_feedback_setup_screen
@@ -11169,7 +11222,7 @@ endfunc
 init incrstep := .01
 Enddec
 Declare eb_efs_pid_password as EditBoxV2
-Level 249900
+Level 249899
 #Visible True
 #Lock False
 init parent := pid_warning_popup
@@ -11202,7 +11255,7 @@ endfunc
 init incrstep := 1
 Enddec
 Declare eb_efs_scale_factor as EditBoxV2
-Level 249884
+Level 249883
 #Visible True
 #Lock False
 init parent := external_feedback_setup_screen
@@ -11538,7 +11591,7 @@ func focusOff()
 endfunc
 Enddec
 Declare eb_i_gain as EditBoxV2
-Level 249893
+Level 249892
 #Visible True
 #Lock False
 init parent := pid_settings_popup
@@ -11779,6 +11832,8 @@ func valueChanged()
         SegTimeArray[1]=TarVolArray[1]/SegRateArray[1]
     endif
     If ddl_Profile_1.selected==3 then
+        Rem Need to convert to psi if display in bar
+        temp=ScaledInput(temp)
         TarPressArray[1]=temp
         SegTimeArray[1]=(TarPressArray[1]/SegRateArray[1])/60
     endif
@@ -11848,6 +11903,8 @@ func valueChanged()
         SegTimeArray[2]=TarVolArray[2]/SegRateArray[2]
     endif
     If ddl_Profile_2.selected==3 then
+        Rem Need to convert to psi if display in bar
+        temp=ScaledInput(temp)
         TarPressArray[2]=temp
         SegTimeArray[2]=(TarPressArray[2]/SegRateArray[2])/60
     endif
@@ -11921,6 +11978,8 @@ func valueChanged()
         SegTimeArray[3]=TarVolArray[3]/SegRateArray[3]
     endif
     If ddl_Profile_3.selected==3 then
+        Rem Need to convert to psi if display in bar
+        temp=ScaledInput(temp)
         TarPressArray[3]=temp
         SegTimeArray[3]=(TarPressArray[3]/SegRateArray[3])/60
     endif
@@ -11994,6 +12053,8 @@ func valueChanged()
         SegTimeArray[4]=TarVolArray[4]/SegRateArray[4]
     endif
     If ddl_Profile_4.selected==3 then
+        Rem Need to convert to psi if display in bar
+        temp=ScaledInput(temp)
         TarPressArray[4]=temp
         SegTimeArray[4]=(TarPressArray[4]/SegRateArray[4])/60
     endif
@@ -12066,6 +12127,8 @@ func valueChanged()
         SegTimeArray[5]=TarVolArray[5]/SegRateArray[5]
     endif
     If ddl_Profile_5.selected==3 then
+        Rem Need to convert to psi if display in bar
+        temp=ScaledInput(temp)
         TarPressArray[5]=temp
         SegTimeArray[5]=(TarPressArray[5]/SegRateArray[5])/60
     endif
@@ -12138,6 +12201,8 @@ func valueChanged()
         SegTimeArray[6]=TarVolArray[6]/SegRateArray[6]
     endif
     If ddl_Profile_6.selected==3 then
+        Rem Need to convert to psi if display in bar
+        temp=ScaledInput(temp)
         TarPressArray[6]=temp
         SegTimeArray[6]=(TarPressArray[6]/SegRateArray[6])/60
     endif
@@ -12204,7 +12269,7 @@ func valueChanged()
 endfunc
 Enddec
 Declare eb_p_gain as EditBoxV2
-Level 249889
+Level 249888
 #Visible True
 #Lock False
 init parent := pid_settings_popup
@@ -12308,17 +12373,26 @@ func valueChanged()
     dim New_Pmax as integer
 
     check error
-            val(New_Pmax, eb_pmax_1.Value)
-        on error
-            _ClearException()
-        enderr
+        val(New_Pmax, eb_pmax_1.Value)
+        new_pmax=ScaledInput(New_Pmax)
+    on error
+        _ClearException()
+    enderr
 
 
     if new_pmax<pcur then
         if (1.1*pcur>PRange) then
-            me.Value=str(1.1*PRange)
+            if enumPresDispUnit==psi then
+                me.Value=str(1.1*PRange)
+            else
+                me.Value=str((1.1*PRange)/psiPerBar)
+            endif
         else
-            me.Value=str(1.1*pcur)
+            if enumPresDispUnit==psi then
+                me.Value=str(1.1*pcur)
+            else
+                me.Value=str((1.1*pcur)/psiPerBar)
+            endif
 
         endif
     endif
@@ -12356,6 +12430,10 @@ init yinset := 0
 init ptsize := 20
 init borderstyle := bdr_tabborder
 init cursorcolor := clr_buttonforeground
+
+func valueChanged()
+
+endfunc
 Enddec
 Declare eb_PressR as EditBoxV2
 Level 249408
@@ -12459,6 +12537,9 @@ func valueChanged()
 
     Check Error
         Val(SegRateArray[1],value)
+        if ddl_profile_1.selected==3 then
+            SegRateArray[1]=ScaledInput(SegRateArray[1])
+        endif
     on error
         _ClearException()
     enderr
@@ -12485,7 +12566,7 @@ init ypos := 367
 init width := 80
 init height := 34
 init boxtype := eb_numericstrict
-init value := "20.000"
+init value := ""
 init min := 0
 init max := default
 init maxlines := 1
@@ -12509,6 +12590,9 @@ func valueChanged()
 
     Check Error
         Val(SegRateArray[2],value)
+        if ddl_profile_2.selected==3 then
+            SegRateArray[2]=ScaledInput(SegRateArray[2])
+        endif
     on error
         _ClearException()
     enderr
@@ -12534,7 +12618,7 @@ init ypos := 415
 init width := 80
 init height := 34
 init boxtype := eb_numericstrict
-init value := "0.980"
+init value := ""
 init min := 0
 init max := default
 init maxlines := 1
@@ -12558,6 +12642,9 @@ func valueChanged()
 
     Check Error
         Val(SegRateArray[3],value)
+        if ddl_profile_3.selected==3 then
+            SegRateArray[3]=ScaledInput(SegRateArray[3])
+        endif
     on error
         _ClearException()
     enderr
@@ -12583,7 +12670,7 @@ init ypos := 465
 init width := 80
 init height := 34
 init boxtype := eb_numericstrict
-init value := "2500.000"
+init value := ""
 init min := 0
 init max := default
 init maxlines := 1
@@ -12607,6 +12694,9 @@ func valueChanged()
 
     Check Error
         Val(SegRateArray[4],value)
+        if ddl_profile_4.selected==3 then
+            SegRateArray[4]=ScaledInput(SegRateArray[4])
+        endif
     on error
         _ClearException()
     enderr
@@ -12656,6 +12746,9 @@ func valueChanged()
 
     Check Error
         Val(SegRateArray[5],value)
+        if ddl_profile_5.selected==3 then
+            SegRateArray[5]=ScaledInput(SegRateArray[5])
+        endif
     on error
         _ClearException()
     enderr
@@ -12705,6 +12798,9 @@ func valueChanged()
 
     Check Error
         Val(SegRateArray[6],value)
+        if ddl_profile_6.selected==3 then
+            SegRateArray[6]=ScaledInput(SegRateArray[6])
+        endif
     on error
         _ClearException()
     enderr
@@ -13007,6 +13103,7 @@ func valueChanged()
     'gmccom_pmax.executecommand = true
     check error
             val(TargetPress, Value)
+            TargetPress=ScaledInput(targetPress)
         on error
             _ClearException()
         enderr
@@ -13014,7 +13111,7 @@ func valueChanged()
     if TargetPress > PMax then
         lbl_RampStatus.Value="Target Pressure must be less than PMax Limit"
         TargetPress=.99*PMax
-        eb_Target_Press.value= _formatfloat(TargetPress,6,2,_FLOAT_NORMAL)
+        eb_Target_Press.value= _formatfloat(ScaledDisp(TargetPress),6,PresDigits,_FLOAT_NORMAL)
         Warning_Sound()
     endif
 
@@ -13220,7 +13317,7 @@ init font := default_ttf
 init ptsize := 12
 Enddec
 Declare External_Control_Screen as ScreenV2
-Level 249866
+Level 249921
 #Visible False
 #Lock False
 init parent := default
@@ -13236,10 +13333,10 @@ func screenEnabled()
 endfunc
 Enddec
 Declare External_Feedback_Setup_Screen as ScreenV2
-Level 249921
+Level 249920
 #Visible False
 #Lock Me
-init parent := default
+init parent := external_control_screen
 init xpos := 0
 init ypos := 0
 init width := 480
@@ -13413,7 +13510,7 @@ Declare g_72_ver_lbl as LabelV2
 Level 249363
 #Visible True
 #Lock False
-init value := "Terminal Version VPA D301 03/17/2015"
+init value := "Terminal Version VPA D301 03/18/2015"
 init parent := sys_setup_screen
 init xpos := 20
 init ypos := 744
@@ -14123,6 +14220,7 @@ func ResponseReceived(response as string)
     If FState > 0 then
         'We need to initiate Flow Mode screen with stop enabled
         Title_Screen.enabled= false
+        label_45.value=strPresDispUnit
          flow_mode_screen.enabled = true
         gmcpoll_mlcura.enabled=true
         gmcpoll_mlcurb.enabled=true
@@ -14683,7 +14781,7 @@ func ResponseReceived(response as string)
     on error
             _ClearException()
     enderr
-    eb_Pmax.value=_FormatFloat(Pmax,6,2,_FLOAT_NORMAL)
+    eb_Pmax.value=_FormatFloat(ScaledDisp(Pmax),6,PresDigits,_FLOAT_NORMAL)
 
 
 
@@ -14829,15 +14927,15 @@ func ResponseReceived(response as string)
     on error
             _ClearException()
     enderr
-    lbl_p_range.value=_FormatFloat(PRange,5,0,_FLOAT_NORMAL)
+    lbl_p_range.value=_FormatFloat(scaledDisp(PRange),5,presDigits,_FLOAT_NORMAL)
     lbl_press_range.value=_FormatFloat(PRange,5,0,_FLOAT_NORMAL)
-    eb_PMax.max=PRange*1.1
-    eb_PMax.min=PRange*.01
-    eb_PMax_1.max=PRange*1.1
-    eb_PMax_1.min=PRange*.01
-    eb_Target_Press.max=PRange
-    eb_PMax_Warn.max=PRange*1.1
-    eb_PMax_Warn.min=PRange*.01
+    eb_PMax.max=ScaledDisp(PRange*1.1)
+    eb_PMax.min=ScaledDisp(PRange*.01)
+    eb_PMax_1.max=ScaledDisp(PRange*1.1)
+    eb_PMax_1.min=ScaledDisp(PRange*.01)
+    eb_Target_Press.max=ScaledDisp(PRange)
+    eb_PMax_Warn.max=ScaledDisp(PRange*1.1)
+    eb_PMax_Warn.min=ScaledDisp(PRange*.01)
     If PRange > 15 and PRange < 25 then
         Pxdcr=0
     endif
@@ -14918,6 +15016,10 @@ func ResponseReceived(response as string)
 '       sk_Pcontrol.value = "STOP"
 '        sk_cycle.value = "CYCLE"
 '        sk_ramp.value="RAMP"
+
+        label_8.value=strPresDispUnit
+        label_11.value=strPresDispUnit
+        eb_target_press.DecimalPlaces=PresDigits
         pressure_mode_screen.enabled = true
         gmcpoll_mlcura.enabled=true
         gmcpoll_mlcurb.enabled=true
@@ -14935,18 +15037,18 @@ func ResponseReceived(response as string)
 '        lbl_Pmode_msg.value="Operator terminal rebooted unexpectedly"
 '        tmr_CheckML.enabled=true
 
-        eb_Target_Press.value=_FormatFloat(Ptarget,6,2,_FLOAT_NORMAL)
+        eb_Target_Press.value=_FormatFloat(scaledDisp(Ptarget),6,PresDigits,_FLOAT_NORMAL)
 
         Pratemin=Prate*60
 
         If psi_per_sec then
-            but_psi_per_sec_min.Value="psi/sec"
-            eb_PressR.max=200
-            eb_PressR.value=_FormatFloat(Prate,6,2,_FLOAT_NORMAL)
+            but_psi_per_sec_min.Value=strPresDispUnit+"/sec"
+            eb_PressR.max=scaledDisp(200)
+            eb_PressR.value=_FormatFloat(scaledDisp(Prate),6,2,_FLOAT_NORMAL)
         else
-            but_psi_per_sec_min.Value="psi/min"
-            eb_PressR.max=12000
-            eb_PressR.value=_FormatFloat(Pratemin,6,2,_FLOAT_NORMAL)
+            but_psi_per_sec_min.Value=strPresDispUnit+"/min"
+            eb_PressR.max=scaledDisp(12000)
+            eb_PressR.value=_FormatFloat(scaledDisp(Pratemin),6,2,_FLOAT_NORMAL)
         endif
 
         Set_Press_Buttons()
@@ -16615,22 +16717,22 @@ func ResponseReceived (response as reference to string)
     tmpStr=_FormatFloat(Pcur,6,0,_FLOAT_NORMAL)
     If Pressure_Mode_screen.enabled then
         if lbl_P_Act.value<>tmpStr then
-            lbl_P_Act.value=tmpStr
+            lbl_P_Act.value=_formatfloat(scaledDisp(Pcur),6,PresDigits,_FLOAT_NORMAL)
         endif
     endif
    If Flow_Mode_screen.enabled then
         if lbl_P_Act_2.value<>tmpStr then
-            lbl_P_Act_2.value=tmpStr
+            lbl_P_Act_2.value=_formatfloat(scaledDisp(Pcur),6,PresDigits,_FLOAT_NORMAL)
         endif
     endif
     If Profile_screen.enabled then
         if lbl_P_Act_1.value<>tmpStr then
-            lbl_P_Act_1.value=tmpStr
+            lbl_P_Act_1.value=_formatfloat(scaledDisp(Pcur),6,PresDigits,_FLOAT_NORMAL)
         endif
     endif
     If Remote_Display.enabled then
         if lbl_P_Act_3.value<>tmpStr then
-            lbl_P_Act_3.value=tmpStr
+            lbl_P_Act_3.value=_formatfloat(scaledDisp(Pcur),6,PresDigits,_FLOAT_NORMAL)
         endif
     endif
     If Pcur > PRange or Pcur < -PRange then
@@ -16683,32 +16785,32 @@ func ResponseReceived (response as reference to string)
     tmpStr=_FormatFloat(PcurA,6,0,_FLOAT_NORMAL)
     If Pressure_Mode_screen.enabled then
         if lbl_P_Act_A.value<>tmpStr then
-            lbl_P_Act_A.value=tmpStr
+            lbl_P_Act_A.value=_formatfloat(scaleddisp(PcurA),6,presdigits,_FLOAT_NORMAL)
         endif
     endif
     If Flow_Mode_screen.enabled then
         if lbl_P_Act_A_1.value<>tmpStr then
-            lbl_P_Act_A_1.value=tmpStr
+            lbl_P_Act_A_1.value=_formatfloat(scaleddisp(PcurA),6,presdigits,_FLOAT_NORMAL)
         endif
     endif
     If Profile_screen.enabled then
         if lbl_P_Act_A_2.value<>tmpStr then
-            lbl_P_Act_A_2.value=tmpStr
+            lbl_P_Act_A_2.value=_formatfloat(scaleddisp(PcurA),6,presdigits,_FLOAT_NORMAL)
         endif
     endif
     If Power_Up_screen.enabled then
         if lbl_P_Cur_A.value<>tmpStr then
-            lbl_P_Cur_A.value=tmpStr
+            lbl_P_Cur_A.value=_formatfloat(scaleddisp(PcurA),6,presdigits,_FLOAT_NORMAL)
         endif
     endif
     If Manual_Control_screen.enabled then
         if lbl_P_Cur_A_1.value<>tmpStr then
-            lbl_P_Cur_A_1.value=tmpStr
+            lbl_P_Cur_A_1.value=_formatfloat(scaledDisp(PcurA),6,presDigits,_FLOAT_NORMAL)
         endif
     endif
     If Remote_Display.enabled then
         if lbl_P_Act_A_3.value<>tmpStr then
-            lbl_P_Act_A_3.value=tmpStr
+            lbl_P_Act_A_3.value=_formatfloat(scaledDisp(PcurA),6,presDigits,_FLOAT_NORMAL)
         endif
     endif
     If PcurA > PMaxWarn then
@@ -16764,32 +16866,32 @@ func ResponseReceived (response as reference to string)
     tmpStr=_FormatFloat(PcurB,6,0,_FLOAT_NORMAL)
     If Pressure_Mode_screen.enabled then
         if lbl_P_Act_B.value<>tmpStr then
-            lbl_P_Act_B.value=tmpStr
+            lbl_P_Act_B.value=_formatfloat(ScaledDisp(PcurB),6,PresDigits,_FLOAT_NORMAL)
         endif
     endif
     If Flow_Mode_screen.enabled then
         if lbl_P_Act_B_1.value<>tmpStr then
-            lbl_P_Act_B_1.value=tmpStr
+            lbl_P_Act_B_1.value=_formatfloat(ScaledDisp(PcurB),6,PresDigits,_FLOAT_NORMAL)
         endif
     endif
     If Profile_screen.enabled then
         if lbl_P_Act_B_2.value<>tmpStr then
-            lbl_P_Act_B_2.value=tmpStr
+            lbl_P_Act_B_2.value=_formatfloat(ScaledDisp(PcurB),6,PresDigits,_FLOAT_NORMAL)
         endif
     endif
     If Power_Up_screen.enabled then
         if lbl_P_Cur_B.value<>tmpStr then
-            lbl_P_Cur_B.value=tmpStr
+            lbl_P_Cur_B.value=_formatfloat(ScaledDisp(PcurB),6,PresDigits,_FLOAT_NORMAL)
         endif
     endif
     If Manual_Control_screen.enabled then
         if lbl_P_Cur_B_1.value<>tmpStr then
-            lbl_P_Cur_B_1.value=tmpStr
+            lbl_P_Cur_B_1.value=_formatfloat(scaledDisp(PcurB),6,PresDigits,_FLOAT_NORMAL)
         endif
     endif
     If Remote_Display.enabled then
         if lbl_P_Act_B_3.value<>tmpStr then
-            lbl_P_Act_B_3.value=tmpStr
+            lbl_P_Act_B_3.value=_formatfloat(scaledDisp(PcurB),6,PresDigits,_FLOAT_NORMAL)
         endif
     endif
     If PcurB > PMaxWarn then
@@ -17447,7 +17549,7 @@ init ypos := 0
 init image := Banner_Rev5
 Enddec
 Declare Image_20 as ImageV2
-Level 249867
+Level 249866
 #Visible True
 #Lock False
 init parent := external_feedback_setup_screen
@@ -17648,7 +17750,7 @@ init ptsize := 26
 init transparent := true
 Enddec
 Declare Label_106 as LabelV2
-Level 249890
+Level 249889
 #Visible True
 #Lock False
 init value := "P"
@@ -17662,7 +17764,7 @@ init xjustify := hjustify_leftalign
 init borderstyle := bdr_none
 Enddec
 Declare Label_107 as LabelV2
-Level 249891
+Level 249890
 #Visible True
 #Lock False
 init value := "I"
@@ -17676,7 +17778,7 @@ init xjustify := hjustify_leftalign
 init borderstyle := bdr_none
 Enddec
 Declare Label_108 as LabelV2
-Level 249892
+Level 249891
 #Visible True
 #Lock False
 init value := "D"
@@ -18955,7 +19057,7 @@ init ptsize := 26
 init transparent := true
 Enddec
 Declare Label_77 as LabelV2
-Level 249906
+Level 249905
 #Visible True
 #Lock False
 init value := "Minimum"
@@ -18971,7 +19073,7 @@ init borderstyle := bdr_none
 init bgcolor := clr_softkeybarbuttonbg
 Enddec
 Declare Label_78 as LabelV2
-Level 249905
+Level 249904
 #Visible True
 #Lock False
 init value := "Maximum"
@@ -18987,7 +19089,7 @@ init borderstyle := bdr_none
 init bgcolor := clr_softkeybarbuttonbg
 Enddec
 Declare Label_79 as LabelV2
-Level 249910
+Level 249909
 #Visible True
 #Lock False
 init value := "Engineering Units"
@@ -19021,7 +19123,7 @@ init ptsize := 12
 init transparent := true
 Enddec
 Declare Label_80 as LabelV2
-Level 249911
+Level 249910
 #Visible True
 #Lock False
 init value := "Volts DC"
@@ -19073,7 +19175,7 @@ init ptsize := 12
 init transparent := true
 Enddec
 Declare Label_89 as LabelV2
-Level 249878
+Level 249877
 #Visible True
 #Lock False
 init value := "Engineering Units (EU)"
@@ -19107,7 +19209,7 @@ init ptsize := 26
 init transparent := true
 Enddec
 Declare Label_90 as LabelV2
-Level 249877
+Level 249876
 #Visible True
 #Lock False
 init value := "Current Input (volts)"
@@ -19126,7 +19228,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare Label_91 as LabelV2
-Level 249876
+Level 249875
 #Visible True
 #Lock False
 init value := "EXTERNAL FEEDBACK SETUP"
@@ -19145,7 +19247,7 @@ init ptsize := 26
 init transparent := true
 Enddec
 Declare Label_92 as LabelV2
-Level 249875
+Level 249874
 #Visible True
 #Lock False
 init value := "Scale Factor"
@@ -19177,7 +19279,7 @@ init ptsize := 12
 init transparent := true
 Enddec
 Declare Label_94 as LabelV2
-Level 249874
+Level 249873
 #Visible True
 #Lock False
 init value := "Zero Offset"
@@ -19355,7 +19457,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_current_input as LabelV2
-Level 249873
+Level 249872
 #Visible True
 #Lock False
 init value := "Current Input (ml)"
@@ -19584,7 +19686,7 @@ init bgcolor := clr_softkeybarbackground
 init yjustify := vjustify_topalign
 Enddec
 Declare lbl_Current_pos_bk_16 as LabelV2
-Level 249287
+Level 249288
 #Visible True
 #Lock False
 init value := ""
@@ -19935,7 +20037,7 @@ init ptsize := 20
 init yjustify := vjustify_topalign
 Enddec
 Declare lbl_DP_Range_Bgnd_2 as LabelV2
-Level 249868
+Level 249867
 #Visible True
 #Lock False
 init value := "CURRENT VALUES"
@@ -19973,7 +20075,7 @@ init ptsize := 20
 init yjustify := vjustify_topalign
 Enddec
 Declare lbl_DP_Range_Bgnd_4 as LabelV2
-Level 249869
+Level 249868
 #Visible True
 #Lock False
 init value := "EXTERNAL INPUT SETTINGS"
@@ -20189,7 +20291,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_efs_current_eus as LabelV2
-Level 249871
+Level 249870
 #Visible True
 #Lock False
 init value := "00.00"
@@ -20208,7 +20310,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_efs_current_vdc as LabelV2
-Level 249872
+Level 249871
 #Visible True
 #Lock False
 init value := "00.00"
@@ -20227,7 +20329,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_efs_message as LabelV2
-Level 249870
+Level 249869
 #Visible True
 #Lock False
 init value := "Enter engineering units, scale factor and offset for display of the input signal.\n\nEngineering units is a label up to three characters long.\n\nThe calculation for displaying the feedback signal is: \n(voltage input - Zero Offset)*Scale Factor"
@@ -20587,7 +20689,7 @@ Declare lbl_Lim_Seg_2 as LabelV2
 Level 249339
 #Visible True
 #Lock False
-init value := "ml"
+init value := ""
 init parent := profile_screen
 init xpos := 398
 init ypos := 365
@@ -20605,7 +20707,7 @@ Declare lbl_Lim_Seg_3 as LabelV2
 Level 249340
 #Visible True
 #Lock False
-init value := "psi"
+init value := ""
 init parent := profile_screen
 init xpos := 398
 init ypos := 413
@@ -20623,7 +20725,7 @@ Declare lbl_Lim_Seg_4 as LabelV2
 Level 249341
 #Visible True
 #Lock False
-init value := "min"
+init value := ""
 init parent := profile_screen
 init xpos := 398
 init ypos := 463
@@ -20774,7 +20876,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_min_eu_2 as LabelV2
-Level 249909
+Level 249908
 #Visible True
 #Lock False
 init value := "Rate (EU/sec)"
@@ -20790,7 +20892,7 @@ init borderstyle := bdr_none
 init bgcolor := clr_softkeybarbuttonbg
 Enddec
 Declare lbl_min_eu_3 as LabelV2
-Level 249914
+Level 249913
 #Visible True
 #Lock False
 init value := "Rate (vdc/sec)"
@@ -21344,7 +21446,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_pid_message as LabelV2
-Level 249895
+Level 249894
 #Visible True
 #Lock False
 init value := "Enter the proportional, integral, and derivative gains."
@@ -21383,7 +21485,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_popup_efs_max_rate_eu as LabelV2
-Level 249916
+Level 249915
 #Visible True
 #Lock False
 init value := "10"
@@ -21402,7 +21504,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_popup_efs_max_rate_vdc as LabelV2
-Level 249918
+Level 249917
 #Visible True
 #Lock False
 init value := "10"
@@ -21421,7 +21523,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_popup_efs_max_vdc as LabelV2
-Level 249912
+Level 249911
 #Visible True
 #Lock False
 init value := "10"
@@ -21440,7 +21542,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_popup_efs_min_rate_eu as LabelV2
-Level 249915
+Level 249914
 #Visible True
 #Lock False
 init value := "10"
@@ -21459,7 +21561,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_popup_efs_min_rate_vdc as LabelV2
-Level 249917
+Level 249916
 #Visible True
 #Lock False
 init value := ".0001"
@@ -21478,7 +21580,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_popup_efs_min_vdc as LabelV2
-Level 249913
+Level 249912
 #Visible True
 #Lock False
 init value := "10"
@@ -21590,7 +21692,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_Profile_Segment_1 as LabelV2
-Level 249288
+Level 249290
 #Visible True
 #Lock False
 init value := "1"
@@ -21608,7 +21710,7 @@ init ptsize := 20
 init bgcolor := clr_softkeybarbackground
 Enddec
 Declare lbl_Profile_Segment_2 as LabelV2
-Level 249289
+Level 249291
 #Visible True
 #Lock False
 init value := "2"
@@ -21626,7 +21728,7 @@ init ptsize := 20
 init bgcolor := clr_softkeybarbackground
 Enddec
 Declare lbl_Profile_Segment_3 as LabelV2
-Level 249290
+Level 249292
 #Visible True
 #Lock False
 init value := "3"
@@ -21644,7 +21746,7 @@ init ptsize := 20
 init bgcolor := clr_softkeybarbackground
 Enddec
 Declare lbl_Profile_Segment_4 as LabelV2
-Level 249291
+Level 249287
 #Visible True
 #Lock False
 init value := "4"
@@ -21659,12 +21761,12 @@ init font := helvb24_bdf
 init xinset := 1
 init yinset := 0
 init ptsize := 20
-init bgcolor := clr_buttonbackgroundalt
+init bgcolor := clr_softkeybarbackground
 
-init fgcolor := clr_buttonforegroundalt
+init fgcolor := clr_labelforeground
 Enddec
 Declare lbl_Profile_Segment_5 as LabelV2
-Level 249292
+Level 249289
 #Visible True
 #Lock False
 init value := "5"
@@ -21771,7 +21873,7 @@ Declare lbl_Rate_Seg_2 as LabelV2
 Level 249333
 #Visible True
 #Lock False
-init value := "ml/min"
+init value := ""
 init parent := profile_screen
 init xpos := 290
 init ypos := 365
@@ -21789,7 +21891,7 @@ Declare lbl_Rate_Seg_3 as LabelV2
 Level 249334
 #Visible True
 #Lock False
-init value := "psi/sec"
+init value := ""
 init parent := profile_screen
 init xpos := 290
 init ypos := 413
@@ -21807,7 +21909,7 @@ Declare lbl_Rate_Seg_4 as LabelV2
 Level 249335
 #Visible True
 #Lock False
-init value := "psi"
+init value := ""
 init parent := profile_screen
 init xpos := 290
 init ypos := 463
@@ -22313,7 +22415,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_Vol_Cal_msg_B_1 as LabelV2
-Level 249902
+Level 249901
 #Visible True
 #Lock False
 init value := "Enter the minimum and maximum values for the Engineering Units. The maximum engineering unit is (10-Zero Offset)*Scale Factor, the minumum is (-10-Zero Offest)*Scale Factor.\n\nThe minimum rate/second is .0001*Scale Factor, the maximum rate/sec is 10*Scale Factor"
@@ -22334,7 +22436,7 @@ init yinset := 0
 init ptsize := 20
 Enddec
 Declare lbl_Vol_Cal_msg_B_3 as LabelV2
-Level 249899
+Level 249898
 #Visible True
 #Lock False
 init value := "The PID values are advanced settings and can cause unpredictable control of the pump if set incorrectly. \nEnter password to proceed."
@@ -22613,12 +22715,12 @@ Declare lbl_Zero_Msg as LabelV2
 Level 249973
 #Visible True
 #Lock False
-init value := "One of the transducers currently exceeds 30 psi.  Are you sure you want to zero the pressure transducers?"
+init value := "One of the transducers currently exceeds 30 psi (2.068 bar).  Are you sure you want to zero the pressure transducers?"
 init parent := zero_pressure_popup_screen
 init xpos := 10
 init ypos := 50
 init width := 280
-init height := 101
+init height := 118
 init font := helvb18_bdf
 init borderstyle := bdr_bumpborder
 init xjustify := hjustify_leftalign
@@ -22649,7 +22751,7 @@ init ypos := 0
 Enddec
 Declare P_Cal_screen as ScreenV2
 Level 249536
-#Visible True
+#Visible False
 #Lock Me
 init parent := default
 init xpos := 0
@@ -22659,7 +22761,7 @@ init height := 800
 init enabled := False
 Enddec
 Declare PID_Settings_Popup as PopupScreenV2
-Level 249896
+Level 249895
 #Visible False
 #Lock False
 init xpos := 80
@@ -22675,7 +22777,7 @@ init value := "PID SETTINGS"
 init parent := external_feedback_setup_screen
 Enddec
 Declare PID_Warning_popup as PopupScreenV2
-Level 249901
+Level 249900
 #Visible False
 #Lock False
 init xpos := 99
@@ -22691,8 +22793,8 @@ init value := "WARNING"
 init parent := external_feedback_setup_screen
 Enddec
 Declare popup_efs_input_limits as PopupScreenV2
-Level 249919
-#Visible True
+Level 249918
+#Visible False
 #Lock False
 init xpos := 30
 init ypos := 122
@@ -22817,12 +22919,14 @@ func EnterPressed()
                 If psi_per_sec then
                     check error
                         val(Prate,eb_PressR.Value)
+                        prate=scaledInput(Prate)
                     on error
                         _ClearException()
                     enderr
                 else
                     check error
                         val(Pratemin,eb_PressR.Value)
+                        PRateMin=ScaledInput(PrateMin)
                     on error
                         _ClearException()
                     enderr
@@ -22838,6 +22942,7 @@ func EnterPressed()
 
                 check error
                     val(Ptarget,eb_Target_Press.Value)
+                    Ptarget=ScaledInput(PTarget)
                 on error
                     _ClearException()
                 enderr
@@ -23035,19 +23140,19 @@ init width := 480
 init height := 800
 init enabled := false
 Enddec
+Declare pv_display_settings as PersistentVariablesV2
+Level 249944
+#Visible True
+#Lock False
+init filename := "pv_display set.dat"
+init savelist := "eb_efs_EU_label.value;ddl_pres_dis_units.selected;default.strPresDispUnit;default.enumPresDispUnit;default.presDigits;"
+Enddec
 Declare pv_errorlog as PersistentVariablesV2
 Level 249251
 #Visible True
 #Lock False
 init savelist := "error_log_eb.value;"
 init filename := "errorlog.dat"
-Enddec
-Declare pv_external_fb as PersistentVariablesV2
-Level 249944
-#Visible True
-#Lock False
-init filename := "pv_external.dat"
-init savelist := "eb_efs_EU_label.value;"
 Enddec
 Declare pv_Limits as PersistentVariablesV2
 Level 249245
@@ -23079,7 +23184,7 @@ func RestoreComplete()
 endfunc
 Enddec
 Declare QwertyKeypad as QwertyKeypadV2
-Level 249920
+Level 249919
 #Visible False
 #Lock False
 init parent := external_feedback_setup_screen
@@ -23095,7 +23200,7 @@ func EnterPressed()
     eb_efs_eu_label.Value=me.Value
     set_eng_unit_labels()
     me.enabled=false
-    pv_external_fb.Save()
+    pv_display_settings.Save()
 
 endfunc
 
@@ -23230,7 +23335,7 @@ endfunc
 Enddec
 Declare Remote_Display as ScreenV2
 Level 249284
-#Visible False
+#Visible True
 #Lock False
 init xpos := 0
 init ypos := 0
@@ -23266,7 +23371,7 @@ init parent := system_maintenance_screen
 Enddec
 Declare Sys_Setup_screen as ScreenV2
 Level 249377
-#Visible False
+#Visible True
 #Lock False
 init parent := default
 init xpos := -1
@@ -23622,7 +23727,7 @@ func timeout()
 endfunc
 Enddec
 Declare tmr_update_ext_setup as TimerV2
-Level 249883
+Level 249882
 #Visible True
 #Lock False
 init parent := external_feedback_setup_screen
